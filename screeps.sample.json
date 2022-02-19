@@ -23,7 +23,7 @@
     "path": "/season",
     "branch": "main"
   },
-  "pserver": {
+  "private": {
     "email": "username",
     "password": "Password",
     "protocol": "http",
