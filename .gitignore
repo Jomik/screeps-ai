@@ -1,2 +1,4 @@
 screeps.json
 node_modules/
+.env
+*.nw
