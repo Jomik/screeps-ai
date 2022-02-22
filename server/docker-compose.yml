@@ -1,10 +1,10 @@
 version: '3'
 services:
   screeps:
-    image: screepers/screeps-launcher
-    volumes:
-      - ./config.yml:/screeps/config.yml
-      - screeps-data:/screeps
+    image: jomik/screeps-server:latest-mongo
+    depends_on:
+      - mongo
+      - redis
     ports:
       - 21025:21025/tcp
     environment:
@@ -41,4 +41,3 @@ services:
 volumes:
   redis-data:
   mongo-data:
-  screeps-data:
