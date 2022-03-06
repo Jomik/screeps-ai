@@ -1,17 +1,19 @@
 version: '3'
 services:
   screeps:
-    image: jomik/screeps-server:latest-mongo
-    depends_on:
-      - mongo
-      - redis
+    image: jomik/screeps-server:edge
     ports:
       - 21025:21025/tcp
+    volumes:
+      - ./config.yml:/screeps/config.yml
     environment:
       MONGO_HOST: mongo
       REDIS_HOST: redis
       STEAM_KEY: ${STEAM_KEY:?"Missing steam key"}
     restart: unless-stopped
+    depends_on:
+      - mongo
+      - redis
 
   mongo:
     image: mongo
@@ -27,15 +29,15 @@ services:
 
   client:
     image: node:16
-    user: node
-    command: sh -c "mkdir -p /home/node/client && cd /home/node/client && npm init -y && npm install laverdet/screeps-steamless-client && ./node_modules/.bin/screeps-steamless-client --package /screeps.nw"
+    working_dir: /home/root/client
+    command: sh -c 'npm install --log-level=error --no-progress Jomik/screeps-steamless-client#add-args && npx screeps-steamless-client --package /screeps.nw --host 0.0.0.0 --internal_backend http://screeps:21025 --backend http://localhost:21025'
     environment:
       SCREEPS_NW_PATH: ${SCREEPS_NW_PATH:?"Missing screeps nw file"}
     volumes:
       - ${SCREEPS_NW_PATH}:/screeps.nw
-    network_mode: host
-    # ports:
-    #   - 8080:8080/tcp
+
+    ports:
+      - 8080:8080/tcp
     restart: unless-stopped
 
 volumes:

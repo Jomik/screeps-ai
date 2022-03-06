@@ -1,0 +1,7 @@
+mods:
+  - Jomik/screepsmod-auth#add-return
+  - screepsmod-admin-utils
+  - screepsmod-mongo
+bots:
+  simplebot: screepsbot-zeswarm
+  overmind: screeps-bot-overmind
