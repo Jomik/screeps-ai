@@ -101,9 +101,9 @@ export class SpawnManager extends Process<undefined> {
       (creep) => creep.my && creep.name.startsWith('worker')
     );
     const attackers = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('attackers')
+      (creep) => creep.my && creep.name.startsWith('attacker')
     );
-    const enemies = Object.values(Game.creeps).filter((creep) => !creep.my);
+    const enemies = spawn.room.find(FIND_HOSTILE_CREEPS);
 
     if (attackers.length < enemies.length) {
       spawnAttacker();
