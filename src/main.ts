@@ -1,3 +1,5 @@
+import 'ts-polyfill/lib/es2019-array';
+
 import { Kernel } from 'kernel/Kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import { BasePlanner } from 'processes/BasePlanner';

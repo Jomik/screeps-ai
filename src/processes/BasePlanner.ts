@@ -43,7 +43,7 @@ export class BasePlanner extends Process<undefined> {
         continue;
       }
       const res = this.search(node.pos, node.range);
-      const flatPaths = _.flatten(paths);
+      const flatPaths = paths.flat();
       const path = res.path.filter(
         ({ x, y }) =>
           !flatPaths.some((p) => p.x === x && p.y === y) &&

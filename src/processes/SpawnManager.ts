@@ -64,8 +64,8 @@ export class SpawnManager extends Process<undefined> {
     const sources = spawn.room.find(FIND_SOURCES);
     const terrain = spawn.room.getTerrain();
 
-    const slots = _.flatten(
-      sources.map((source) =>
+    const slots = sources
+      .map((source) =>
         box
           .map<RoomPosition>(
             ([x, y]) =>
@@ -86,23 +86,15 @@ export class SpawnManager extends Process<undefined> {
           })
           .slice(0, 3)
       )
-    );
+      .flat();
 
-    const miners = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('miner')
-    );
-    const haulers = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('hauler')
-    );
-    const upgraders = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('upgrader')
-    );
-    const workers = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('worker')
-    );
-    const attackers = Object.values(Game.creeps).filter(
-      (creep) => creep.my && creep.name.startsWith('attacker')
-    );
+    const {
+      miner: miners,
+      hauler: haulers,
+      upgrader: upgraders,
+      worker: workers,
+      attacker: attackers,
+    } = _.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]);
     const enemies = spawn.room.find(FIND_HOSTILE_CREEPS);
 
     if (attackers.length < enemies.length) {
