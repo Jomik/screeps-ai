@@ -1,23 +1,26 @@
+import { STATUS_CODES } from 'http';
+import { ErrorMapper } from 'utils/ErrorMapper';
 import { isGeneratorFunction } from 'utils/generator';
 import { entries } from 'utils/object';
 import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
-import { sleep, SysCalls } from './sys-calls';
+import { CFS } from './schedulers/CFS';
+import { sleep, SysCall } from './sys-calls';
 
 type Memory = Record<string, unknown>;
 
+export type PID = number;
+
 type ProcessDescriptor<M extends Memory | undefined> = {
   type: string;
-  pid: number;
+  pid: PID;
   parent: number;
-  priority: number;
   memory: M;
 };
 
 type PackedProcessDescriptor<M extends Memory | undefined> = [
   type: string,
-  pid: number,
+  pid: PID,
   parent: number,
-  priority: number,
   memory: M
 ];
 
@@ -27,7 +30,6 @@ const packEntry = <M extends Memory | undefined>(
   entry.type,
   entry.pid,
   entry.parent,
-  entry.priority,
   entry.memory,
 ];
 
@@ -37,37 +39,42 @@ const unpackEntry = <M extends Memory | undefined>(
   type: entry[0],
   pid: entry[1],
   parent: entry[2],
-  priority: entry[3],
-  memory: entry[4],
+  memory: entry[3],
 });
 
-function* threadify(process: Process<never>): Thread {
+function threadify(process: Process<never>): () => Thread {
   const run = process.run.bind(process) as (() => void) | (() => Thread);
 
   if (isGeneratorFunction(run)) {
-    const res = yield* run();
-    return res;
+    return run;
   } else {
-    while (true) {
-      run();
-      yield sleep();
-    }
+    return function* () {
+      while (true) {
+        run();
+        yield sleep();
+      }
+    };
   }
 }
 
 class Tron extends Process<undefined> {
-  run() {
-    // Do nothing
+  *run() {
+    while (true) {
+      yield sleep(Infinity);
+    }
   }
 }
 
 export class Kernel {
-  private readonly table: Record<number, PackedProcessDescriptor<never>> = {};
-  private readonly threads: Record<number, Thread> = {};
+  private readonly table: Record<PID, PackedProcessDescriptor<never>> = {};
+  private readonly threads: Record<PID, Thread> = {};
   private readonly registry: Record<string, ProcessConstructor<never>> = {};
+  private readonly scheduler: CFS;
 
-  constructor() {
+  constructor(processes: ProcessConstructor<any>[]) {
+    this.scheduler = new CFS();
     this.createProcess(Tron, undefined, 0, 0, 0);
+    processes.forEach((type) => this.registerProcess(type as never));
   }
 
   private PIDCount = 0;
@@ -115,56 +122,36 @@ export class Kernel {
       type: type.name,
       pid,
       parent,
-      priority,
       memory: memory as never,
     });
-    this.threads[pid] = threadify(process);
+    this.threads[pid] = threadify(process)();
+    this.scheduler.add(pid);
   }
 
-  private killProcess(pid: number) {
+  private killProcess(pid: PID) {
     delete this.threads[pid];
     delete this.table[pid];
-  }
-
-  private runThread(pid: number, thread: Thread) {
-    let state: ReturnType<Thread['next']> = thread.next();
-    let interrupt = false;
-
-    if (state.done) {
-      this.killProcess(pid);
-      return;
-    }
-
-    while (!state.done && !interrupt) {
-      const syscall: void | SysCalls = state.value;
-      // Cooperative scheduling
-      if (!syscall) {
-        return;
-        // TODO: Decide if we should stop or continue or requeue
-        // state = thread.next();
-        // continue;
-      }
-
-      switch (syscall.type) {
-        case 'sleep':
-          return;
-      }
-    }
+    this.scheduler.remove(pid);
   }
 
   run(): void {
-    // TODO: Scheduling
-    for (const [pid, thread] of entries(this.threads)) {
+    const schedule = this.scheduler.run();
+    let pid = schedule.next();
+    while (!pid.done) {
+      let sysCall: ReturnType<Thread['next']>;
       try {
-        this.runThread(pid, thread);
+        sysCall = this.threads[pid.value].next();
       } catch (error) {
-        this.killProcess(pid);
-        throw error;
+        this.killProcess(pid.value);
+        console.log(ErrorMapper.sourceMappedStackTrace(error as never));
+        pid = schedule.next({ done: true, value: undefined });
+        break;
       }
+      pid = schedule.next(sysCall);
     }
   }
 
-  ps(pid = 0) {
+  ps(pid: PID = 0) {
     const tableByParent = _.groupBy(
       Object.values(this.table)
         .map(unpackEntry)
@@ -172,7 +159,7 @@ export class Kernel {
       'parent'
     );
 
-    const getSubTree = (prefix: string, pid: number, end: boolean): string => {
+    const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
       const row = this.table[pid];
       if (!row) {
         return `No process with pid ${pid}`;
@@ -183,7 +170,7 @@ export class Kernel {
       const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;
 
       const children = tableByParent[pid] ?? [];
-      children.sort((a, b) => a.priority - b.priority);
+      children.sort((a, b) => a.pid - b.pid);
       const childTree = children.map(({ pid }, i) =>
         getSubTree(
           prefix + (end ? '    ' : '|    '),

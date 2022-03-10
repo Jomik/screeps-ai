@@ -6,7 +6,7 @@ import { BasePlanner } from 'processes/BasePlanner';
 import { SpawnManager } from 'processes/SpawnManager';
 import { CreepManager } from 'processes/CreepManager';
 
-const kernel = new Kernel();
+const kernel = new Kernel([SpawnManager, CreepManager, BasePlanner]);
 kernel.spawn(SpawnManager, undefined);
 kernel.spawn(CreepManager, undefined);
 kernel.spawn(BasePlanner, undefined);

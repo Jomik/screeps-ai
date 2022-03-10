@@ -1,6 +1,6 @@
-import { SysCalls } from './sys-calls';
+import { SysCall } from './sys-calls';
 
-export type Thread = Generator<SysCalls | void, void, void>;
+export type Thread = Generator<SysCall | void, void, void>;
 
 export type ProcessMemory = Record<string, unknown> | undefined;
 

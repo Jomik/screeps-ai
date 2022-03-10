@@ -44,6 +44,7 @@
     "typescript": "^4.6.2"
   },
   "dependencies": {
+    "scl": "^4.1.1",
     "source-map": "~0.6.1",
     "ts-polyfill": "^3.8.2"
   }
