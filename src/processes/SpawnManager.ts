@@ -1,57 +1,6 @@
 import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
 
-const spawnHauler = () => {
-  const result = Game.spawns['Spawn1'].spawnCreep(
-    [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
-    `hauler-${Game.time}`
-  );
-  if (result === OK) {
-    console.log('spawn hauler');
-  }
-};
-
-const spawnMiner = (slot: [number, number]) => {
-  const result = Game.spawns['Spawn1'].spawnCreep(
-    [WORK, WORK, MOVE],
-    `miner-${Game.time}`,
-    { memory: { slot } }
-  );
-  if (result === OK) {
-    console.log('spawn miner', slot);
-  }
-};
-
-const spawnUpgrader = () => {
-  const result = Game.spawns['Spawn1'].spawnCreep(
-    [WORK, CARRY, CARRY, MOVE, MOVE],
-    `upgrader-${Game.time}`
-  );
-  if (result === OK) {
-    console.log('spawn upgrader');
-  }
-};
-
-const spawnWorker = () => {
-  const result = Game.spawns['Spawn1'].spawnCreep(
-    [WORK, CARRY, CARRY, MOVE, MOVE],
-    `worker-${Game.time}`
-  );
-  if (result === OK) {
-    console.log('spawn worker');
-  }
-};
-
-const spawnAttacker = () => {
-  const result = Game.spawns['Spawn1'].spawnCreep(
-    [MOVE, ATTACK],
-    `attacker-${Game.time}`
-  );
-  if (result === OK) {
-    console.log('spawn attacker');
-  }
-};
-
 // prettier-ignore
 const box = [
   [1,1], [0,1], [-1,1],
@@ -60,9 +9,61 @@ const box = [
 ];
 
 export class SpawnManager extends Process<undefined> {
+  private spawn = Game.spawns['Spawn1'];
+  private spawnHauler() {
+    const result = this.spawn.spawnCreep(
+      [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
+      `hauler-${Game.time}`
+    );
+    if (result === OK) {
+      this.logger.info('spawn hauler', this.spawn);
+    }
+  }
+
+  private spawnMiner(slot: [number, number]) {
+    const result = this.spawn.spawnCreep(
+      [WORK, WORK, MOVE],
+      `miner-${Game.time}`,
+      { memory: { slot } }
+    );
+    if (result === OK) {
+      this.logger.info('spawn miner', this.spawn);
+    }
+  }
+
+  private spawnUpgrader() {
+    const result = this.spawn.spawnCreep(
+      [WORK, CARRY, CARRY, MOVE, MOVE],
+      `upgrader-${Game.time}`
+    );
+    if (result === OK) {
+      this.logger.info('spawn upgrader', this.spawn);
+    }
+  }
+
+  private spawnWorker() {
+    const result = this.spawn.spawnCreep(
+      [WORK, CARRY, CARRY, MOVE, MOVE],
+      `worker-${Game.time}`
+    );
+    if (result === OK) {
+      this.logger.info('spawn worker', this.spawn);
+    }
+  }
+
+  private spawnAttacker() {
+    const result = this.spawn.spawnCreep(
+      [MOVE, ATTACK],
+      `attacker-${Game.time}`
+    );
+    if (result === OK) {
+      this.logger.info('spawn attacker', this.spawn);
+    }
+  }
+
   *run(): Thread {
     do {
-      const spawn = Game.spawns['Spawn1'];
+      const spawn = this.spawn;
       const sources = spawn.room.find(FIND_SOURCES);
       const terrain = spawn.room.getTerrain();
 
@@ -100,16 +101,16 @@ export class SpawnManager extends Process<undefined> {
       const enemies = spawn.room.find(FIND_HOSTILE_CREEPS);
 
       if (attackers.length < enemies.length) {
-        spawnAttacker();
+        this.spawnAttacker();
       } else if (miners.length === 0) {
         const closestSlot = spawn.pos.findClosestByPath(slots);
         if (!closestSlot) {
-          console.log('No source slot');
+          this.logger.error('No source slot', spawn.room);
         } else {
-          spawnMiner([closestSlot.x, closestSlot.y]);
+          this.spawnMiner([closestSlot.x, closestSlot.y]);
         }
       } else if (haulers.length === 0) {
-        spawnHauler();
+        this.spawnHauler();
       } else if (miners.length < slots.length) {
         const takenSlots = miners.map((creep) => creep.memory.slot);
         const freeSlots = slots.filter(
@@ -117,14 +118,14 @@ export class SpawnManager extends Process<undefined> {
         );
         const freeSlot = spawn.pos.findClosestByPath(freeSlots);
         if (freeSlot) {
-          spawnMiner([freeSlot.x, freeSlot.y]);
+          this.spawnMiner([freeSlot.x, freeSlot.y]);
         }
       } else if (haulers.length < 2) {
-        spawnHauler();
+        this.spawnHauler();
       } else if (upgraders.length < 4 && spawn.room.controller) {
-        spawnUpgrader();
+        this.spawnUpgrader();
       } else if (workers.length < 2) {
-        spawnWorker();
+        this.spawnWorker();
       }
       yield* sleep(10);
     } while (true);

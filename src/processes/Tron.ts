@@ -4,6 +4,7 @@ import { Init } from './Init';
 
 export class Tron extends Process<undefined> {
   *run(): Thread {
+    this.logger.alert('Global reset');
     if (!this.hasChildOfType(Init)) {
       yield* fork(Init, undefined);
     }

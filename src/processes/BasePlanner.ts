@@ -8,6 +8,7 @@ export class BasePlanner extends Process<undefined> {
     const spawn = Game.spawns['Spawn1'];
     return spawn.pos;
   }
+
   private get room() {
     return Game.rooms[this.center.roomName];
   }

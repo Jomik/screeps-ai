@@ -1,3 +1,4 @@
+import { Logger } from 'Logger';
 import { PID } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
@@ -7,25 +8,35 @@ export type ProcessMemory = Record<string, unknown> | undefined;
 
 const internal = Symbol('internal');
 
+type Child = {
+  type: ProcessConstructor<any>;
+  pid: PID;
+};
+
 type Config = {
   pid: PID;
   parent: () => PID;
-  children: () => Array<{ type: ProcessConstructor<never>; pid: PID }>;
+  children: () => Child[];
   memory: () => Memory;
 };
 
 export abstract class Process<Memory extends ProcessMemory> {
+  protected readonly logger: Logger = new Logger(this.constructor as never);
   private [internal]: any;
-  get parent(): PID {
+
+  protected get parent(): PID {
     return this[internal].parent();
   }
-  get pid(): PID {
+
+  protected get pid(): PID {
     return this[internal].pid;
   }
-  get children(): Array<{ type: ProcessConstructor<any>; pid: PID }> {
+
+  protected get children(): Child[] {
     return this[internal].children();
   }
-  get memory(): Memory {
+
+  protected get memory(): Memory {
     return this[internal].memory();
   }
 
