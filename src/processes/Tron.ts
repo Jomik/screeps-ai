@@ -6,6 +6,7 @@ export class Tron extends Process<undefined> {
   *run(): Thread {
     this.logger.alert('Global reset');
     if (!this.hasChildOfType(Init)) {
+      this.logger.info('Initialising...');
       yield* fork(Init, undefined);
     }
     yield* hibernate();

@@ -12,7 +12,7 @@ export class Init extends Process<undefined> {
     for (const type of InitProcesses) {
       if (!spawnedProcesses.includes(type)) {
         const pid = yield* fork(type, undefined);
-        this.logger.info(`spawned ${type.name} with pid ${pid}`);
+        this.logger.info(`forked ${type.name} with pid ${pid}`);
       }
     }
     yield* hibernate();
