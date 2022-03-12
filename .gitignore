@@ -4,3 +4,5 @@ node_modules/
 *.nw
 .DS_Store
 dist/
+.nyc_output/
+coverage/

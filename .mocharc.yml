@@ -1,0 +1,10 @@
+ui: bdd
+reporter: spec
+extension:
+  - ts
+require:
+  - ts-node/register
+  - tsconfig-paths/register
+  - tests/mocha.setup.ts
+spec:
+  - src/**/*.spec.ts
