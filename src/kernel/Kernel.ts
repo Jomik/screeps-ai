@@ -1,4 +1,5 @@
 import { Tron } from 'processes/Tron';
+import { getMemoryRef } from './memory';
 import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 import { SysCallResults } from './sys-calls';
 
@@ -38,14 +39,30 @@ const unpackEntry = <M extends Memory | undefined>(
   memory: entry[3],
 });
 
+type ProcessTable = Record<PID, PackedProcessDescriptor<never>>;
+
 export class Kernel {
-  private readonly table: Record<PID, PackedProcessDescriptor<never>> = {};
+  private get table(): ProcessTable {
+    return getMemoryRef<ProcessTable>('processTable', {});
+  }
+
   private readonly threads: Record<PID, Thread> = {};
   private readonly registry: Record<string, ProcessConstructor<never>> = {};
 
   constructor(processes: ProcessConstructor<any>[]) {
-    this.createProcess(Tron, undefined, 0, 0);
+    this.registerProcess(Tron as never);
     processes.forEach((type) => this.registerProcess(type as never));
+    if (!this.table[0]) {
+      for (const key in this.table) {
+        delete this.table[key];
+      }
+      this.createProcess(Tron, undefined, 0, 0);
+    } else {
+      for (const key of Object.keys(this.table)) {
+        const pid = Number.parseInt(key);
+        this.initThread(pid);
+      }
+    }
   }
 
   private PIDCount = 0;
@@ -86,28 +103,42 @@ export class Kernel {
     }
     this.registerProcess(type as never);
 
-    const process = new this.registry[type.name](memory as never);
-
     this.table[pid] = packEntry<never>({
       type: type.name,
       pid,
       parent,
       memory: memory as never,
     });
+
+    this.initThread(pid);
+  }
+
+  private initThread(pid: PID) {
+    const descriptor = unpackEntry(this.table[pid]);
+    const process = new this.registry[descriptor.type]();
+    process.init({
+      pid,
+      parent: () => unpackEntry(this.table[pid]).parent,
+      memory: () => unpackEntry(this.table[pid]).memory,
+      children: () => this.findChildren(pid),
+    });
+
     this.threads[pid] = process.run.bind(process)();
   }
 
-  private findChildren(pid: PID): PID[] {
+  private findChildren(
+    pid: PID
+  ): Array<{ type: ProcessConstructor<never>; pid: PID }> {
     return Object.values(this.table)
       .map((v) => unpackEntry(v))
       .filter(({ parent }) => parent === pid)
-      .map((v) => v.pid);
+      .map((v) => ({ type: this.registry[v.type], pid: v.pid }));
   }
 
   private killProcess(pid: PID) {
     delete this.threads[pid];
     delete this.table[pid];
-    this.findChildren(pid).forEach((child) => this.killProcess(child));
+    this.findChildren(pid).forEach((child) => this.killProcess(child.pid));
   }
 
   run(): void {

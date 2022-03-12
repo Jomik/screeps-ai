@@ -4,11 +4,17 @@ import { BasePlanner } from './BasePlanner';
 import { CreepManager } from './CreepManager';
 import { SpawnManager } from './SpawnManager';
 
+const InitProcesses = [SpawnManager, CreepManager, BasePlanner];
+
 export class Init extends Process<undefined> {
   *run(): Thread {
-    const smPID = yield* fork(SpawnManager, undefined);
-    const cmPID = yield* fork(CreepManager, undefined);
-    const bpPID = yield* fork(BasePlanner, undefined);
+    const spawnedProcesses = this.children.map((v) => v.type);
+    for (const type of InitProcesses) {
+      if (!spawnedProcesses.includes(type)) {
+        const pid = yield* fork(type, undefined);
+        console.log(`[Init] spawned ${type.name} with pid ${pid}`);
+      }
+    }
     yield* hibernate();
   }
 }

@@ -2,15 +2,12 @@ import { Process, Thread } from 'kernel/Process';
 import { hibernate, sleep } from 'kernel/sys-calls';
 
 export class BasePlanner extends Process<undefined> {
-  private center: RoomPosition;
   private costMatrix = new PathFinder.CostMatrix();
 
-  constructor(memory: undefined) {
-    super(memory);
+  private get center() {
     const spawn = Game.spawns['Spawn1'];
-    this.center = spawn.pos;
+    return spawn.pos;
   }
-
   private get room() {
     return Game.rooms[this.center.roomName];
   }

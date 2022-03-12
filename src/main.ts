@@ -3,11 +3,8 @@ import 'ts-polyfill/lib/es2019-array';
 import { Kernel } from 'kernel/Kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import * as processes from 'processes';
-import { Init } from 'processes';
 
 const kernel = new Kernel(Object.values(processes));
-
-kernel.spawn(Init, undefined);
 
 // @ts-ignore: to use ps in console
 global.ps = (pid?: number) => {
