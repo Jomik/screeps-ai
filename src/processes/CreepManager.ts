@@ -1,4 +1,5 @@
 import { Process, Thread } from 'kernel/Process';
+import { sleep } from 'kernel/sys-calls';
 
 const runMiners = () => {
   const miners = Object.values(Game.creeps).filter(
@@ -142,11 +143,14 @@ const runAttackers = () => {
 };
 
 export class CreepManager extends Process<undefined> {
-  run() {
-    runAttackers();
-    runMiners();
-    runHaulers();
-    runUpgraders();
-    runWorkers();
+  *run(): Thread {
+    while (true) {
+      runAttackers();
+      runMiners();
+      runHaulers();
+      runUpgraders();
+      runWorkers();
+      yield* sleep();
+    }
   }
 }

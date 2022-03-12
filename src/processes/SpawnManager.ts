@@ -1,4 +1,4 @@
-import { Process } from 'kernel/Process';
+import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
 
 const spawnHauler = () => {
@@ -60,7 +60,7 @@ const box = [
 ];
 
 export class SpawnManager extends Process<undefined> {
-  *run() {
+  *run(): Thread {
     do {
       const spawn = Game.spawns['Spawn1'];
       const sources = spawn.room.find(FIND_SOURCES);
@@ -126,7 +126,7 @@ export class SpawnManager extends Process<undefined> {
       } else if (workers.length < 2) {
         spawnWorker();
       }
-      yield sleep(10);
+      yield* sleep(10);
     } while (true);
   }
 }

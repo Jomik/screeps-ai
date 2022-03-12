@@ -1,11 +1,10 @@
 import { PID } from 'kernel/Kernel';
-import { Thread } from 'kernel/Process';
-import { SysCall } from 'kernel/sys-calls';
 import { RBTreeIndex } from 'scl';
 import { ResolveAction } from 'scl/lib/util';
+import { Scheduler, SchedulerThreadReturn } from './Scheduler';
 
 type ThreadMeta = {
-  pid: number;
+  pid: PID;
   startTick: number;
   cpuSpent?: number;
 };
@@ -22,29 +21,35 @@ class RedBlackTree extends RBTreeIndex<ThreadMeta, PID> {
   }
 }
 
-export class CFS {
+export class CFS implements Scheduler {
   private sleepingThreads: Record<PID, ThreadMeta> = {};
   private timeline = new RedBlackTree();
+  private deletions = new Set<PID>();
 
-  add(pid: PID, startTick = Game.time) {
-    if (this.timeline.has({ pid, startTick })) {
+  constructor(
+    private readonly clock: () => number,
+    private readonly quota: () => number
+  ) {}
+
+  add(pid: PID) {
+    if (this.timeline.has({ pid, startTick: 0 })) {
       return;
     }
     this.sleepingThreads[pid] = {
       ...this.sleepingThreads[pid],
       pid,
-      startTick,
+      startTick: this.clock(),
     };
   }
 
   remove(pid: PID) {
-    // TODO: Can we delete while running?
     delete this.sleepingThreads[pid];
-    this.timeline.delete({ pid, startTick: 0 });
+    this.deletions.add(pid);
   }
 
-  *run(): Generator<number, void, ReturnType<Thread['next']>> {
-    const tick = Game.time;
+  *run(): Generator<PID, void, SchedulerThreadReturn> {
+    this.doDeletions();
+    const tick = this.clock();
 
     const minCpuSpent = this.timeline.begin()?.value.cpuSpent ?? 0;
     Object.values(this.sleepingThreads).forEach((meta) => {
@@ -56,32 +61,42 @@ export class CFS {
       delete this.sleepingThreads[meta.pid];
     });
 
-    const availableCpu = Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed();
+    const availableCpu = this.quota();
     const cpuPerTask = availableCpu / this.timeline.size;
 
-    const deletedThreads: ThreadMeta[] = [];
-
     for (const meta of this.timeline) {
-      const startCpu = Game.cpu.getUsed();
-      while (Game.cpu.getUsed() - startCpu < cpuPerTask) {
-        const sysCall = yield meta.pid;
+      const startCpu = this.quota();
+      while (
+        startCpu - this.quota() < cpuPerTask &&
+        !this.deletions.has(meta.pid)
+      ) {
+        const res = yield meta.pid;
 
-        if (sysCall.done) {
-          deletedThreads.push(meta);
-          break;
+        if (!res) {
+          continue;
         }
 
-        if (sysCall.value?.type === 'sleep') {
+        if (res.type === 'done') {
+          this.deletions.add(meta.pid);
+          break;
+        } else if (res.type === 'sleep') {
           this.sleepingThreads[meta.pid] = {
             ...meta,
-            startTick: tick + sysCall.value.ticks,
+            startTick: tick + res.ticks,
           };
-          deletedThreads.push(meta);
+          this.deletions.add(meta.pid);
           break;
         }
       }
     }
 
-    deletedThreads.forEach((meta) => this.timeline.delete(meta));
+    this.doDeletions();
+  }
+
+  private doDeletions() {
+    this.deletions.forEach((pid) =>
+      this.timeline.delete({ pid, startTick: 0 })
+    );
+    this.deletions.clear();
   }
 }

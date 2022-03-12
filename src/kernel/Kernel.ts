@@ -1,10 +1,6 @@
-import { STATUS_CODES } from 'http';
-import { ErrorMapper } from 'utils/ErrorMapper';
-import { isGeneratorFunction } from 'utils/generator';
-import { entries } from 'utils/object';
-import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
-import { CFS } from './schedulers/CFS';
-import { sleep, SysCall } from './sys-calls';
+import { Tron } from 'processes/Tron';
+import { ProcessConstructor, ProcessMemory, Thread } from './Process';
+import { SysCallResults } from './sys-calls';
 
 type Memory = Record<string, unknown>;
 
@@ -42,38 +38,13 @@ const unpackEntry = <M extends Memory | undefined>(
   memory: entry[3],
 });
 
-function threadify(process: Process<never>): () => Thread {
-  const run = process.run.bind(process) as (() => void) | (() => Thread);
-
-  if (isGeneratorFunction(run)) {
-    return run;
-  } else {
-    return function* () {
-      while (true) {
-        run();
-        yield sleep();
-      }
-    };
-  }
-}
-
-class Tron extends Process<undefined> {
-  *run() {
-    while (true) {
-      yield sleep(Infinity);
-    }
-  }
-}
-
 export class Kernel {
   private readonly table: Record<PID, PackedProcessDescriptor<never>> = {};
   private readonly threads: Record<PID, Thread> = {};
   private readonly registry: Record<string, ProcessConstructor<never>> = {};
-  private readonly scheduler: CFS;
 
   constructor(processes: ProcessConstructor<any>[]) {
-    this.scheduler = new CFS();
-    this.createProcess(Tron, undefined, 0, 0, 0);
+    this.createProcess(Tron, undefined, 0, 0);
     processes.forEach((type) => this.registerProcess(type as never));
   }
 
@@ -91,11 +62,10 @@ export class Kernel {
 
   spawn<M extends ProcessMemory, Type extends ProcessConstructor<M>>(
     type: Type,
-    memory: M,
-    priority?: number
+    memory: M
   ): void {
     const pid = this.acquirePID();
-    this.createProcess(type, memory, pid, 0, priority);
+    this.createProcess(type, memory, pid, 0);
   }
 
   private registerProcess<Type extends ProcessConstructor<never>>(type: Type) {
@@ -110,7 +80,7 @@ export class Kernel {
   private createProcess<
     M extends ProcessMemory,
     Type extends ProcessConstructor<M>
-  >(type: Type, memory: M, pid: number, parent: number, priority = 50) {
+  >(type: Type, memory: M, pid: number, parent: number) {
     if (this.table[pid]) {
       throw new Error(`PID already occupied: ${pid}`);
     }
@@ -124,30 +94,54 @@ export class Kernel {
       parent,
       memory: memory as never,
     });
-    this.threads[pid] = threadify(process)();
-    this.scheduler.add(pid);
+    this.threads[pid] = process.run.bind(process)();
+  }
+
+  private findChildren(pid: PID): PID[] {
+    return Object.values(this.table)
+      .map((v) => unpackEntry(v))
+      .filter(({ parent }) => parent === pid)
+      .map((v) => v.pid);
   }
 
   private killProcess(pid: PID) {
     delete this.threads[pid];
     delete this.table[pid];
-    this.scheduler.remove(pid);
+    this.findChildren(pid).forEach((child) => this.killProcess(child));
   }
 
   run(): void {
-    const schedule = this.scheduler.run();
-    let pid = schedule.next();
-    while (!pid.done) {
+    for (const [key, thread] of Object.entries(this.threads)) {
+      const pid = Number.parseInt(key);
       let sysCall: ReturnType<Thread['next']>;
-      try {
-        sysCall = this.threads[pid.value].next();
-      } catch (error) {
-        this.killProcess(pid.value);
-        console.log(ErrorMapper.sourceMappedStackTrace(error as never));
-        pid = schedule.next({ done: true, value: undefined });
-        break;
-      }
-      pid = schedule.next(sysCall);
+      let nextArg: SysCallResults = undefined;
+      do {
+        if (!this.table[pid]) {
+          break;
+        }
+
+        sysCall = thread.next(nextArg);
+        nextArg = undefined;
+        if (sysCall.done) {
+          this.killProcess(pid);
+          break;
+        }
+
+        if (!sysCall.value) {
+          continue;
+        }
+
+        if (sysCall.value.type === 'sleep') {
+          break;
+        }
+
+        if (sysCall.value.type === 'fork') {
+          const { memory, processType } = sysCall.value;
+          const childPID = this.acquirePID();
+          this.createProcess(processType, memory, childPID, pid);
+          nextArg = { type: 'fork', pid: childPID };
+        }
+      } while (true);
     }
   }
 

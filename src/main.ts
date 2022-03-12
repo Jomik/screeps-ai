@@ -2,14 +2,12 @@ import 'ts-polyfill/lib/es2019-array';
 
 import { Kernel } from 'kernel/Kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
-import { BasePlanner } from 'processes/BasePlanner';
-import { SpawnManager } from 'processes/SpawnManager';
-import { CreepManager } from 'processes/CreepManager';
+import * as processes from 'processes';
+import { Init } from 'processes';
 
-const kernel = new Kernel([SpawnManager, CreepManager, BasePlanner]);
-kernel.spawn(SpawnManager, undefined);
-kernel.spawn(CreepManager, undefined);
-kernel.spawn(BasePlanner, undefined);
+const kernel = new Kernel(Object.values(processes));
+
+kernel.spawn(Init, undefined);
 
 // @ts-ignore: to use ps in console
 global.ps = (pid?: number) => {

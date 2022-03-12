@@ -1,5 +1,5 @@
-import { Process } from 'kernel/Process';
-import { sleep } from 'kernel/sys-calls';
+import { Process, Thread } from 'kernel/Process';
+import { hibernate, sleep } from 'kernel/sys-calls';
 
 export class BasePlanner extends Process<undefined> {
   private center: RoomPosition;
@@ -27,17 +27,15 @@ export class BasePlanner extends Process<undefined> {
     );
   }
 
-  *run() {
+  *run(): Thread {
+    yield* hibernate();
     const sources = this.room
       .find(FIND_SOURCES)
       .sort((a, b) => this.search(a.pos).cost - this.search(b.pos).cost)
       .map((s) => ({ pos: s.pos, range: 2 }));
     yield;
-
     const nodes = [...sources, { pos: this.room.controller?.pos, range: 3 }];
-
     const paths: RoomPosition[][] = [];
-
     for (const node of nodes) {
       if (!node.pos) {
         continue;
@@ -57,10 +55,8 @@ export class BasePlanner extends Process<undefined> {
       );
       paths.push(path);
       path.forEach(({ x, y }) => this.costMatrix.set(x, y, 1));
-
       yield;
     }
-
     while (paths.length > 0) {
       const sites = this.room.find(FIND_MY_CONSTRUCTION_SITES, {
         filter: (cs) => cs.structureType === STRUCTURE_ROAD,
@@ -71,12 +67,12 @@ export class BasePlanner extends Process<undefined> {
           this.room.createConstructionSite(x, y, STRUCTURE_ROAD)
         );
       }
-
+      console.log('draw');
       for (const path of paths) {
         this.room.visual.poly(path, { opacity: 0.75, stroke: '#00FF00' });
       }
-
-      yield sleep();
+      console.log('done');
+      yield* sleep();
     }
   }
 }
