@@ -185,12 +185,8 @@ export class Kernel {
     );
 
     const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
-      const row = this.table[pid];
-      if (!row) {
-        return `No process with pid ${pid}`;
-      }
-
-      const [type] = row;
+      const entry = unpackEntry(this.table[pid]);
+      const { type } = entry;
 
       const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;
 
@@ -204,7 +200,7 @@ export class Kernel {
         )
       );
 
-      return `${header}\n${childTree.join('\n')}`;
+      return `${header}\n${childTree.join('')}`;
     };
 
     return getSubTree('', pid, true);
