@@ -6,6 +6,7 @@ const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   modulePaths: [compilerOptions.baseUrl],
+  setupFilesAfterEnv: ['./test/setup.ts'],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {
     prefix: `<rootDir>/${compilerOptions.baseUrl}`,
   }),
