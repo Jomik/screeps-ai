@@ -7,6 +7,7 @@ import { Init } from 'processes';
 import { ScreepsROM } from 'kernel/memory';
 import { LogLevel, ScreepsLogger } from 'Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
+import { updateStats } from 'stats';
 
 const kernel = new Kernel({
   Init,
@@ -40,4 +41,6 @@ export const loop = ErrorMapper.wrapLoop(() => {
       delete Memory.creeps[name];
     }
   }
+
+  updateStats();
 });
