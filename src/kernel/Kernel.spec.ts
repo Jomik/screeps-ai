@@ -2,6 +2,7 @@ import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
 import { fakeROMFactory, SilentLogger } from 'test/utils';
+import { RoundRobinScheduler } from './schedulers/RoundRobinScheduler';
 
 describe('Kernel', () => {
   describe('init', () => {
@@ -17,6 +18,7 @@ describe('Kernel', () => {
         processes: [],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -37,6 +39,7 @@ describe('Kernel', () => {
         processes: [],
         rom,
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
       kernel.run();
 
@@ -46,6 +49,7 @@ describe('Kernel', () => {
         processes: [],
         rom,
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
       uut.run();
 
@@ -68,6 +72,7 @@ describe('Kernel', () => {
         processes: [],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -91,6 +96,7 @@ describe('Kernel', () => {
         processes: [],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -111,6 +117,7 @@ describe('Kernel', () => {
         processes: [],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -142,6 +149,7 @@ describe('Kernel', () => {
         processes: [Thread1],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -171,6 +179,7 @@ describe('Kernel', () => {
         processes: [Thread1],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -198,6 +207,7 @@ describe('Kernel', () => {
         processes: [Thread1],
         rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
 
       uut.run();
@@ -231,6 +241,7 @@ describe('Kernel', () => {
         processes: [Thread1],
         rom,
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
       kernel.run();
       kernel.run();
@@ -240,6 +251,7 @@ describe('Kernel', () => {
         processes: [Thread1],
         rom,
         loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
       });
       uut.run();
 

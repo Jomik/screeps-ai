@@ -1,5 +1,6 @@
 import { Logger } from 'Logger';
 import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
+import { Scheduler, SchedulerThreadReturn } from './schedulers/Scheduler';
 import { hibernate, SysCallResults } from './sys-calls';
 
 type Memory = Record<string, unknown>;
@@ -62,6 +63,7 @@ export class Kernel {
     return this.tableHandle.get();
   }
   private readonly logger: Logger;
+  private readonly scheduler: Scheduler;
 
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
@@ -72,8 +74,10 @@ export class Kernel {
     processes: ProcessConstructor<any>[];
     rom: ROM;
     loggerFactory: (name: string) => Logger;
+    scheduler: Scheduler;
   }) {
-    const { Init, processes, rom, loggerFactory } = config;
+    const { Init, processes, rom, loggerFactory, scheduler } = config;
+    this.scheduler = scheduler;
     this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
     this.tableHandle = rom.getHandle<ProcessTable>('processTable', {});
@@ -152,6 +156,7 @@ export class Kernel {
     });
 
     this.threads[pid] = process.run.bind(process)();
+    this.scheduler.add(pid);
   }
 
   private findChildren(
@@ -166,42 +171,52 @@ export class Kernel {
   private killProcess(pid: PID) {
     delete this.threads[pid];
     delete this.table[pid];
+    this.scheduler.remove(pid);
     this.findChildren(pid).forEach((child) => this.killProcess(child.pid));
   }
 
+  private runThread(pid: PID): SchedulerThreadReturn {
+    const thread = this.threads[pid];
+
+    let nextArg: SysCallResults = undefined;
+    do {
+      const sysCall = thread.next(nextArg);
+      nextArg = undefined;
+
+      if (sysCall.done) {
+        this.killProcess(pid);
+        return undefined;
+      }
+
+      if (!sysCall.value) {
+        return undefined;
+      }
+
+      if (sysCall.value.type === 'sleep') {
+        return sysCall.value;
+      }
+
+      if (sysCall.value.type === 'fork') {
+        const { memory, processType } = sysCall.value;
+        const childPID = this.acquirePID();
+        this.createProcess(processType, memory, childPID, pid);
+        nextArg = { type: 'fork', pid: childPID };
+      }
+    } while (true);
+  }
+
   run(): void {
-    for (const [key, thread] of Object.entries(this.threads)) {
-      const pid = Number.parseInt(key);
-      let sysCall: ReturnType<Thread['next']>;
-      let nextArg: SysCallResults = undefined;
-      do {
-        if (!this.table[pid]) {
-          break;
-        }
+    const schedule = this.scheduler.run();
+    let nextArg: SchedulerThreadReturn = undefined;
+    do {
+      const next = schedule.next(nextArg);
+      if (next.done) {
+        break;
+      }
 
-        sysCall = thread.next(nextArg);
-        nextArg = undefined;
-        if (sysCall.done) {
-          this.killProcess(pid);
-          break;
-        }
-
-        if (!sysCall.value) {
-          continue;
-        }
-
-        if (sysCall.value.type === 'sleep') {
-          break;
-        }
-
-        if (sysCall.value.type === 'fork') {
-          const { memory, processType } = sysCall.value;
-          const childPID = this.acquirePID();
-          this.createProcess(processType, memory, childPID, pid);
-          nextArg = { type: 'fork', pid: childPID };
-        }
-      } while (true);
-    }
+      const pid = next.value;
+      nextArg = this.runThread(pid);
+    } while (true);
   }
 
   /* istanbul ignore next */

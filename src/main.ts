@@ -6,12 +6,16 @@ import * as processes from 'processes';
 import { Init } from 'processes';
 import { ScreepsROM } from 'kernel/memory';
 import { ScreepsLogger } from 'Logger';
+import { RoundRobinScheduler } from 'kernel/schedulers/RoundRobinScheduler';
 
 const kernel = new Kernel({
   Init,
   processes: Object.values(processes),
   rom: ScreepsROM,
   loggerFactory: (name) => new ScreepsLogger(name),
+  scheduler: new RoundRobinScheduler(
+    () => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()
+  ),
 });
 
 // @ts-ignore: to use ps in console

@@ -28,7 +28,13 @@ describe('RoundRobinScheduler', () => {
     expect(scheduler.run()).toMatchYieldsExactly<ScheduleGenerator>([
       [expected, undefined],
       [expected, undefined],
-      [expected, { type: 'done' }],
+      [
+        expected,
+        () => {
+          scheduler.remove(expected);
+          return undefined;
+        },
+      ],
     ]);
   });
   it('yields until no quota', () => {

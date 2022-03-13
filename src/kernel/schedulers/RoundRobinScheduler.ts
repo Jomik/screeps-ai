@@ -37,9 +37,8 @@ export class RoundRobinScheduler implements Scheduler {
           continue;
         }
 
-        if (res.type === 'done') {
-          this.remove(pid);
-          continue;
+        if (res.type === 'sleep') {
+          // TODO: Handle sleeping
         }
       }
     } while (pidsToRun.length > 0 && this.quota() > 0);
