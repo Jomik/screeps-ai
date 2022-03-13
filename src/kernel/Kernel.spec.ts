@@ -2,7 +2,7 @@ import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
 import { fakeROMFactory, SilentLogger } from 'test/utils';
-import { RoundRobinScheduler } from './schedulers/RoundRobinScheduler';
+import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
 
 describe('Kernel', () => {
   describe('init', () => {

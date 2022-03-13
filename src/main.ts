@@ -5,8 +5,8 @@ import { ErrorMapper } from 'utils/ErrorMapper';
 import * as processes from 'processes';
 import { Init } from 'processes';
 import { ScreepsROM } from 'kernel/memory';
-import { ScreepsLogger } from 'Logger';
-import { RoundRobinScheduler } from 'kernel/schedulers/RoundRobinScheduler';
+import { LogLevel, ScreepsLogger } from 'Logger';
+import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
 
 const kernel = new Kernel({
   Init,
@@ -21,6 +21,12 @@ const kernel = new Kernel({
 // @ts-ignore: to use ps in console
 global.ps = (pid?: number) => {
   return kernel.ps(pid);
+};
+// @ts-ignore: to use setLogLevel in console
+global.LogLevel = LogLevel;
+// @ts-ignore: to use setLogLevel in console
+global.setLogLevel = (level: LogLevel) => {
+  ScreepsLogger.setLogLevel(level);
 };
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change

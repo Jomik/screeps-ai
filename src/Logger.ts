@@ -35,7 +35,7 @@ export abstract class Logger {
   }
 }
 
-enum LogLevel {
+export enum LogLevel {
   Alert = 1,
   Error = 2,
   Warn = 3,

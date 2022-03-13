@@ -1,6 +1,6 @@
 import { Logger } from 'Logger';
 import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
-import { Scheduler, SchedulerThreadReturn } from './schedulers/Scheduler';
+import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import { hibernate, SysCallResults } from './sys-calls';
 
 type Memory = Record<string, unknown>;

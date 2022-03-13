@@ -76,10 +76,7 @@ export class CFS implements Scheduler {
           continue;
         }
 
-        if (res.type === 'done') {
-          this.deletions.add(meta.pid);
-          break;
-        } else if (res.type === 'sleep') {
+        if (res.type === 'sleep') {
           this.sleepingThreads[meta.pid] = {
             ...meta,
             startTick: tick + res.ticks,
