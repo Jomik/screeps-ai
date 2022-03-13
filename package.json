@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint \"src/**/*.spec.ts\"",
+    "lint": "eslint",
     "build": "rollup -c",
     "test:unit": "nyc mocha",
     "push:main": "yarn build --environment DEST:main",
@@ -27,6 +27,7 @@
   },
   "homepage": "https://github.com/Jomik/screeps-ai#readme",
   "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^1.0.2",
     "@rollup/plugin-commonjs": "^21.0.2",
     "@rollup/plugin-node-resolve": "^13.1.3",
     "@types/chai": "^4.3.0",
@@ -51,6 +52,7 @@
     "rollup-plugin-typescript2": "^0.31.2",
     "sinon": "^13.0.1",
     "sinon-chai": "^3.7.0",
+    "source-map-support": "^0.5.21",
     "ts-node": "^10.7.0",
     "tsconfig-paths": "^3.13.0",
     "typescript": "^4.6.2"

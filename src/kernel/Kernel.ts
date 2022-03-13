@@ -1,7 +1,6 @@
-import { Tron } from 'processes/Tron';
-import { getMemoryRef } from './memory';
-import { ProcessConstructor, ProcessMemory, Thread } from './Process';
-import { SysCallResults } from './sys-calls';
+import { Logger } from 'Logger';
+import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
+import { hibernate, SysCallResults } from './sys-calls';
 
 type Memory = Record<string, unknown>;
 
@@ -41,22 +40,50 @@ const unpackEntry = <M extends Memory | undefined>(
 
 type ProcessTable = Record<PID, PackedProcessDescriptor<never>>;
 
+class Tron extends Process<undefined> {
+  *run(): Thread {
+    this.logger.alert('Global reset');
+    yield* hibernate();
+  }
+}
+
+export interface ROMHandle<T> {
+  get(): T;
+  set(value: T): void;
+}
+
+export interface ROM {
+  getHandle<T>(key: string, defaultValue: T): ROMHandle<T>;
+}
+
 export class Kernel {
+  private readonly tableHandle: ROMHandle<ProcessTable>;
   private get table(): ProcessTable {
-    return getMemoryRef<ProcessTable>('processTable', {});
+    return this.tableHandle.get();
   }
 
+  private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
   private readonly registry: Record<string, ProcessConstructor<never>> = {};
 
-  constructor(processes: ProcessConstructor<any>[]) {
-    this.registerProcess(Tron as never);
-    processes.forEach((type) => this.registerProcess(type as never));
+  constructor(config: {
+    Init: ProcessConstructor<undefined>;
+    processes: ProcessConstructor<any>[];
+    rom: ROM;
+    loggerFactory: (name: string) => Logger;
+  }) {
+    const { Init, processes, rom, loggerFactory } = config;
+    this.loggerFactory = loggerFactory;
+    this.tableHandle = rom.getHandle<ProcessTable>('processTable', {});
+    for (const type of [Tron, Init, ...processes]) {
+      this.registerProcess(type as never);
+    }
     if (!this.table[0]) {
       for (const key in this.table) {
         delete this.table[key];
       }
       this.createProcess(Tron, undefined, 0, 0);
+      this.createProcess(Init, undefined, 1, 0);
     } else {
       for (const key of Object.keys(this.table)) {
         const pid = Number.parseInt(key);
@@ -75,14 +102,6 @@ export class Kernel {
       return this.acquirePID();
     }
     return this.PIDCount;
-  }
-
-  spawn<M extends ProcessMemory, Type extends ProcessConstructor<M>>(
-    type: Type,
-    memory: M
-  ): void {
-    const pid = this.acquirePID();
-    this.createProcess(type, memory, pid, 0);
   }
 
   private registerProcess<Type extends ProcessConstructor<never>>(type: Type) {
@@ -115,12 +134,12 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const descriptor = unpackEntry(this.table[pid]);
-    const process = new this.registry[descriptor.type]();
-    process.init({
+    const process = new this.registry[descriptor.type]({
       pid,
       parent: () => unpackEntry(this.table[pid]).parent,
       memory: () => unpackEntry(this.table[pid]).memory,
       children: () => this.findChildren(pid),
+      logger: this.loggerFactory(`${descriptor.type}:${pid}`),
     });
 
     this.threads[pid] = process.run.bind(process)();

@@ -3,8 +3,16 @@ import 'ts-polyfill/lib/es2019-array';
 import { Kernel } from 'kernel/Kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import * as processes from 'processes';
+import { Init } from 'processes';
+import { ScreepsROM } from 'kernel/memory';
+import { ScreepsLogger } from 'Logger';
 
-const kernel = new Kernel(Object.values(processes));
+const kernel = new Kernel({
+  Init,
+  processes: Object.values(processes),
+  rom: ScreepsROM,
+  loggerFactory: (name) => new ScreepsLogger(name),
+});
 
 // @ts-ignore: to use ps in console
 global.ps = (pid?: number) => {

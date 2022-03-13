@@ -1,1 +1,0 @@
-global._ = require('lodash');

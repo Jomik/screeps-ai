@@ -23,5 +23,6 @@
     "node_modules/": true
   },
   "typescript.tsdk": "./node_modules/typescript/lib",
-  "eslint.enable": true
+  "eslint.enable": true,
+  "mochaExplorer.configFile": "default"
 }

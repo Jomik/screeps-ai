@@ -1,4 +1,4 @@
-import { Logger } from 'Logger';
+import { Logger, ScreepsLogger } from 'Logger';
 import { PID } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
@@ -18,11 +18,17 @@ type Config = {
   parent: () => PID;
   children: () => Child[];
   memory: () => Memory;
+  logger: Logger;
 };
 
 export abstract class Process<Memory extends ProcessMemory> {
-  protected readonly logger: Logger = new Logger(this.constructor as never);
+  protected readonly logger: Logger;
   private [internal]: any;
+
+  constructor(config: Config) {
+    this.logger = config.logger;
+    this[internal] = config;
+  }
 
   protected get parent(): PID {
     return this[internal].parent();
@@ -44,12 +50,9 @@ export abstract class Process<Memory extends ProcessMemory> {
     return this.children.map((v) => v.type).includes(type);
   }
 
-  init(config: Config): void {
-    this[internal] = config;
-  }
-
   abstract run(): Thread;
 }
 
-export type ProcessConstructor<Memory extends ProcessMemory> =
-  new () => Process<Memory>;
+export type ProcessConstructor<Memory extends ProcessMemory> = new (
+  config: Config
+) => Process<Memory>;

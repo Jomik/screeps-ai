@@ -1,10 +1,12 @@
 ui: bdd
 reporter: spec
+recursive: true
 extension:
   - ts
 require:
   - ts-node/register
   - tsconfig-paths/register
-  - tests/mocha.setup.ts
+  - source-map-support/register
+  - test/mocha.setup.ts
 spec:
-  - src/**/*.spec.ts
+  - test/**/*.spec.ts

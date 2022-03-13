@@ -26,6 +26,7 @@ export class SpawnManager extends Process<undefined> {
       `miner-${Game.time}`,
       { memory: { slot } }
     );
+    console.log('result', result);
     if (result === OK) {
       this.logger.info('spawn miner', this.spawn);
     }
@@ -64,6 +65,10 @@ export class SpawnManager extends Process<undefined> {
   *run(): Thread {
     do {
       const spawn = this.spawn;
+      if (spawn.spawning) {
+        yield* sleep(spawn.spawning.remainingTime);
+      }
+
       const sources = spawn.room.find(FIND_SOURCES);
       const terrain = spawn.room.getTerrain();
 
