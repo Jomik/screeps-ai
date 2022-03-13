@@ -41,6 +41,7 @@ export function* fork<
     processType: type as never,
     memory: memory as never,
   };
+  // istanbul ignore next
   if (!res || res.type !== 'fork') {
     throw new Error('Did not receive a new process ID');
   }

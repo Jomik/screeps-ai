@@ -5,7 +5,7 @@ export class SilentLogger extends Logger {
   protected log(): void {}
 }
 
-export const FakeROM = (): ROM & { data: Record<string, unknown> } => {
+export const fakeROMFactory = (): ROM & { data: Record<string, unknown> } => {
   const data: Record<string, any> = {};
   return {
     data,

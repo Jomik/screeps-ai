@@ -1,7 +1,7 @@
 import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
-import { FakeROM, SilentLogger } from 'test/utils';
+import { fakeROMFactory, SilentLogger } from 'test/utils';
 
 describe('Kernel', () => {
   describe('init', () => {
@@ -15,7 +15,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -26,7 +26,7 @@ describe('Kernel', () => {
 
     it('does not spawn multiple Init threads on reboot', () => {
       const thread = jest.fn();
-      const rom = FakeROM();
+      const rom = fakeROMFactory();
       class Init extends Process<undefined> {
         *run(): Thread {
           thread();
@@ -66,7 +66,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -89,7 +89,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -109,7 +109,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -140,7 +140,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -169,7 +169,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -196,7 +196,7 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: FakeROM(),
+        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
       });
 
@@ -209,7 +209,7 @@ describe('Kernel', () => {
   describe('memory', () => {
     it('persists across reboots', () => {
       const thread = jest.fn();
-      const rom = FakeROM();
+      const rom = fakeROMFactory();
       const expected = 42;
       class Init extends Process<undefined> {
         *run(): Thread {

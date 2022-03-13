@@ -61,6 +61,7 @@ export class Kernel {
   private get table(): ProcessTable {
     return this.tableHandle.get();
   }
+  private readonly logger: Logger;
 
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
@@ -74,14 +75,14 @@ export class Kernel {
   }) {
     const { Init, processes, rom, loggerFactory } = config;
     this.loggerFactory = loggerFactory;
+    this.logger = loggerFactory(this.constructor.name);
     this.tableHandle = rom.getHandle<ProcessTable>('processTable', {});
     for (const type of [Tron, Init, ...processes]) {
       this.registerProcess(type as never);
     }
     if (!this.table[0]) {
-      for (const key in this.table) {
-        delete this.table[key];
-      }
+      this.logger.info('Tron missing, reinitialising');
+      this.tableHandle.set({});
       this.createProcess(Tron, undefined, 0, 0);
       this.createProcess(Init, undefined, 1, 0);
     } else {
@@ -109,12 +110,11 @@ export class Kernel {
   }
 
   private registerProcess<Type extends ProcessConstructor<never>>(type: Type) {
-    if (this.registry[type.name]) {
-      if (this.registry[type.name] !== type) {
-        throw new Error(
-          `A different version already exists in registry: ${type.name}`
-        );
-      }
+    // istanbul ignore next
+    if (this.registry[type.name] && this.registry[type.name] !== type) {
+      throw new Error(
+        `A different version already exists in registry: ${type.name}`
+      );
     }
     this.registry[type.name] = type;
   }
@@ -123,9 +123,12 @@ export class Kernel {
     M extends ProcessMemory,
     Type extends ProcessConstructor<M>
   >(type: Type, memory: M, pid: number, parent: number) {
+    // istanbul ignore next
     if (this.table[pid]) {
       throw new Error(`PID already occupied: ${pid}`);
     }
+
+    // istanbul ignore next
     if (!this.registry[type.name]) {
       throw new Error(`No process of type, ${type.name}, has been registered`);
     }
