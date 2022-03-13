@@ -14,7 +14,6 @@ type Child = {
 };
 
 type Config = {
-  pid: PID;
   children: () => Child[];
   memory: () => Memory;
   logger: Logger;
@@ -29,20 +28,12 @@ export abstract class Process<Memory extends ProcessMemory> {
     this[internal] = config;
   }
 
-  protected get pid(): PID {
-    return this[internal].pid;
-  }
-
   protected get children(): Child[] {
     return this[internal].children();
   }
 
   protected get memory(): Memory {
     return this[internal].memory();
-  }
-
-  hasChildOfType(type: ProcessConstructor<any>): boolean {
-    return this.children.map((v) => v.type).includes(type);
   }
 
   abstract run(): Thread;

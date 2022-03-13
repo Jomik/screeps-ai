@@ -146,7 +146,6 @@ export class Kernel {
   private initThread(pid: PID) {
     const descriptor = unpackEntry(this.table[pid]);
     const process = new this.registry[descriptor.type]({
-      pid,
       memory: () => unpackEntry(this.table[pid]).memory,
       children: () => this.findChildren(pid),
       logger: this.loggerFactory(`${descriptor.type}:${pid}`),
