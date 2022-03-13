@@ -24,5 +24,10 @@
   },
   "typescript.tsdk": "./node_modules/typescript/lib",
   "eslint.enable": true,
-  "mochaExplorer.configFile": "default"
+  "jest.autoRun": {
+    "watch": false,
+    "onSave": "test-src-file",
+    "onStartup": ["all-tests"]
+  },
+  "jest.jestCommandLine": "yarn jest"
 }

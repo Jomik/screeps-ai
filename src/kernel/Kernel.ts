@@ -90,9 +90,13 @@ export class Kernel {
         this.initThread(pid);
       }
     }
+    this.PIDCount = Math.max(
+      0,
+      ...Object.keys(this.table).map((k) => Number.parseInt(k))
+    );
   }
 
-  private PIDCount = 0;
+  private PIDCount: number;
   private acquirePID(): number {
     if (this.PIDCount >= 50000) {
       this.PIDCount = 0;
@@ -107,7 +111,9 @@ export class Kernel {
   private registerProcess<Type extends ProcessConstructor<never>>(type: Type) {
     if (this.registry[type.name]) {
       if (this.registry[type.name] !== type) {
-        throw new Error(`Process already exists in registry: ${type.name}`);
+        throw new Error(
+          `A different version already exists in registry: ${type.name}`
+        );
       }
     }
     this.registry[type.name] = type;
@@ -120,7 +126,9 @@ export class Kernel {
     if (this.table[pid]) {
       throw new Error(`PID already occupied: ${pid}`);
     }
-    this.registerProcess(type as never);
+    if (!this.registry[type.name]) {
+      throw new Error(`No process of type, ${type.name}, has been registered`);
+    }
 
     this.table[pid] = packEntry<never>({
       type: type.name,
@@ -136,7 +144,6 @@ export class Kernel {
     const descriptor = unpackEntry(this.table[pid]);
     const process = new this.registry[descriptor.type]({
       pid,
-      parent: () => unpackEntry(this.table[pid]).parent,
       memory: () => unpackEntry(this.table[pid]).memory,
       children: () => this.findChildren(pid),
       logger: this.loggerFactory(`${descriptor.type}:${pid}`),
@@ -195,6 +202,7 @@ export class Kernel {
     }
   }
 
+  /* istanbul ignore next */
   ps(pid: PID = 0) {
     const tableByParent = _.groupBy(
       Object.values(this.table)

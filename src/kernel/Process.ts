@@ -15,7 +15,6 @@ type Child = {
 
 type Config = {
   pid: PID;
-  parent: () => PID;
   children: () => Child[];
   memory: () => Memory;
   logger: Logger;
@@ -28,10 +27,6 @@ export abstract class Process<Memory extends ProcessMemory> {
   constructor(config: Config) {
     this.logger = config.logger;
     this[internal] = config;
-  }
-
-  protected get parent(): PID {
-    return this[internal].parent();
   }
 
   protected get pid(): PID {
