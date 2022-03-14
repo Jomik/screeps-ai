@@ -26,7 +26,6 @@ export class SpawnManager extends Process<undefined> {
       `miner-${Game.time}`,
       { memory: { slot } }
     );
-    console.log('result', result);
     if (result === OK) {
       this.logger.info('spawn miner', this.spawn);
     }

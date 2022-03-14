@@ -6,7 +6,7 @@ import * as processes from 'processes';
 import { Init } from 'processes';
 import { LogLevel, ScreepsLogger } from 'Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
-import { updateStats } from 'stats';
+import { recordCPU, recordGCL, recordRooms, resetStats } from 'library';
 
 const kernel = new Kernel({
   Init,
@@ -31,6 +31,8 @@ global.setLogLevel = (level: LogLevel) => {
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
+  resetStats();
+
   kernel.run();
 
   // Automatically delete memory of missing creeps
@@ -40,5 +42,7 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  updateStats();
+  recordRooms();
+  recordGCL();
+  recordCPU();
 });
