@@ -1,12 +1,14 @@
 import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
-import { fakeROMFactory, SilentLogger } from 'test/utils';
+import { SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
+import { mockGlobal } from 'screeps-jest';
 
 describe('Kernel', () => {
   describe('init', () => {
     it('spawns Init', () => {
+      mockGlobal('Memory', {});
       const thread = jest.fn();
       class Init extends Process<undefined> {
         *run(): Thread {
@@ -16,7 +18,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -28,7 +29,6 @@ describe('Kernel', () => {
 
     it('does not spawn multiple Init threads on reboot', () => {
       const thread = jest.fn();
-      const rom = fakeROMFactory();
       class Init extends Process<undefined> {
         *run(): Thread {
           thread();
@@ -37,7 +37,6 @@ describe('Kernel', () => {
       const kernel = new Kernel({
         Init,
         processes: [],
-        rom,
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -47,7 +46,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom,
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -70,7 +68,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -94,7 +91,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -115,7 +111,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -147,7 +142,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -177,7 +171,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -205,7 +198,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom: fakeROMFactory(),
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -219,7 +211,6 @@ describe('Kernel', () => {
   describe('memory', () => {
     it('persists across reboots', () => {
       const thread = jest.fn();
-      const rom = fakeROMFactory();
       const expected = 42;
       class Init extends Process<undefined> {
         *run(): Thread {
@@ -239,7 +230,6 @@ describe('Kernel', () => {
       const kernel = new Kernel({
         Init,
         processes: [Thread1],
-        rom,
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });
@@ -249,7 +239,6 @@ describe('Kernel', () => {
       const uut = new Kernel({
         Init,
         processes: [Thread1],
-        rom,
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
       });

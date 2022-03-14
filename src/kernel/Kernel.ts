@@ -2,6 +2,7 @@ import { Logger } from 'Logger';
 import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import { hibernate, SysCallResults } from './sys-calls';
+import { getMemoryRef } from './memory';
 
 type Memory = Record<string, unknown>;
 
@@ -53,14 +54,10 @@ export interface ROMHandle<T> {
   set(value: T): void;
 }
 
-export interface ROM {
-  getHandle<T>(key: string, defaultValue: T): ROMHandle<T>;
-}
-
 export class Kernel {
-  private readonly tableHandle: ROMHandle<ProcessTable>;
+  private readonly tableRef = getMemoryRef<ProcessTable>('processTable', {});
   private get table(): ProcessTable {
-    return this.tableHandle.get();
+    return this.tableRef.get();
   }
   private readonly logger: Logger;
   private readonly scheduler: Scheduler;
@@ -72,21 +69,19 @@ export class Kernel {
   constructor(config: {
     Init: ProcessConstructor<undefined>;
     processes: ProcessConstructor<any>[];
-    rom: ROM;
     loggerFactory: (name: string) => Logger;
     scheduler: Scheduler;
   }) {
-    const { Init, processes, rom, loggerFactory, scheduler } = config;
+    const { Init, processes, loggerFactory, scheduler } = config;
     this.scheduler = scheduler;
     this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
-    this.tableHandle = rom.getHandle<ProcessTable>('processTable', {});
     for (const type of [Tron, Init, ...processes]) {
       this.registerProcess(type as never);
     }
     if (!this.table[0]) {
       this.logger.info('Tron missing, reinitialising');
-      this.tableHandle.set({});
+      this.tableRef.set({});
       this.createProcess(Tron, undefined, 0, 0);
       this.createProcess(Init, undefined, 1, 0);
     } else {

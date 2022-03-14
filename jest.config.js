@@ -4,7 +4,8 @@ const { compilerOptions } = require('./tsconfig');
 /** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
 const config = {
   preset: 'ts-jest',
-  testEnvironment: 'node',
+  testEnvironment: 'screeps-jest',
+  collectCoverageFrom: ['src/**/*.ts'],
   modulePaths: [compilerOptions.baseUrl],
   setupFilesAfterEnv: ['./test/setup.ts'],
   moduleNameMapper: pathsToModuleNameMapper(compilerOptions.paths, {

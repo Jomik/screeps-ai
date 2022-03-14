@@ -4,7 +4,6 @@ import { Kernel } from 'kernel/Kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import * as processes from 'processes';
 import { Init } from 'processes';
-import { ScreepsROM } from 'kernel/memory';
 import { LogLevel, ScreepsLogger } from 'Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
 import { updateStats } from 'stats';
@@ -12,7 +11,6 @@ import { updateStats } from 'stats';
 const kernel = new Kernel({
   Init,
   processes: Object.values(processes),
-  rom: ScreepsROM,
   loggerFactory: (name) => new ScreepsLogger(name),
   scheduler: new RoundRobinScheduler(
     () => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()

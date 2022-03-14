@@ -3040,6 +3040,11 @@ screeps-api@^1.11.0:
     bufferutil "^4.0.1"
     utf-8-validate "^5.0.2"
 
+screeps-jest@^2.0.2:
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/screeps-jest/-/screeps-jest-2.0.2.tgz#4991a8df8c7b1ded46c7ee9935d50b46d69265d7"
+  integrity sha512-2jVH1fKX2U4SQBbbGe5rF5lUGtsE7AcsteV7+L4//WngXl5z16nv7DyHq0yNFrxuaRYZUUBLOaSE4gjr7h6H0A==
+
 semver@7.x, semver@^7.3.2, semver@^7.3.5:
   version "7.3.5"
   resolved "https://registry.yarnpkg.com/semver/-/semver-7.3.5.tgz#0b621c879348d8998e4b0e4be94b3f12e6018ef7"

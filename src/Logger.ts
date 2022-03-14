@@ -56,13 +56,15 @@ type LocationArg =
   | string;
 
 const Separator = '<span style="color:#6e6770"> &rsaquo; </span>';
+
 export class ScreepsLogger extends Logger {
-  private static get settings(): { level: LogLevel } {
-    return getMemoryRef('logger', { level: LogLevel.Warn });
+  private static settingsRef = getMemoryRef('logger', LogLevel.Warn);
+  private static get level(): LogLevel {
+    return this.settingsRef.get();
   }
 
   public static setLogLevel(level: LogLevel) {
-    this.settings.level = level;
+    this.settingsRef.set(level);
   }
 
   private getRoomName(room: LocationArg): string {
@@ -91,7 +93,7 @@ export class ScreepsLogger extends Logger {
     level: LogLevel,
     color: string
   ) {
-    if (level > ScreepsLogger.settings.level) {
+    if (level > ScreepsLogger.level) {
       return;
     }
 

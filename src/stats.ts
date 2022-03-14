@@ -11,7 +11,7 @@ export const updateStats = () => {
     gcl: {},
     rooms: {},
     cpu: {},
-  });
+  }).get();
   stats.gcl = {};
   stats.cpu = {};
   stats.rooms = {};
