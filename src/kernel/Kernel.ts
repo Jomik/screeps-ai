@@ -3,6 +3,7 @@ import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import { hibernate, SysCallResults } from './sys-calls';
 import { getMemoryRef } from './memory';
+import { recordStats } from 'library';
 
 type Memory = Record<string, unknown>;
 
@@ -210,7 +211,17 @@ export class Kernel {
       }
 
       const pid = next.value;
+      const entry = unpackEntry(this.table[pid]);
+      const startCPU = Game.cpu.getUsed();
       nextArg = this.runThread(pid);
+      const endCpu = Game.cpu.getUsed();
+      recordStats({
+        threads: {
+          [entry.type]: {
+            [pid]: endCpu - startCPU,
+          },
+        },
+      });
     } while (true);
   }
 

@@ -6,9 +6,15 @@ import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
 import { mockGlobal } from 'screeps-jest';
 
 describe('Kernel', () => {
+  beforeEach(() => {
+    mockGlobal<Game>('Game', {
+      cpu: {
+        getUsed: jest.fn().mockReturnValue(1),
+      },
+    });
+  });
   describe('init', () => {
     it('spawns Init', () => {
-      mockGlobal('Memory', {});
       const thread = jest.fn();
       class Init extends Process<undefined> {
         *run(): Thread {

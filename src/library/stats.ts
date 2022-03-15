@@ -13,7 +13,11 @@ export const resetStats = () => {
 };
 
 export const recordStats = (stats: StatsRecord) => {
-  statsRef.set(_.merge(statsRef.get(), stats));
+  statsRef.set(
+    _.merge(statsRef.get(), stats, (a, b) =>
+      typeof a === 'number' ? a + b : undefined
+    )
+  );
 };
 
 export const recordRooms = () => {
