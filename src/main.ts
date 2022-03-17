@@ -6,7 +6,7 @@ import * as processes from 'processes';
 import { Init } from 'processes';
 import { LogLevel, ScreepsLogger } from 'Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
-import { recordCPU, recordGCL, recordRooms, resetStats } from 'library';
+import { recordGlobals, resetStats } from 'library';
 
 const kernel = new Kernel({
   Init,
@@ -47,7 +47,5 @@ export const loop = ErrorMapper.wrapLoop(() => {
     }
   }
 
-  recordRooms();
-  recordGCL();
-  recordCPU();
+  recordGlobals();
 });
