@@ -158,6 +158,13 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const descriptor = unpackEntry(this.table[pid]);
+    if (!(descriptor.type in this.registry)) {
+      this.killProcess(pid);
+      this.logger.error(
+        `Error trying to initialise pid ${pid} with unknown type ${descriptor.type}`
+      );
+      return;
+    }
     const process = new this.registry[descriptor.type]({
       memory: () => unpackEntry(this.table[pid]).memory,
       children: () => this.findChildren(pid),
@@ -221,7 +228,7 @@ export class Kernel {
         const childPID = this.acquirePID();
         this.createProcess(processType, memory, childPID, pid);
         nextArg = { type: 'fork', pid: childPID };
-        this.logger.info(`${pid} forked ${processType.name}:${childPID}`);
+        this.logger.info(`PID ${pid} forked ${processType.name}:${childPID}`);
       }
     } while (true);
   }
