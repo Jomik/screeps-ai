@@ -28,11 +28,9 @@ export class CreepManager extends Process<undefined> {
         continue;
       }
 
-      const container = miner.pos.findClosestByRange<
-        FIND_STRUCTURES,
-        StructureContainer
-      >(FIND_STRUCTURES, {
-        filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+      const container = miner.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: (structure): structure is StructureContainer =>
+          structure.structureType === STRUCTURE_CONTAINER,
       });
       if (container && miner.pos.isNearTo(container)) {
         miner.transfer(container, RESOURCE_ENERGY);
@@ -147,10 +145,7 @@ export class CreepManager extends Process<undefined> {
 
     for (const hauler of haulers) {
       if (hauler.store.getFreeCapacity() < 75) {
-        const target = hauler.pos.findClosestByRange<
-          FIND_STRUCTURES,
-          StructureSpawn | StructureContainer
-        >(FIND_STRUCTURES, {
+        const target = hauler.pos.findClosestByRange(FIND_STRUCTURES, {
           filter: (
             structure
           ): structure is StructureSpawn | StructureContainer =>
