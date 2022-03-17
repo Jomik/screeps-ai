@@ -1,8 +1,8 @@
-import { Logger, ScreepsLogger } from 'Logger';
+import { Logger } from 'Logger';
 import { PID } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
-export type Thread = Generator<SysCall | void, void, SysCallResults>;
+export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
 export type ProcessMemory = Record<string, unknown> | undefined;
 

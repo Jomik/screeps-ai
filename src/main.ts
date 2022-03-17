@@ -21,6 +21,11 @@ const kernel = new Kernel({
 global.ps = (pid?: number) => {
   return kernel.ps(pid);
 };
+// @ts-ignore: to use ps in console
+global.reboot = () => {
+  kernel.reboot();
+};
+
 // @ts-ignore: to use setLogLevel in console
 global.LogLevel = LogLevel;
 // @ts-ignore: to use setLogLevel in console

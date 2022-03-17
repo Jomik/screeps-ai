@@ -62,6 +62,7 @@ export class Kernel {
   }
   private readonly logger: Logger;
   private readonly scheduler: Scheduler;
+  private readonly Init: ProcessConstructor<undefined>;
 
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
@@ -75,16 +76,15 @@ export class Kernel {
   }) {
     const { Init, processes, loggerFactory, scheduler } = config;
     this.scheduler = scheduler;
+    this.Init = Init;
     this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
     for (const type of [Tron, Init, ...processes]) {
       this.registerProcess(type as never);
     }
     if (!this.table[0]) {
-      this.logger.info('Tron missing, reinitialising');
-      this.tableRef.set({});
-      this.createProcess(Tron, undefined, 0, 0);
-      this.createProcess(Init, undefined, 1, 0);
+      this.logger.warn('Tron missing');
+      this.reboot();
     } else {
       for (const key of Object.keys(this.table)) {
         const pid = Number.parseInt(key);
@@ -95,6 +95,19 @@ export class Kernel {
       0,
       ...Object.keys(this.table).map((k) => Number.parseInt(k))
     );
+  }
+
+  reboot() {
+    this.logger.info('Rebooting...');
+
+    for (const key of Object.keys(this.table)) {
+      const pid = Number.parseInt(key);
+      this.scheduler.remove(pid);
+    }
+
+    this.tableRef.set({});
+    this.createProcess(Tron, undefined, 0, 0);
+    this.createProcess(this.Init, undefined, 1, 0);
   }
 
   private PIDCount: number;
@@ -176,7 +189,18 @@ export class Kernel {
 
     let nextArg: SysCallResults = undefined;
     do {
-      const sysCall = thread.next(nextArg);
+      let sysCall;
+      try {
+        sysCall = thread.next(nextArg);
+      } catch (err) {
+        this.logger.error(
+          `Error while running ${unpackEntry(this.table[pid]).type}:${pid}\n${
+            err instanceof Error ? err.message : err
+          }`
+        );
+        this.killProcess(pid);
+        return;
+      }
       nextArg = undefined;
 
       if (sysCall.done) {
@@ -197,6 +221,7 @@ export class Kernel {
         const childPID = this.acquirePID();
         this.createProcess(processType, memory, childPID, pid);
         nextArg = { type: 'fork', pid: childPID };
+        this.logger.info(`${pid} forked ${processType.name}:${childPID}`);
       }
     } while (true);
   }

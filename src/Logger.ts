@@ -18,7 +18,7 @@ export abstract class Logger {
     this.log(message, location, LogLevel.Error, '#e50000');
   }
 
-  public warning(message: string, location?: LocationArg) {
+  public warn(message: string, location?: LocationArg) {
     this.log(message, location, LogLevel.Warn, '#f4c542');
   }
 

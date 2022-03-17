@@ -1,20 +1,14 @@
 import { PID } from './Kernel';
-import { ProcessConstructor, ProcessMemory } from './Process';
+import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
 export type SysCall = Sleep | Fork;
 export type SysCallResults = void | { type: 'fork'; pid: number };
-
-type SysCallGenerator<T extends SysCall, R> = Generator<
-  T,
-  R,
-  void | SysCallResults
->;
 
 type Sleep = {
   type: 'sleep';
   ticks: number;
 };
-export function* sleep(ticks: number = 1): SysCallGenerator<Sleep, void> {
+export function* sleep(ticks: number = 1): Thread<void> {
   yield {
     type: 'sleep',
     ticks,
@@ -35,7 +29,7 @@ type Fork = {
 export function* fork<
   M extends ProcessMemory,
   Type extends ProcessConstructor<M>
->(type: Type, memory: M): SysCallGenerator<Fork, PID> {
+>(type: Type, memory: M): Thread<PID> {
   const res = yield {
     type: 'fork',
     processType: type as never,

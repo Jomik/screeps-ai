@@ -1,9 +1,10 @@
 import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
-import { SilentLogger } from 'test/utils';
+import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
 import { mockGlobal } from 'screeps-jest';
+import { identity } from 'lodash';
 
 describe('Kernel', () => {
   beforeEach(() => {
@@ -58,6 +59,33 @@ describe('Kernel', () => {
       uut.run();
 
       expect(thread).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('errors', () => {
+    it('handles thread errors', () => {
+      const logger = jest.fn();
+      const expected = 'Error in thread';
+      class Init extends Process<undefined> {
+        *run(): Thread {
+          throw new Error(expected);
+        }
+      }
+
+      const uut = new Kernel({
+        Init,
+        processes: [],
+        loggerFactory: () => new CallbackLogger(logger),
+        scheduler: new RoundRobinScheduler(() => 1),
+      });
+
+      uut.run();
+
+      expect(
+        logger.mock.calls
+          .map(([message]) => message)
+          .some((x) => x.includes(expected))
+      ).toBe(true);
     });
   });
 
