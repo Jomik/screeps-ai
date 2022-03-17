@@ -1,12 +1,6 @@
 import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
-
-// prettier-ignore
-const box = [
-  [1,1], [0,1], [-1,1],
-  [1,0], [0,0], [-1,0],
-  [1,-1], [0,-1], [-1,-1],
-];
+import { expandPosition } from 'utils/position';
 
 export class SpawnManager extends Process<undefined> {
   private spawn = Game.spawns['Spawn1'];
@@ -73,15 +67,7 @@ export class SpawnManager extends Process<undefined> {
 
       const slots = sources
         .map((source) =>
-          box
-            .map<RoomPosition>(
-              ([x, y]) =>
-                new RoomPosition(
-                  x + source.pos.x,
-                  y + source.pos.y,
-                  source.pos.roomName
-                )
-            )
+          expandPosition(source.pos)
             .filter(({ x, y }) => !(terrain.get(x, y) & TERRAIN_MASK_WALL))
             .sort((a, b) => {
               const goal = spawn.pos;
