@@ -52,5 +52,8 @@ export const recordGlobals = () => {
       used: heap?.used_heap_size,
       limit: heap?.total_available_size,
     },
+    memory: {
+      used: RawMemory.get().length,
+    },
   });
 };
