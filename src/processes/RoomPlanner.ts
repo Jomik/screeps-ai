@@ -94,6 +94,30 @@ export class RoomPlanner extends Process<undefined> {
     while (true) {
       yield* sleep();
       this.room.visual.import(visuals);
+
+      if (this.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+        continue;
+      }
+
+      const container = containers.find(
+        (pos) => this.room.lookForAt(LOOK_STRUCTURES, pos).length === 0
+      );
+      if (container) {
+        this.room.createConstructionSite(
+          container.x,
+          container.y,
+          STRUCTURE_CONTAINER
+        );
+        continue;
+      }
+
+      const path = containers.find(
+        (pos) => this.room.lookForAt(LOOK_STRUCTURES, pos).length === 0
+      );
+      if (path) {
+        this.room.createConstructionSite(path.x, path.y, STRUCTURE_ROAD);
+        continue;
+      }
     }
   }
 }

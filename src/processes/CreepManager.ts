@@ -14,9 +14,23 @@ export class CreepManager extends Process<undefined> {
       }
       const source = miner.pos.findInRange(FIND_SOURCES, 1);
       if (source.length === 0) {
-        break;
+        continue;
       }
+
       miner.harvest(source[0]);
+      if (miner.store.getFreeCapacity()) {
+        continue;
+      }
+
+      const container = miner.pos.findClosestByRange<
+        FIND_STRUCTURES,
+        StructureContainer
+      >(FIND_STRUCTURES, {
+        filter: (structure) => structure.structureType === STRUCTURE_CONTAINER,
+      });
+      if (container && miner.pos.isNearTo(container)) {
+        miner.transfer(container, RESOURCE_ENERGY);
+      }
     }
   }
 
@@ -67,7 +81,7 @@ export class CreepManager extends Process<undefined> {
         if (worker.store.getFreeCapacity()) {
           pickupEnergy();
         }
-        break;
+        continue;
       }
 
       if (
@@ -96,7 +110,7 @@ export class CreepManager extends Process<undefined> {
       if (!controller) {
         this.logger.alert('upgrader in room with no controller', upgrader);
         upgrader.suicide();
-        return;
+        continue;
       }
 
       if (
@@ -112,7 +126,7 @@ export class CreepManager extends Process<undefined> {
         });
         const resource = _.max(energyDrops, 'amount');
         if (!resource) {
-          break;
+          continue;
         }
         upgrader.moveTo(resource);
         upgrader.pickup(resource);
@@ -126,17 +140,30 @@ export class CreepManager extends Process<undefined> {
     );
 
     for (const hauler of haulers) {
-      const spawn = Game.spawns['Spawn1'];
       if (hauler.store.getFreeCapacity() < 75) {
-        hauler.moveTo(spawn);
-        hauler.transfer(spawn, RESOURCE_ENERGY);
+        const target = hauler.pos.findClosestByRange<
+          FIND_STRUCTURES,
+          StructureSpawn | StructureContainer
+        >(FIND_STRUCTURES, {
+          filter: (
+            structure
+          ): structure is StructureSpawn | StructureContainer =>
+            (structure.structureType === STRUCTURE_CONTAINER ||
+              structure.structureType === STRUCTURE_SPAWN) &&
+            structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        });
+        if (!target) {
+          continue;
+        }
+        hauler.moveTo(target);
+        hauler.transfer(target, RESOURCE_ENERGY);
       } else {
         const energyDrops = hauler.room.find(FIND_DROPPED_RESOURCES, {
           filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
         });
         const resource = _.max(energyDrops, 'amount');
         if (!resource) {
-          break;
+          continue;
         }
         hauler.moveTo(resource);
         hauler.pickup(resource);
