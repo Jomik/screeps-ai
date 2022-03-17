@@ -16,7 +16,7 @@ export class SpawnManager extends Process<undefined> {
 
   private spawnMiner(slot: [number, number]) {
     const result = this.spawn.spawnCreep(
-      [WORK, WORK, MOVE],
+      [WORK, WORK, CARRY, MOVE],
       `miner-${Game.time}`,
       { memory: { slot } }
     );

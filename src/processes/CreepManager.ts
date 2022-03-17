@@ -22,6 +22,12 @@ export class CreepManager extends Process<undefined> {
         continue;
       }
 
+      const site = miner.pos.findInRange(FIND_CONSTRUCTION_SITES, 1)[0];
+      if (site) {
+        miner.build(site);
+        continue;
+      }
+
       const container = miner.pos.findClosestByRange<
         FIND_STRUCTURES,
         StructureContainer
@@ -56,7 +62,7 @@ export class CreepManager extends Process<undefined> {
     for (const worker of workers) {
       const room = worker.room;
       const buildings = room
-        .find(FIND_MY_STRUCTURES, {
+        .find(FIND_STRUCTURES, {
           filter: (s) => s.hits < s.hitsMax / 2,
         })
         .sort((a, b) => a.hits - b.hits);

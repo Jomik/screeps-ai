@@ -11,7 +11,7 @@ export class RoomPlanner extends Process<undefined> {
     return Game.rooms[this.center.roomName];
   }
 
-  public search(
+  private search(
     target: RoomPosition,
     range: number,
     costMatrix: CostMatrix
@@ -27,7 +27,7 @@ export class RoomPlanner extends Process<undefined> {
     );
   }
 
-  *runPathsPlan(
+  private *runPathsPlan(
     nodes: { pos: RoomPosition; range: number }[]
   ): Thread<RoomPosition[][]> {
     const costMatrix = new PathFinder.CostMatrix();
@@ -50,6 +50,41 @@ export class RoomPlanner extends Process<undefined> {
     return finalPaths;
   }
 
+  private findSourceContainers(
+    sources: RoomPosition[],
+    paths: RoomPosition[][]
+  ): Array<RoomPosition | null> {
+    const terrain = this.room.getTerrain();
+    return sources.map((target) => {
+      const endPoint = target.findClosestByRange(paths.flat());
+      if (!endPoint) {
+        return null;
+      }
+
+      const spots = expandPosition(target).filter(
+        (pos) => terrain.get(pos.x, pos.y) ^ TERRAIN_MASK_WALL
+      );
+      return endPoint.findClosestByRange(spots);
+    });
+  }
+
+  private getControllerContainer(paths: RoomPosition[][]): RoomPosition | null {
+    const target = this.room.controller?.pos;
+    if (!target) {
+      return null;
+    }
+
+    const endPoint = target.findClosestByRange(paths.flat());
+    if (!endPoint) {
+      return null;
+    }
+
+    const spots = expandPosition(endPoint);
+    return target.findClosestByRange(
+      spots.filter((spot) => spot.getRangeTo(target) >= 3)
+    );
+  }
+
   *run(): Thread {
     const costMatrix = new PathFinder.CostMatrix();
 
@@ -66,17 +101,11 @@ export class RoomPlanner extends Process<undefined> {
     );
     const paths = yield* this.runPathsPlan(nodes);
 
-    const containers = nodes
-      .map(({ pos: target, range }) => {
-        const endPoint = target.findClosestByRange(paths.flat());
-        if (!endPoint) {
-          return null;
-        }
-        const spots = expandPosition(endPoint);
-        return target.findClosestByRange(
-          spots.filter((spot) => spot.getRangeTo(target) >= range)
-        );
-      })
+    const containers = this.findSourceContainers(
+      sources.map(({ pos }) => pos),
+      paths
+    )
+      .concat(this.getControllerContainer(paths))
       .filter(<T>(v: T | null): v is T => !!v);
     yield;
 
@@ -95,19 +124,17 @@ export class RoomPlanner extends Process<undefined> {
       yield* sleep();
       this.room.visual.import(visuals);
 
-      if (this.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
+      const containerSites = containers.filter(
+        (pos) => this.room.lookForAt(LOOK_STRUCTURES, pos).length === 0
+      );
+      if (containerSites.length > 0) {
+        containerSites.forEach((site) =>
+          this.room.createConstructionSite(site.x, site.y, STRUCTURE_CONTAINER)
+        );
         continue;
       }
 
-      const container = containers.find(
-        (pos) => this.room.lookForAt(LOOK_STRUCTURES, pos).length === 0
-      );
-      if (container) {
-        this.room.createConstructionSite(
-          container.x,
-          container.y,
-          STRUCTURE_CONTAINER
-        );
+      if (this.room.find(FIND_CONSTRUCTION_SITES).length > 0) {
         continue;
       }
 
