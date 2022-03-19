@@ -1,7 +1,7 @@
 import { PID } from './Kernel';
 import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
-export type SysCall = Sleep | Fork<any> | Kill;
+export type SysCall = Sleep | Fork<Record<string, unknown>> | Kill;
 export type SysCallResults = void | ForkResult;
 
 type Sleep = {
@@ -36,8 +36,8 @@ export function* fork<
 >(type: Type, memory: M): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: type,
-    memory: memory,
+    processType: type as ProcessConstructor<Record<string, unknown>>,
+    memory,
   };
   // istanbul ignore next
   if (!res || res.type !== 'fork') {

@@ -6,13 +6,10 @@ import { SpawnManager } from './SpawnManager';
 
 const InitProcesses = [SpawnManager, CreepManager, RoomPlanner];
 
-export class Init extends Process<undefined> {
+export class Init extends Process {
   *run(): Thread {
-    const spawnedProcesses = this.children.map((v) => v.type);
     for (const type of InitProcesses) {
-      if (!spawnedProcesses.includes(type)) {
-        yield* fork(type, undefined);
-      }
+      yield* fork(type, {});
     }
   }
 }

@@ -4,7 +4,7 @@ import { SysCall, SysCallResults } from './sys-calls';
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
-export type ProcessMemory = Record<string, unknown> | undefined;
+export type ProcessMemory = Record<string, unknown>;
 
 const internal = Symbol('internal');
 
@@ -19,7 +19,7 @@ type Config<M extends ProcessMemory> = {
   logger: Logger;
 };
 
-export abstract class Process<M extends ProcessMemory> {
+export abstract class Process<M extends ProcessMemory = Record<string, never>> {
   protected readonly logger: Logger;
   private [internal]: Config<M>;
 
@@ -39,6 +39,6 @@ export abstract class Process<M extends ProcessMemory> {
   abstract run(): Thread;
 }
 
-export type ProcessConstructor<M extends ProcessMemory> = new (
-  config: Config<M>
-) => Process<M>;
+export type ProcessConstructor<
+  M extends ProcessMemory = Record<string, never>
+> = new (config: Config<M>) => Process<M>;

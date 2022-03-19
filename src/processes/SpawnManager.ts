@@ -2,57 +2,37 @@ import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
 import { expandPosition } from 'utils/position';
 
-export class SpawnManager extends Process<undefined> {
+export class SpawnManager extends Process {
   private spawn = Game.spawns['Spawn1'];
   private spawnHauler() {
-    const result = this.spawn.spawnCreep(
+    this.spawn.spawnCreep(
       [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
       `hauler-${Game.time}`
     );
-    if (result === OK) {
-      this.logger.info('spawn hauler', this.spawn);
-    }
   }
 
   private spawnMiner(slot: [number, number]) {
-    const result = this.spawn.spawnCreep(
-      [WORK, WORK, CARRY, MOVE],
-      `miner-${Game.time}`,
-      { memory: { slot } }
-    );
-    if (result === OK) {
-      this.logger.info('spawn miner', this.spawn);
-    }
+    this.spawn.spawnCreep([WORK, WORK, CARRY, MOVE], `miner-${Game.time}`, {
+      memory: { slot },
+    });
   }
 
   private spawnUpgrader() {
-    const result = this.spawn.spawnCreep(
+    this.spawn.spawnCreep(
       [WORK, CARRY, CARRY, MOVE, MOVE],
       `upgrader-${Game.time}`
     );
-    if (result === OK) {
-      this.logger.info('spawn upgrader', this.spawn);
-    }
   }
 
   private spawnWorker() {
-    const result = this.spawn.spawnCreep(
+    this.spawn.spawnCreep(
       [WORK, CARRY, CARRY, MOVE, MOVE],
       `worker-${Game.time}`
     );
-    if (result === OK) {
-      this.logger.info('spawn worker', this.spawn);
-    }
   }
 
   private spawnAttacker() {
-    const result = this.spawn.spawnCreep(
-      [MOVE, ATTACK],
-      `attacker-${Game.time}`
-    );
-    if (result === OK) {
-      this.logger.info('spawn attacker', this.spawn);
-    }
+    this.spawn.spawnCreep([MOVE, ATTACK], `attacker-${Game.time}`);
   }
 
   *run(): Thread {

@@ -17,13 +17,12 @@ describe('Kernel', () => {
   describe('init', () => {
     it('spawns Init', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           thread();
         }
       }
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -36,13 +35,12 @@ describe('Kernel', () => {
 
     it('does not spawn multiple Init threads on reboot', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           thread();
         }
       }
-      const kernel = new Kernel({
-        Init,
+      const kernel = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -50,8 +48,7 @@ describe('Kernel', () => {
       kernel.run();
 
       // Should not spawn Init, as Tron should exist.
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -66,14 +63,13 @@ describe('Kernel', () => {
     it('handles thread errors', () => {
       const logger = jest.fn();
       const expected = 'Error in thread';
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           throw new Error(expected);
         }
       }
 
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new CallbackLogger(logger),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -93,7 +89,7 @@ describe('Kernel', () => {
     it('persists across reboots', () => {
       const thread = jest.fn();
       const expected = 42;
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           yield* fork(Thread1, {});
         }
@@ -107,8 +103,7 @@ describe('Kernel', () => {
           yield* hibernate();
         }
       }
-      const kernel = new Kernel({
-        Init,
+      const kernel = new Kernel(Init, {
         processes: [Thread1],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -116,8 +111,7 @@ describe('Kernel', () => {
       kernel.run();
       kernel.run();
 
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [Thread1],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -131,15 +125,14 @@ describe('Kernel', () => {
   describe('yield', () => {
     it('runs again after yielding', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           thread();
           yield;
           thread();
         }
       }
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -154,15 +147,14 @@ describe('Kernel', () => {
   describe('sleep', () => {
     it('sleeps till next run', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           thread();
           yield* sleep();
           thread();
         }
       }
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -174,15 +166,14 @@ describe('Kernel', () => {
     });
     it('sleeps till next run, and continues', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
           thread(1);
           yield* sleep();
           thread(2);
         }
       }
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -200,19 +191,18 @@ describe('Kernel', () => {
   describe('fork', () => {
     it('forks a child', () => {
       const thread = jest.fn();
-      class Init extends Process<undefined> {
+      class Init extends Process {
         *run(): Thread {
-          yield* fork(Thread1, undefined);
+          yield* fork(Thread1, {});
         }
       }
-      class Thread1 extends Process<undefined> {
+      class Thread1 extends Process {
         *run(): Thread {
           thread();
           yield* hibernate();
         }
       }
-      const uut = new Kernel({
-        Init,
+      const uut = new Kernel(Init, {
         processes: [Thread1],
         loggerFactory: () => new SilentLogger(''),
         scheduler: new RoundRobinScheduler(() => 1),
@@ -226,20 +216,19 @@ describe('Kernel', () => {
     describe('children', () => {
       it('reparents children when parent die', () => {
         const thread = jest.fn();
-        class Init extends Process<undefined> {
+        class Init extends Process {
           *run(): Thread {
-            yield* fork(Thread1, undefined);
+            yield* fork(Thread1, {});
             yield* sleep();
           }
         }
-        class Thread1 extends Process<undefined> {
+        class Thread1 extends Process {
           *run(): Thread {
             yield* sleep();
             thread();
           }
         }
-        const uut = new Kernel({
-          Init,
+        const uut = new Kernel(Init, {
           processes: [Thread1],
           loggerFactory: () => new SilentLogger(''),
           scheduler: new RoundRobinScheduler(() => 1),
@@ -253,20 +242,19 @@ describe('Kernel', () => {
       });
       it('should expose children pids', () => {
         const thread = jest.fn();
-        class Init extends Process<undefined> {
+        class Init extends Process {
           *run(): Thread {
-            yield* fork(Thread1, undefined);
-            yield* fork(Thread1, undefined);
+            yield* fork(Thread1, {});
+            yield* fork(Thread1, {});
             thread(this.children);
           }
         }
-        class Thread1 extends Process<undefined> {
+        class Thread1 extends Process {
           *run(): Thread {
             yield* sleep();
           }
         }
-        const uut = new Kernel({
-          Init,
+        const uut = new Kernel(Init, {
           processes: [Thread1],
           loggerFactory: () => new SilentLogger(''),
           scheduler: new RoundRobinScheduler(() => 1),
@@ -281,21 +269,20 @@ describe('Kernel', () => {
     describe('kill', () => {
       it('kills a child', () => {
         const thread = jest.fn();
-        class Init extends Process<undefined> {
+        class Init extends Process {
           *run(): Thread {
-            yield* fork(Thread1, undefined);
+            yield* fork(Thread1, {});
             yield* sleep();
             yield* kill(this.children[0].pid);
             thread(this.children);
           }
         }
-        class Thread1 extends Process<undefined> {
+        class Thread1 extends Process {
           *run(): Thread {
             yield* sleep();
           }
         }
-        const uut = new Kernel({
-          Init,
+        const uut = new Kernel(Init, {
           processes: [Thread1],
           loggerFactory: () => new SilentLogger(''),
           scheduler: new RoundRobinScheduler(() => 1),
@@ -309,15 +296,15 @@ describe('Kernel', () => {
       });
       it('cannot kill other processes', () => {
         let expected: PID = -1;
-        class Init extends Process<undefined> {
+        class Init extends Process {
           *run(): Thread {
-            expected = yield* fork(Thread1, undefined);
+            expected = yield* fork(Thread1, {});
             yield* sleep();
             yield* fork(Thread2, { pid: expected });
             yield* hibernate();
           }
         }
-        class Thread1 extends Process<undefined> {
+        class Thread1 extends Process {
           *run(): Thread {
             yield* hibernate();
           }
@@ -328,8 +315,7 @@ describe('Kernel', () => {
             yield* hibernate();
           }
         }
-        const uut = new Kernel({
-          Init,
+        const uut = new Kernel(Init, {
           processes: [Thread1, Thread2],
           loggerFactory: () => new SilentLogger(''),
           scheduler: new RoundRobinScheduler(() => 1),

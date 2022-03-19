@@ -8,8 +8,7 @@ import { LogLevel, ScreepsLogger } from 'Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
 import { recordGlobals, resetStats } from 'library';
 
-const kernel = new Kernel({
-  Init,
+const kernel = new Kernel(Init, {
   processes: Object.values(processes),
   loggerFactory: (name) => new ScreepsLogger(name),
   scheduler: new RoundRobinScheduler(

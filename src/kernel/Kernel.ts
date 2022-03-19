@@ -7,29 +7,27 @@ import {
   Thread,
 } from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
-import { hibernate, SysCallResults } from './sys-calls';
+import { hibernate, SysCall, SysCallResults } from './sys-calls';
 import { getMemoryRef } from './memory';
 import { recordStats } from 'library';
 
-type Memory = Record<string, unknown>;
-
 export type PID = number;
 
-type ProcessDescriptor<M extends Memory | undefined> = {
+type ProcessDescriptor<M extends ProcessMemory> = {
   type: string;
   pid: PID;
   parent: number;
   memory: M;
 };
 
-type PackedProcessDescriptor<M extends Memory | undefined> = [
+type PackedProcessDescriptor<M extends ProcessMemory> = [
   type: string,
   pid: PID,
   parent: number,
   memory: M
 ];
 
-const packEntry = <M extends Memory | undefined>(
+const packEntry = <M extends ProcessMemory>(
   entry: ProcessDescriptor<M>
 ): PackedProcessDescriptor<M> => [
   entry.type,
@@ -38,7 +36,7 @@ const packEntry = <M extends Memory | undefined>(
   entry.memory,
 ];
 
-const unpackEntry = <M extends Memory | undefined>(
+const unpackEntry = <M extends ProcessMemory>(
   entry: PackedProcessDescriptor<M>
 ): ProcessDescriptor<M> => ({
   type: entry[0],
@@ -49,7 +47,7 @@ const unpackEntry = <M extends Memory | undefined>(
 
 type ProcessTable = Record<PID, PackedProcessDescriptor<any>>;
 
-class Tron extends Process<undefined> {
+class Tron extends Process {
   *run(): Thread {
     this.logger.alert('Global reset');
     yield* hibernate();
@@ -72,24 +70,24 @@ export class Kernel {
 
   private readonly logger: Logger;
   private readonly scheduler: Scheduler;
-  private readonly Init: ProcessConstructor<undefined>;
 
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
   private readonly registry: Record<string, ProcessConstructor<any>> = {};
 
-  constructor(config: {
-    Init: ProcessConstructor<undefined>;
-    processes: ProcessConstructor<any>[];
-    loggerFactory: (name: string) => Logger;
-    scheduler: Scheduler;
-  }) {
-    const { Init, processes, loggerFactory, scheduler } = config;
+  constructor(
+    private readonly Init: ProcessConstructor,
+    config: {
+      processes: ProcessConstructor<any>[];
+      loggerFactory: (name: string) => Logger;
+      scheduler: Scheduler;
+    }
+  ) {
+    const { processes, loggerFactory, scheduler } = config;
     this.scheduler = scheduler;
-    this.Init = Init;
     this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
-    for (const type of [Tron, Init, ...processes]) {
+    for (const type of [Tron, this.Init, ...processes]) {
       this.registerProcess(type);
     }
     if (!this.table[0]) {
@@ -111,8 +109,8 @@ export class Kernel {
     }
 
     this.tableRef.set({});
-    this.createProcess(Tron, undefined, 0, 0);
-    this.createProcess(this.Init, undefined, 1, 0);
+    this.createProcess(Tron, {}, 0, 0);
+    this.createProcess(this.Init, {}, 1, 0);
   }
 
   private PIDCount: number;
@@ -213,7 +211,7 @@ export class Kernel {
 
     let nextArg: SysCallResults = undefined;
     for (;;) {
-      let sysCall;
+      let sysCall: IteratorResult<SysCall | void>;
       try {
         sysCall = thread.next(nextArg);
       } catch (err) {

@@ -2,7 +2,7 @@ import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
 import { expandPosition } from 'utils/position';
 
-export class RoomPlanner extends Process<undefined> {
+export class RoomPlanner extends Process {
   private get center(): RoomPosition {
     return Game.spawns['Spawn1'].pos;
   }

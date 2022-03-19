@@ -1,7 +1,7 @@
 import { Process, Thread } from 'kernel/Process';
 import { sleep } from 'kernel/sys-calls';
 
-export class CreepManager extends Process<undefined> {
+export class CreepManager extends Process {
   private runMiners() {
     const miners = Object.values(Game.creeps).filter(
       (creep) => creep.my && creep.name.startsWith('miner')
