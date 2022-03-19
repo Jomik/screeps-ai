@@ -1,7 +1,7 @@
 import { PID } from './Kernel';
 import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
-export type SysCall = Sleep | Fork;
+export type SysCall = Sleep | Fork | Kill;
 export type SysCallResults = void | ForkResult;
 
 type Sleep = {
@@ -44,4 +44,15 @@ export function* fork<
     throw new Error('Did not receive a new process ID');
   }
   return res.pid;
+}
+
+type Kill = {
+  type: 'kill';
+  pid: PID;
+};
+export function* kill(pid: PID): Thread {
+  yield {
+    type: 'kill',
+    pid,
+  };
 }

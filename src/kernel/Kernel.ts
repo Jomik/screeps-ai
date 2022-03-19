@@ -66,6 +66,10 @@ export class Kernel {
   private get table(): ProcessTable {
     return this.tableRef.get();
   }
+  get pids() {
+    return Object.keys(this.table).map((k) => Number.parseInt(k));
+  }
+
   private readonly logger: Logger;
   private readonly scheduler: Scheduler;
   private readonly Init: ProcessConstructor<undefined>;
@@ -92,22 +96,17 @@ export class Kernel {
       this.logger.warn('Tron missing');
       this.reboot();
     } else {
-      for (const key of Object.keys(this.table)) {
-        const pid = Number.parseInt(key);
+      for (const pid of this.pids) {
         this.initThread(pid);
       }
     }
-    this.PIDCount = Math.max(
-      0,
-      ...Object.keys(this.table).map((k) => Number.parseInt(k))
-    );
+    this.PIDCount = Math.max(0, ...this.pids);
   }
 
   reboot() {
     this.logger.info('Rebooting...');
 
-    for (const key of Object.keys(this.table)) {
-      const pid = Number.parseInt(key);
+    for (const pid of this.pids) {
       this.scheduler.remove(pid);
     }
 
@@ -247,6 +246,15 @@ export class Kernel {
           this.createProcess(processType, memory, childPID, pid);
           nextArg = { type: 'fork', pid: childPID };
           this.logger.info(`PID ${pid} forked ${processType.name}:${childPID}`);
+          break;
+        }
+        case 'kill': {
+          const { pid: childPID } = sysCall.value;
+          if (!this.findChildren(pid).some((child) => child.pid === childPID)) {
+            break;
+          }
+          this.killProcess(childPID);
+          break;
         }
       }
     }

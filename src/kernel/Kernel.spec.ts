@@ -1,6 +1,6 @@
 /* eslint-disable require-yield */
-import { fork, hibernate, sleep } from 'kernel/sys-calls';
-import { Kernel } from './Kernel';
+import { fork, hibernate, kill, sleep } from 'kernel/sys-calls';
+import { Kernel, PID } from './Kernel';
 import { Process, Thread } from './Process';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
@@ -275,6 +275,71 @@ describe('Kernel', () => {
         uut.run();
 
         expect(thread).toHaveBeenCalledWith(Array(2).fill(expect.anything()));
+      });
+    });
+
+    describe('kill', () => {
+      it('kills a child', () => {
+        const thread = jest.fn();
+        class Init extends Process<undefined> {
+          *run(): Thread {
+            yield* fork(Thread1, undefined);
+            yield* sleep();
+            yield* kill(this.children[0].pid);
+            thread(this.children);
+          }
+        }
+        class Thread1 extends Process<undefined> {
+          *run(): Thread {
+            yield* sleep();
+          }
+        }
+        const uut = new Kernel({
+          Init,
+          processes: [Thread1],
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
+
+        uut.run();
+        uut.run();
+        uut.run();
+
+        expect(thread).toHaveBeenCalledWith([]);
+      });
+      it('cannot kill other processes', () => {
+        let expected: PID = -1;
+        class Init extends Process<undefined> {
+          *run(): Thread {
+            expected = yield* fork(Thread1, undefined);
+            yield* sleep();
+            yield* fork(Thread2, { pid: expected });
+            yield* hibernate();
+          }
+        }
+        class Thread1 extends Process<undefined> {
+          *run(): Thread {
+            yield* hibernate();
+          }
+        }
+        class Thread2 extends Process<{ pid: PID }> {
+          *run(): Thread {
+            yield* kill(this.memory.pid);
+            yield* hibernate();
+          }
+        }
+        const uut = new Kernel({
+          Init,
+          processes: [Thread1, Thread2],
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
+
+        uut.run();
+        uut.run();
+        uut.run();
+
+        expect(uut.pids).toContain(expected);
       });
     });
   });
