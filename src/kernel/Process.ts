@@ -9,7 +9,7 @@ export type ProcessMemory = Record<string, unknown> | undefined;
 const internal = Symbol('internal');
 
 export type ChildDescriptor = {
-  type: ProcessConstructor<never>;
+  type: ProcessConstructor<any>;
   pid: PID;
 };
 

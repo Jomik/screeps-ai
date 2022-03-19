@@ -47,7 +47,7 @@ const unpackEntry = <M extends Memory | undefined>(
   memory: entry[3],
 });
 
-type ProcessTable = Record<PID, PackedProcessDescriptor<never>>;
+type ProcessTable = Record<PID, PackedProcessDescriptor<any>>;
 
 class Tron extends Process<undefined> {
   *run(): Thread {
@@ -76,7 +76,7 @@ export class Kernel {
 
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads: Record<PID, Thread> = {};
-  private readonly registry: Record<string, ProcessConstructor<never>> = {};
+  private readonly registry: Record<string, ProcessConstructor<any>> = {};
 
   constructor(config: {
     Init: ProcessConstructor<undefined>;
@@ -90,7 +90,7 @@ export class Kernel {
     this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
     for (const type of [Tron, Init, ...processes]) {
-      this.registerProcess(type as never);
+      this.registerProcess(type);
     }
     if (!this.table[0]) {
       this.logger.warn('Tron missing');
@@ -127,7 +127,7 @@ export class Kernel {
     return this.PIDCount;
   }
 
-  private registerProcess<Type extends ProcessConstructor<never>>(type: Type) {
+  private registerProcess<Type extends ProcessConstructor<any>>(type: Type) {
     // istanbul ignore next
     if (this.registry[type.name] && this.registry[type.name] !== type) {
       throw new Error(
@@ -151,11 +151,11 @@ export class Kernel {
       throw new Error(`No process of type, ${type.name}, has been registered`);
     }
 
-    this.table[pid] = packEntry<never>({
+    this.table[pid] = packEntry({
       type: type.name,
       pid,
       parent,
-      memory: memory as never,
+      memory,
     });
 
     this.initThread(pid);
@@ -171,7 +171,7 @@ export class Kernel {
       return;
     }
     const process = new this.registry[descriptor.type]({
-      memory: () => unpackEntry(this.table[pid]).memory,
+      memory: () => unpackEntry(this.table[pid]).memory as never,
       children: () => this.findChildren(pid),
       logger: this.loggerFactory(`${descriptor.type}:${pid}`),
     });

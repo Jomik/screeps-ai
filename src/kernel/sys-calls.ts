@@ -1,7 +1,7 @@
 import { PID } from './Kernel';
 import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
-export type SysCall = Sleep | Fork | Kill;
+export type SysCall = Sleep | Fork<any> | Kill;
 export type SysCallResults = void | ForkResult;
 
 type Sleep = {
@@ -21,10 +21,10 @@ export function* hibernate() {
   }
 }
 
-type Fork = {
+type Fork<M extends ProcessMemory> = {
   type: 'fork';
-  processType: ProcessConstructor<never>;
-  memory: never;
+  processType: ProcessConstructor<M>;
+  memory: M;
 };
 type ForkResult = {
   type: 'fork';
@@ -36,8 +36,8 @@ export function* fork<
 >(type: Type, memory: M): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: type as never,
-    memory: memory as never,
+    processType: type,
+    memory: memory,
   };
   // istanbul ignore next
   if (!res || res.type !== 'fork') {
