@@ -1,4 +1,4 @@
-import { hibernate, fork } from 'kernel/sys-calls';
+import { fork } from 'kernel/sys-calls';
 import { Process, Thread } from '../kernel/Process';
 import { RoomPlanner } from './RoomPlanner';
 import { CreepManager } from './CreepManager';
@@ -14,7 +14,5 @@ export class Init extends Process<undefined> {
         yield* fork(type, undefined);
       }
     }
-
-    yield* hibernate();
   }
 }

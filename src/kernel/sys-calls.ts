@@ -2,13 +2,13 @@ import { PID } from './Kernel';
 import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
 export type SysCall = Sleep | Fork;
-export type SysCallResults = void | { type: 'fork'; pid: number };
+export type SysCallResults = void | ForkResult;
 
 type Sleep = {
   type: 'sleep';
   ticks: number;
 };
-export function* sleep(ticks: number = 1): Thread<void> {
+export function* sleep(ticks = 1): Thread<void> {
   yield {
     type: 'sleep',
     ticks,
@@ -25,6 +25,10 @@ type Fork = {
   type: 'fork';
   processType: ProcessConstructor<never>;
   memory: never;
+};
+type ForkResult = {
+  type: 'fork';
+  pid: PID;
 };
 export function* fork<
   M extends ProcessMemory,

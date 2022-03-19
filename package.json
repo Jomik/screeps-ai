@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint",
+    "lint": "eslint .",
     "build": "rollup -c",
     "test:unit": "jest",
     "push:main": "yarn build --environment DEST:main",

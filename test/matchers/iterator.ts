@@ -1,15 +1,15 @@
 // istanbul ignore file
 function matchYields<Y, N>(
   this: jest.MatcherContext,
-  iterator: Iterator<Y, any, N>,
+  iterator: Iterator<Y, unknown, N>,
   yieldValues: Array<[Y, N | (() => N)]>
 ) {
   let yieldIndex = 0;
   let pass = true;
-  let received: Y | undefined;
+  let received: unknown;
   let expected: Y | undefined;
-  let iteratorValue: IteratorResult<Y>;
-  const itemsYielded: Y[] = [];
+  let iteratorValue: IteratorResult<Y, unknown> | undefined;
+  const itemsYielded: unknown[] = [];
 
   do {
     const [expectedYieldValue] = yieldValues[yieldIndex] ?? [];
@@ -20,12 +20,12 @@ function matchYields<Y, N>(
         : argumentForYieldThunk;
 
     if (argumentForYield instanceof Error) {
-      iteratorValue = iterator.throw?.(argumentForYield)!;
+      iteratorValue = iterator.throw?.(argumentForYield);
     } else {
       iteratorValue = iterator.next(argumentForYield);
     }
 
-    const yieldedValue = iteratorValue.value;
+    const yieldedValue = iteratorValue?.value;
     itemsYielded.push(yieldedValue);
     const isYieldValueSameAsExpected = this.equals(
       yieldedValue,
@@ -40,13 +40,13 @@ function matchYields<Y, N>(
     }
 
     yieldIndex++;
-  } while (iteratorValue.done === false && yieldIndex - 1 < yieldValues.length);
+  } while (!iteratorValue?.done && yieldIndex - 1 < yieldValues.length);
 
   return {
     pass,
     expected,
     received,
-    done: iteratorValue.done ?? false,
+    done: iteratorValue?.done ?? false,
     itemsYielded,
   };
 }

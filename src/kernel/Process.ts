@@ -8,37 +8,37 @@ export type ProcessMemory = Record<string, unknown> | undefined;
 
 const internal = Symbol('internal');
 
-type Child = {
-  type: ProcessConstructor<any>;
+export type ChildDescriptor = {
+  type: ProcessConstructor<never>;
   pid: PID;
 };
 
-type Config = {
-  children: () => Child[];
-  memory: () => Memory;
+type Config<M extends ProcessMemory> = {
+  children: () => ChildDescriptor[];
+  memory: () => M;
   logger: Logger;
 };
 
-export abstract class Process<Memory extends ProcessMemory> {
+export abstract class Process<M extends ProcessMemory> {
   protected readonly logger: Logger;
-  private [internal]: any;
+  private [internal]: Config<M>;
 
-  constructor(config: Config) {
+  constructor(config: Config<M>) {
     this.logger = config.logger;
     this[internal] = config;
   }
 
-  protected get children(): Child[] {
+  protected get children(): ChildDescriptor[] {
     return this[internal].children();
   }
 
-  protected get memory(): Memory {
+  protected get memory(): M {
     return this[internal].memory();
   }
 
   abstract run(): Thread;
 }
 
-export type ProcessConstructor<Memory extends ProcessMemory> = new (
-  config: Config
-) => Process<Memory>;
+export type ProcessConstructor<M extends ProcessMemory> = new (
+  config: Config<M>
+) => Process<M>;

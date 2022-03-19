@@ -1,5 +1,11 @@
 import { Logger } from 'Logger';
-import { Process, ProcessConstructor, ProcessMemory, Thread } from './Process';
+import {
+  ChildDescriptor,
+  Process,
+  ProcessConstructor,
+  ProcessMemory,
+  Thread,
+} from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import { hibernate, SysCallResults } from './sys-calls';
 import { getMemoryRef } from './memory';
@@ -175,9 +181,7 @@ export class Kernel {
     this.scheduler.add(pid);
   }
 
-  private findChildren(
-    pid: PID
-  ): Array<{ type: ProcessConstructor<never>; pid: PID }> {
+  private findChildren(pid: PID): ChildDescriptor[] {
     return Object.values(this.table)
       .map((v) => unpackEntry(v))
       .filter(({ parent }) => parent === pid)
@@ -185,24 +189,38 @@ export class Kernel {
   }
 
   private killProcess(pid: PID) {
+    if (pid === 0) {
+      this.logger.alert('Trying to kill Tron, rebooting...');
+      this.reboot();
+      return;
+    }
+
     delete this.threads[pid];
     delete this.table[pid];
     this.scheduler.remove(pid);
-    this.findChildren(pid).forEach((child) => this.killProcess(child.pid));
+
+    // Children are adopted by Tron
+    this.findChildren(pid).forEach((child) => {
+      const entry = unpackEntry(this.table[child.pid]);
+      this.table[child.pid] = packEntry({
+        ...entry,
+        parent: 0,
+      });
+    });
   }
 
   private runThread(pid: PID): SchedulerThreadReturn {
     const thread = this.threads[pid];
 
     let nextArg: SysCallResults = undefined;
-    do {
+    for (;;) {
       let sysCall;
       try {
         sysCall = thread.next(nextArg);
       } catch (err) {
         this.logger.error(
           `Error while running ${unpackEntry(this.table[pid]).type}:${pid}\n${
-            err instanceof Error ? err.message : err
+            err instanceof Error ? err.message : JSON.stringify(err)
           }`
         );
         this.killProcess(pid);
@@ -219,24 +237,25 @@ export class Kernel {
         return undefined;
       }
 
-      if (sysCall.value.type === 'sleep') {
-        return sysCall.value;
+      switch (sysCall.value.type) {
+        case 'sleep': {
+          return sysCall.value;
+        }
+        case 'fork': {
+          const { memory, processType } = sysCall.value;
+          const childPID = this.acquirePID();
+          this.createProcess(processType, memory, childPID, pid);
+          nextArg = { type: 'fork', pid: childPID };
+          this.logger.info(`PID ${pid} forked ${processType.name}:${childPID}`);
+        }
       }
-
-      if (sysCall.value.type === 'fork') {
-        const { memory, processType } = sysCall.value;
-        const childPID = this.acquirePID();
-        this.createProcess(processType, memory, childPID, pid);
-        nextArg = { type: 'fork', pid: childPID };
-        this.logger.info(`PID ${pid} forked ${processType.name}:${childPID}`);
-      }
-    } while (true);
+    }
   }
 
   run(): void {
     const schedule = this.scheduler.run();
     let nextArg: SchedulerThreadReturn = undefined;
-    do {
+    for (;;) {
       const next = schedule.next(nextArg);
       if (next.done) {
         break;
@@ -254,7 +273,7 @@ export class Kernel {
           },
         },
       });
-    } while (true);
+    }
   }
 
   /* istanbul ignore next */

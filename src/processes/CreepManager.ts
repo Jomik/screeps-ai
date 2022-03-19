@@ -112,7 +112,7 @@ export class CreepManager extends Process<undefined> {
     for (const upgrader of upgraders) {
       const controller = upgrader.room.controller;
       if (!controller) {
-        this.logger.alert('upgrader in room with no controller', upgrader);
+        this.logger.warn('upgrader in room with no controller', upgrader);
         upgrader.suicide();
         continue;
       }

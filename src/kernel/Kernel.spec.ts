@@ -1,10 +1,10 @@
+/* eslint-disable require-yield */
 import { fork, hibernate, sleep } from 'kernel/sys-calls';
 import { Kernel } from './Kernel';
 import { Process, Thread } from './Process';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
 import { mockGlobal } from 'screeps-jest';
-import { identity } from 'lodash';
 
 describe('Kernel', () => {
   beforeEach(() => {
@@ -83,9 +83,48 @@ describe('Kernel', () => {
 
       expect(
         logger.mock.calls
-          .map(([message]) => message)
+          .map(([message]) => message as string)
           .some((x) => x.includes(expected))
       ).toBe(true);
+    });
+  });
+
+  describe('memory', () => {
+    it('persists across reboots', () => {
+      const thread = jest.fn();
+      const expected = 42;
+      class Init extends Process<undefined> {
+        *run(): Thread {
+          yield* fork(Thread1, {});
+        }
+      }
+      class Thread1 extends Process<{ value?: number }> {
+        *run(): Thread {
+          if (this.memory.value) {
+            thread(this.memory.value);
+          }
+          this.memory.value = expected;
+          yield* hibernate();
+        }
+      }
+      const kernel = new Kernel({
+        Init,
+        processes: [Thread1],
+        loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
+      });
+      kernel.run();
+      kernel.run();
+
+      const uut = new Kernel({
+        Init,
+        processes: [Thread1],
+        loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
+      });
+      uut.run();
+
+      expect(thread).toHaveBeenCalledWith(expected);
     });
   });
 
@@ -164,7 +203,6 @@ describe('Kernel', () => {
       class Init extends Process<undefined> {
         *run(): Thread {
           yield* fork(Thread1, undefined);
-          yield* hibernate();
         }
       }
       class Thread1 extends Process<undefined> {
@@ -185,100 +223,59 @@ describe('Kernel', () => {
 
       expect(thread).toHaveBeenCalledTimes(1);
     });
-  });
-
-  describe('children', () => {
-    it('kills children when parent dies', () => {
-      const thread = jest.fn();
-      class Init extends Process<undefined> {
-        *run(): Thread {
-          yield* fork(Thread1, undefined);
-          yield* sleep();
-        }
-      }
-      class Thread1 extends Process<undefined> {
-        *run(): Thread {
-          yield* sleep();
-          thread();
-        }
-      }
-      const uut = new Kernel({
-        Init,
-        processes: [Thread1],
-        loggerFactory: () => new SilentLogger(''),
-        scheduler: new RoundRobinScheduler(() => 1),
-      });
-
-      uut.run();
-      uut.run();
-      uut.run();
-
-      expect(thread).not.toHaveBeenCalled();
-    });
-    it('should expose children pids', () => {
-      const thread = jest.fn();
-      class Init extends Process<undefined> {
-        *run(): Thread {
-          yield* fork(Thread1, undefined);
-          yield* fork(Thread1, undefined);
-          thread(this.children);
-        }
-      }
-      class Thread1 extends Process<undefined> {
-        *run(): Thread {
-          yield* sleep();
-        }
-      }
-      const uut = new Kernel({
-        Init,
-        processes: [Thread1],
-        loggerFactory: () => new SilentLogger(''),
-        scheduler: new RoundRobinScheduler(() => 1),
-      });
-
-      uut.run();
-
-      expect(thread).toHaveBeenCalledWith(Array(2).fill(expect.anything()));
-    });
-  });
-
-  describe('memory', () => {
-    it('persists across reboots', () => {
-      const thread = jest.fn();
-      const expected = 42;
-      class Init extends Process<undefined> {
-        *run(): Thread {
-          yield* fork(Thread1, {});
-          yield* hibernate();
-        }
-      }
-      class Thread1 extends Process<{ value?: number }> {
-        *run(): Thread {
-          if (this.memory.value) {
-            thread(this.memory.value);
+    describe('children', () => {
+      it('reparents children when parent die', () => {
+        const thread = jest.fn();
+        class Init extends Process<undefined> {
+          *run(): Thread {
+            yield* fork(Thread1, undefined);
+            yield* sleep();
           }
-          this.memory.value = expected;
-          yield* hibernate();
         }
-      }
-      const kernel = new Kernel({
-        Init,
-        processes: [Thread1],
-        loggerFactory: () => new SilentLogger(''),
-        scheduler: new RoundRobinScheduler(() => 1),
-      });
-      kernel.run();
-      kernel.run();
+        class Thread1 extends Process<undefined> {
+          *run(): Thread {
+            yield* sleep();
+            thread();
+          }
+        }
+        const uut = new Kernel({
+          Init,
+          processes: [Thread1],
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
 
-      const uut = new Kernel({
-        Init,
-        processes: [Thread1],
-        loggerFactory: () => new SilentLogger(''),
-        scheduler: new RoundRobinScheduler(() => 1),
-      });
-      uut.run();
+        uut.run();
+        uut.run();
+        uut.run();
 
-      expect(thread).toHaveBeenCalledWith(expected);
+        expect(thread).toHaveBeenCalled();
+      });
+      it('should expose children pids', () => {
+        const thread = jest.fn();
+        class Init extends Process<undefined> {
+          *run(): Thread {
+            yield* fork(Thread1, undefined);
+            yield* fork(Thread1, undefined);
+            thread(this.children);
+          }
+        }
+        class Thread1 extends Process<undefined> {
+          *run(): Thread {
+            yield* sleep();
+          }
+        }
+        const uut = new Kernel({
+          Init,
+          processes: [Thread1],
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
+
+        uut.run();
+
+        expect(thread).toHaveBeenCalledWith(Array(2).fill(expect.anything()));
+      });
     });
   });
 });

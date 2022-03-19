@@ -5,7 +5,7 @@ describe('RoundRobinScheduler', () => {
   let quota: jest.Mock<number, []>;
   let scheduler: Scheduler;
   beforeEach(() => {
-    quota = jest.fn().mockReturnValue(1);
+    quota = jest.fn<number, []>().mockReturnValue(1);
     scheduler = new RoundRobinScheduler(quota);
   });
 

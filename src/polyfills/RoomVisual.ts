@@ -47,21 +47,21 @@ const speechFont = 'Times New Roman';
 function calculateFactoryLevelGapsPoly() {
   let x = -0.08;
   let y = -0.52;
-  let result = [];
+  const result = [];
 
-  let gapAngle = 16 * (Math.PI / 180);
-  let c1 = Math.cos(gapAngle);
-  let s1 = Math.sin(gapAngle);
+  const gapAngle = 16 * (Math.PI / 180);
+  const c1 = Math.cos(gapAngle);
+  const s1 = Math.sin(gapAngle);
 
-  let angle = 72 * (Math.PI / 180);
-  let c2 = Math.cos(angle);
-  let s2 = Math.sin(angle);
+  const angle = 72 * (Math.PI / 180);
+  const c2 = Math.cos(angle);
+  const s2 = Math.sin(angle);
 
   for (let i = 0; i < 5; ++i) {
     result.push([0.0, 0.0]);
     result.push([x, y]);
     result.push([x * c1 - y * s1, x * s1 + y * c1]);
-    let tmpX = x * c2 - y * s2;
+    const tmpX = x * c2 - y * s2;
     y = x * s2 + y * c2;
     x = tmpX;
   }
@@ -315,7 +315,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
       break;
     }
-    case STRUCTURE_LAB:
+    case STRUCTURE_LAB: {
       this.circle(x, y - 0.025, {
         radius: 0.55,
         fill: colors.dark,
@@ -348,6 +348,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       });
 
       break;
+    }
     case STRUCTURE_TOWER:
       this.circle(x, y, {
         radius: 0.6,
@@ -395,8 +396,8 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
-    case STRUCTURE_STORAGE:
-      let outline1 = relPoly(x, y, [
+    case STRUCTURE_STORAGE: {
+      const outline1 = relPoly(x, y, [
         [-0.45, -0.55],
         [0, -0.65],
         [0.45, -0.55],
@@ -418,6 +419,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
+    }
     case STRUCTURE_OBSERVER:
       this.circle(x, y, {
         fill: colors.dark,
@@ -432,7 +434,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
-    case STRUCTURE_NUKER:
+    case STRUCTURE_NUKER: {
       let outline: Poly = [
         [0, -1],
         [-0.47, 0.2],
@@ -462,6 +464,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       break;
+    }
     case STRUCTURE_CONTAINER:
       this.rect(x - 0.225, y - 0.3, 0.45, 0.6, {
         fill: colors.gray,
@@ -508,8 +511,8 @@ function rotate(
   px: number,
   py: number
 ) {
-  let xDelta = x * c - y * s;
-  let yDelta = x * s + y * c;
+  const xDelta = x * c - y * s;
+  const yDelta = x * s + y * c;
   return { x: px + xDelta, y: py + yDelta };
 }
 
@@ -522,13 +525,13 @@ function relPoly(x: number, y: number, poly: Poly) {
 }
 
 RoomVisual.prototype.connectRoads = function (opts = {}) {
-  let color = opts.color || colors.road || 'white';
+  const color = opts.color || colors.road || 'white';
   if (!this.roads) return this;
   this.roads.forEach((r) => {
     for (let i = 1; i <= 4; i++) {
-      let d = dirs[i];
-      let c = [r[0] + d[0], r[1] + d[1]];
-      let rd = _.some(this.roads, (r) => r[0] == c[0] && r[1] == c[1]);
+      const d = dirs[i];
+      const c = [r[0] + d[0], r[1] + d[1]];
+      const rd = _.some(this.roads, (r) => r[0] == c[0] && r[1] == c[1]);
       if (rd) {
         this.line(r[0], r[1], c[0], c[1], {
           color: color,
@@ -543,19 +546,19 @@ RoomVisual.prototype.connectRoads = function (opts = {}) {
 };
 
 RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
-  var background = !!opts.background
+  const background = opts.background
     ? opts.background
     : colors.speechBackground;
-  var textcolor = !!opts.textcolor ? opts.textcolor : colors.speechText;
-  var textstyle = !!opts.textstyle ? opts.textstyle : false;
-  var textsize = !!opts.textsize ? opts.textsize : speechSize;
-  var textfont = !!opts.textfont ? opts.textfont : speechFont;
-  var opacity = !!opts.opacity ? opts.opacity : 1;
-  var fontstring = '';
+  const textcolor = opts.textcolor ? opts.textcolor : colors.speechText;
+  const textstyle = opts.textstyle ? opts.textstyle : false;
+  const textsize = opts.textsize ? opts.textsize : speechSize;
+  const textfont = opts.textfont ? opts.textfont : speechFont;
+  const opacity = opts.opacity ? opts.opacity : 1;
+  let fontstring = '';
   if (textstyle) {
     fontstring = textstyle + ' ';
   }
-  fontstring += textsize + ' ' + textfont;
+  fontstring += `${textsize} ${textfont}`;
 
   let pointer: Poly = [
     [-0.2, -0.8],
@@ -584,19 +587,19 @@ RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
 };
 
 RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
-  let color = !!opts.color ? opts.color : 'blue';
-  let opacity = !!opts.opacity ? opts.opacity : 0.5;
-  let radius = !!opts.radius ? opts.radius : 0.75;
-  let frames = !!opts.frames ? opts.frames : 6;
+  const color = opts.color ? opts.color : 'blue';
+  const opacity = opts.opacity ? opts.opacity : 0.5;
+  let radius = opts.radius ? opts.radius : 0.75;
+  const frames = opts.frames ? opts.frames : 6;
 
-  let angle = (((Game.time % frames) * 90) / frames) * (Math.PI / 180);
-  let s = Math.sin(angle);
-  let c = Math.cos(angle);
+  const angle = (((Game.time % frames) * 90) / frames) * (Math.PI / 180);
+  const s = Math.sin(angle);
+  const c = Math.cos(angle);
 
-  let sizeMod = Math.abs((Game.time % frames) - frames / 2) / 10;
+  const sizeMod = Math.abs((Game.time % frames) - frames / 2) / 10;
   radius += radius * sizeMod;
 
-  let points: Poly = [
+  const points: Poly = [
     rotate(0, -radius, s, c, x, y),
     rotate(radius, 0, s, c, x, y),
     rotate(0, radius, s, c, x, y),
@@ -610,7 +613,7 @@ RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
 };
 
 RoomVisual.prototype.test = function test() {
-  let demopos = [19, 24];
+  const demopos = [19, 24];
   this.clear();
   this.structure(demopos[0] + 0, demopos[1] + 0, STRUCTURE_LAB);
   this.structure(demopos[0] + 1, demopos[1] + 1, STRUCTURE_TOWER);

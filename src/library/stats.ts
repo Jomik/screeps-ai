@@ -14,8 +14,11 @@ export const resetStats = () => {
 
 export const recordStats = (stats: StatsRecord) => {
   statsRef.set(
-    _.merge(statsRef.get(), stats, (a, b) =>
-      typeof a === 'number' ? a + b : undefined
+    _.merge(
+      statsRef.get(),
+      stats,
+      (a: number | StatsRecord, b: StatsRecord | number) =>
+        typeof a === 'number' && typeof b === 'number' ? a + b : undefined
     )
   );
 };
@@ -24,7 +27,7 @@ export const recordGlobals = () => {
   const rooms = _.mapValues(
     _.pick<Record<string, Room>, Record<string, Room>>(
       Game.rooms,
-      (room) => room.controller?.my
+      (room: Room) => room.controller?.my
     ),
     (room) => ({
       energyAvailable: room.energyAvailable,
