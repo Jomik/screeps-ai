@@ -85,6 +85,17 @@ export class RoomPlanner extends Process {
     );
   }
 
+  private drawRoomVisuals(paths: RoomPosition[][], containers: RoomPosition[]) {
+    for (const { x, y } of paths.flat()) {
+      this.room.visual.structure(x, y, STRUCTURE_ROAD, { opacity: 0.3 });
+    }
+    this.room.visual.connectRoads({ opacity: 0.5 });
+
+    for (const { x, y } of containers) {
+      this.room.visual.structure(x, y, STRUCTURE_CONTAINER, { opacity: 0.5 });
+    }
+  }
+
   *run(): Thread {
     const costMatrix = new PathFinder.CostMatrix();
 
@@ -109,20 +120,9 @@ export class RoomPlanner extends Process {
       .filter(<T>(v: T | null): v is T => !!v);
     yield;
 
-    for (const { x, y } of paths.flat()) {
-      this.room.visual.structure(x, y, STRUCTURE_ROAD, { opacity: 0.3 });
-    }
-    this.room.visual.connectRoads({ opacity: 0.5 });
-
-    for (const { x, y } of containers) {
-      this.room.visual.structure(x, y, STRUCTURE_CONTAINER, { opacity: 0.5 });
-    }
-
-    const visuals = this.room.visual.export();
-
-    while (true) {
+    for (;;) {
       yield* sleep();
-      this.room.visual.import(visuals);
+      this.drawRoomVisuals(paths, containers);
 
       const containerSites = containers.filter(
         (pos) => this.room.lookForAt(LOOK_STRUCTURES, pos).length === 0

@@ -162,7 +162,7 @@ export class Kernel {
   private initThread(pid: PID) {
     const descriptor = unpackEntry(this.table[pid]);
     if (!(descriptor.type in this.registry)) {
-      this.killProcess(pid);
+      this.kill(pid);
       this.logger.error(
         `Error trying to initialise pid ${pid} with unknown type ${descriptor.type}`
       );
@@ -185,7 +185,7 @@ export class Kernel {
       .map((v) => ({ type: this.registry[v.type], pid: v.pid }));
   }
 
-  private killProcess(pid: PID) {
+  public kill(pid: PID) {
     if (pid === 0) {
       this.logger.alert('Trying to kill Tron, rebooting...');
       this.reboot();
@@ -220,13 +220,13 @@ export class Kernel {
             err instanceof Error ? err.message : JSON.stringify(err)
           }`
         );
-        this.killProcess(pid);
+        this.kill(pid);
         return;
       }
       nextArg = undefined;
 
       if (sysCall.done) {
-        this.killProcess(pid);
+        this.kill(pid);
         return undefined;
       }
 
@@ -251,14 +251,14 @@ export class Kernel {
           if (!this.findChildren(pid).some((child) => child.pid === childPID)) {
             break;
           }
-          this.killProcess(childPID);
+          this.kill(childPID);
           break;
         }
       }
     }
   }
 
-  run(): void {
+  public run(): void {
     const schedule = this.scheduler.run();
     let nextArg: SchedulerThreadReturn = undefined;
     for (;;) {
@@ -283,7 +283,7 @@ export class Kernel {
   }
 
   /* istanbul ignore next */
-  ps(pid: PID = 0) {
+  public ps(pid: PID = 0) {
     const tableByParent = _.groupBy(
       Object.values(this.table)
         .map(unpackEntry)

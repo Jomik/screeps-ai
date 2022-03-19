@@ -61,7 +61,8 @@ export class CreepManager extends Process {
       const room = worker.room;
       const buildings = room
         .find(FIND_STRUCTURES, {
-          filter: (s) => s.hits < s.hitsMax / 2,
+          filter: (s) =>
+            s.hits < s.hitsMax / 2 && s.structureType !== STRUCTURE_WALL,
         })
         .sort((a, b) => a.hits - b.hits);
       const target =
@@ -173,7 +174,7 @@ export class CreepManager extends Process {
   }
 
   *run(): Thread {
-    while (true) {
+    for (;;) {
       this.runAttackers();
       yield;
       this.runMiners();

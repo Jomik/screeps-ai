@@ -16,7 +16,7 @@ export function* sleep(ticks = 1): Thread<void> {
 }
 
 export function* hibernate() {
-  while (true) {
+  for (;;) {
     yield* sleep(Infinity);
   }
 }

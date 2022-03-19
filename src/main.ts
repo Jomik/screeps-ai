@@ -18,11 +18,21 @@ const kernel = new Kernel(Init, {
 
 // @ts-ignore: to use ps in console
 global.ps = (pid?: number) => {
+  if (pid !== undefined && !kernel.pids.includes(pid)) {
+    return 'Invalid argument';
+  }
   return kernel.ps(pid);
 };
 // @ts-ignore: to use ps in console
 global.reboot = () => {
   kernel.reboot();
+};
+// @ts-ignore: to use ps in console
+global.kill = (pid: number) => {
+  if (!kernel.pids.includes(pid)) {
+    return 'Invalid argument';
+  }
+  kernel.kill(pid);
 };
 
 // @ts-ignore: to use setLogLevel in console

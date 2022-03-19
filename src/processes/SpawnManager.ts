@@ -36,7 +36,7 @@ export class SpawnManager extends Process {
   }
 
   *run(): Thread {
-    do {
+    for (;;) {
       const spawn = this.spawn;
       if (spawn.spawning) {
         yield* sleep(spawn.spawning.remainingTime);
@@ -98,6 +98,6 @@ export class SpawnManager extends Process {
         this.spawnWorker();
       }
       yield* sleep(10);
-    } while (true);
+    }
   }
 }
