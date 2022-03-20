@@ -1,5 +1,5 @@
 import { Process, Thread } from 'kernel/Process';
-import { sleep } from 'kernel/sys-calls';
+import { restartOnTickChange, sleep } from 'kernel/sys-calls';
 
 export class CreepManager extends Process {
   private runMiners() {
@@ -173,7 +173,7 @@ export class CreepManager extends Process {
     }
   }
 
-  *run(): Thread {
+  private *runCreeps() {
     for (;;) {
       this.runAttackers();
       yield;
@@ -186,5 +186,9 @@ export class CreepManager extends Process {
       this.runWorkers();
       yield* sleep();
     }
+  }
+
+  *run(): Thread {
+    yield* restartOnTickChange(this.runCreeps.bind(this));
   }
 }
