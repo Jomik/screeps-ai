@@ -3,7 +3,9 @@ import { sleep } from 'kernel/sys-calls';
 import { expandPosition } from 'utils/position';
 
 export class SpawnManager extends Process {
-  private spawn = Game.spawns['Spawn1'];
+  private get spawn() {
+    return Game.spawns['Spawn1'];
+  }
   private spawnHauler() {
     this.spawn.spawnCreep(
       [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE],
@@ -37,10 +39,10 @@ export class SpawnManager extends Process {
 
   *run(): Thread {
     for (;;) {
-      const spawn = this.spawn;
-      if (spawn.spawning) {
-        yield* sleep(spawn.spawning.remainingTime);
+      if (this.spawn.spawning) {
+        yield* sleep(this.spawn.spawning.remainingTime);
       }
+      const spawn = this.spawn;
 
       const sources = spawn.room.find(FIND_SOURCES);
       const terrain = spawn.room.getTerrain();

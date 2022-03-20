@@ -25,21 +25,21 @@ global.ps = (pid?: number) => {
 };
 // @ts-ignore: to use ps in console
 global.reboot = () => {
-  kernel.reboot();
+  return kernel.reboot();
 };
 // @ts-ignore: to use ps in console
 global.kill = (pid: number) => {
   if (!kernel.pids.includes(pid)) {
     return 'Invalid argument';
   }
-  kernel.kill(pid);
+  return kernel.kill(pid);
 };
 
 // @ts-ignore: to use setLogLevel in console
 global.LogLevel = LogLevel;
 // @ts-ignore: to use setLogLevel in console
 global.setLogLevel = (level: LogLevel) => {
-  ScreepsLogger.setLogLevel(level);
+  return ScreepsLogger.setLogLevel(level);
 };
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change

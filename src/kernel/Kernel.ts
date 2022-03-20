@@ -269,9 +269,11 @@ export class Kernel {
 
       const pid = next.value;
       const entry = unpackEntry(this.table[pid]);
+      this.logger.verbose(`Running thread ${entry.type}:${pid}`);
       const startCPU = Game.cpu.getUsed();
       nextArg = this.runThread(pid);
       const endCpu = Game.cpu.getUsed();
+      this.logger.verbose(`${entry.type}:${pid} ${nextArg?.type ?? 'yield'}`);
       recordStats({
         threads: {
           [entry.type]: {

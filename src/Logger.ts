@@ -1,40 +1,5 @@
 import { getMemoryRef } from 'kernel/memory';
 
-export abstract class Logger {
-  constructor(protected readonly name: string) {}
-
-  protected abstract log(
-    message: string,
-    location: LocationArg | undefined,
-    level: LogLevel,
-    color: string
-  ): void;
-
-  public alert(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Alert, '#ff00d0');
-  }
-
-  public error(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Error, '#e50000');
-  }
-
-  public warn(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Warn, '#f4c542');
-  }
-
-  public info(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Info, '#efefef');
-  }
-
-  public debug(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Debug, '#a6a4a6');
-  }
-
-  public verbose(message: string, location?: LocationArg) {
-    this.log(message, location, LogLevel.Verbose, '#6e6770');
-  }
-}
-
 export enum LogLevel {
   Alert = 1,
   Error = 2,
@@ -43,6 +8,8 @@ export enum LogLevel {
   Debug = 5,
   Verbose = 6,
 }
+
+type MessageThunk = string | (() => string);
 
 type LocationArg =
   | {
@@ -55,6 +22,41 @@ type LocationArg =
   | RoomPosition
   | string;
 
+export abstract class Logger {
+  constructor(protected readonly name: string) {}
+
+  protected abstract log(
+    message: MessageThunk,
+    location: LocationArg | undefined,
+    level: LogLevel,
+    color: string
+  ): void;
+
+  public alert(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Alert, '#ff00d0');
+  }
+
+  public error(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Error, '#e50000');
+  }
+
+  public warn(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Warn, '#f4c542');
+  }
+
+  public info(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Info, '#efefef');
+  }
+
+  public debug(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Debug, '#a6a4a6');
+  }
+
+  public verbose(message: MessageThunk, location?: LocationArg) {
+    this.log(message, location, LogLevel.Verbose, '#6e6770');
+  }
+}
+
 const Separator = '<span style="color:#6e6770"> &rsaquo; </span>';
 
 export class ScreepsLogger extends Logger {
@@ -63,8 +65,12 @@ export class ScreepsLogger extends Logger {
     return this.settingsRef.get();
   }
 
-  public static setLogLevel(level: LogLevel) {
+  public static setLogLevel(level: LogLevel): string | undefined {
+    if (!(level in LogLevel)) {
+      return 'Invalid log level';
+    }
     this.settingsRef.set(level);
+    return;
   }
 
   private getRoomName(room: LocationArg): string {
@@ -88,7 +94,7 @@ export class ScreepsLogger extends Logger {
   }
 
   protected log(
-    message: string,
+    message: MessageThunk,
     location: LocationArg | undefined,
     level: LogLevel,
     color: string
@@ -107,7 +113,7 @@ export class ScreepsLogger extends Logger {
       output += `<a href="#!/room/${Game.shard.name}/${roomName}">${roomName}</a>`;
       output += Separator;
     }
-    output += message;
+    output += typeof message === 'function' ? message() : message;
     console.log(`<span style="color:${color}">${output}</span>`);
   }
 }
