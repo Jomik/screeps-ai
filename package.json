@@ -7,11 +7,11 @@
     "lint": "eslint .",
     "build": "rollup -c",
     "test:unit": "jest",
-    "push:main": "yarn build --environment DEST:main",
+    "push:mmo": "yarn build --environment DEST:mmo",
     "push:private": "yarn build --environment DEST:private",
     "push:season": "yarn build --environment DEST:season",
     "push:sim": "yarn build --environment DEST:sim",
-    "watch:main": "yarn push:main -w",
+    "watch:mmo": "yarn push:mmo -w",
     "watch:private": "yarn push:private -w",
     "watch:season": "yarn push:season -w",
     "watch:sim": "yarn push:sim -w"
