@@ -1,4 +1,5 @@
 import { getMemoryRef } from 'kernel/memory';
+import { filter } from 'lodash';
 
 export enum LogLevel {
   Alert = 1,
@@ -60,16 +61,30 @@ export abstract class Logger {
 const Separator = '<span style="color:#6e6770"> &rsaquo; </span>';
 
 export class ScreepsLogger extends Logger {
-  private static settingsRef = getMemoryRef('logger', LogLevel.Warn);
+  private static settingsRef = getMemoryRef('logger', {
+    level: LogLevel.Warn,
+    filter: undefined as string | undefined,
+  });
   private static get level(): LogLevel {
-    return this.settingsRef.get();
+    return this.settingsRef.get().level;
   }
 
   public static setLogLevel(level: LogLevel): string | undefined {
     if (!(level in LogLevel)) {
       return 'Invalid log level';
     }
-    this.settingsRef.set(level);
+    this.settingsRef.get().level = level;
+    return;
+  }
+  private static get filter(): string | undefined {
+    return this.settingsRef.get().filter;
+  }
+
+  public static setLogFilter(filter: string | undefined): string | undefined {
+    if (filter !== undefined && filter.length < 0) {
+      return 'Invalid log filter';
+    }
+    this.settingsRef.get().filter = filter;
     return;
   }
 
@@ -114,6 +129,10 @@ export class ScreepsLogger extends Logger {
       output += Separator;
     }
     output += typeof message === 'function' ? message() : message;
+    const filter = ScreepsLogger.filter;
+    if (filter && !output.includes(filter)) {
+      return;
+    }
     console.log(`<span style="color:${color}">${output}</span>`);
   }
 }
