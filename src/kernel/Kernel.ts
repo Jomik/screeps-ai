@@ -10,6 +10,7 @@ import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import { hibernate, SysCall, SysCallResults } from './sys-calls';
 import { getMemoryRef } from './memory';
 import { recordStats } from 'library';
+import { ErrorMapper } from 'utils/ErrorMapper';
 
 export type PID = number;
 
@@ -216,9 +217,9 @@ export class Kernel {
         sysCall = thread.next(nextArg);
       } catch (err) {
         this.logger.error(
-          `Error while running ${unpackEntry(this.table[pid]).type}:${pid}\n${
-            err instanceof Error ? err.message : JSON.stringify(err)
-          }`
+          `Error while running ${
+            unpackEntry(this.table[pid]).type
+          }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
         );
         this.kill(pid);
         return;
