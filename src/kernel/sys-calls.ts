@@ -1,8 +1,20 @@
 import { PID } from './Kernel';
-import { ProcessConstructor, ProcessMemory, Thread } from './Process';
+import { ProcessConstructor, Thread } from './Process';
 
-export type SysCall = Sleep | Fork<Record<string, unknown>> | Kill;
+export type SysCall = Sleep | Fork | Kill;
 export type SysCallResults = void | ForkResult;
+
+function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
+  res: SysCallResults,
+  type: T
+): asserts res is Extract<SysCallResults, { type: T }> {
+  // istanbul ignore next
+  if (!res || res.type !== type) {
+    throw new Error(
+      `Expected to receive a fork result, but got ${res?.type ?? 'unknown'}`
+    );
+  }
+}
 
 type Sleep = {
   type: 'sleep';
@@ -21,28 +33,25 @@ export function* hibernate() {
   }
 }
 
-type Fork<M extends ProcessMemory> = {
+type Fork = {
   type: 'fork';
-  processType: ProcessConstructor<M>;
-  memory: M;
+  processType: ProcessConstructor<Record<string, unknown>>;
+  memory: Record<string, unknown>;
 };
 type ForkResult = {
   type: 'fork';
   pid: PID;
 };
-export function* fork<
-  M extends ProcessMemory,
-  Type extends ProcessConstructor<M>
->(type: Type, memory: M): Thread<PID> {
+export function* fork<Type extends ProcessConstructor<any>>(
+  type: Type,
+  memory: Type extends ProcessConstructor<infer M> ? M : never
+): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: type as ProcessConstructor<Record<string, unknown>>,
+    processType: type,
     memory,
   };
-  // istanbul ignore next
-  if (!res || res.type !== 'fork') {
-    throw new Error('Did not receive a new process ID');
-  }
+  assertResultType(res, 'fork');
   return res.pid;
 }
 
