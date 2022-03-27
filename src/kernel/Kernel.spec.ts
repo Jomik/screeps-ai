@@ -1,6 +1,14 @@
 /* eslint-disable require-yield */
-import { fork, hibernate, kill, sleep } from 'kernel/sys-calls';
-import { Kernel, PID } from './Kernel';
+import {
+  fork,
+  hibernate,
+  kill,
+  openSocket,
+  read,
+  sleep,
+  write,
+} from 'kernel/sys-calls';
+import { Kernel, PID, SocketIn, SocketOut } from './Kernel';
 import { Process, Thread } from './Process';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
@@ -327,6 +335,40 @@ describe('Kernel', () => {
 
         expect(uut.pids).toContain(expected);
       });
+    });
+  });
+
+  describe('sockets', () => {
+    it('communicates', () => {
+      const thread = jest.fn();
+      const expected = 'message';
+      class Init extends Process {
+        *run(): Thread {
+          const socket = yield* openSocket<string>('message');
+          yield* fork(Thread1, { in: socket });
+          yield* write(socket, expected);
+        }
+      }
+      class Thread1 extends Process<{ in: SocketOut<string> }> {
+        *run(): Thread {
+          let message: string | null = null;
+          while (!(message = yield* read(this.sockets.in))) {
+            yield* sleep();
+          }
+          thread(message);
+        }
+      }
+      const uut = new Kernel(Init, {
+        processes: [Thread1],
+        loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
+      });
+
+      uut.run();
+      uut.run();
+      uut.run();
+
+      expect(thread).toHaveBeenCalledWith(expected);
     });
   });
 });

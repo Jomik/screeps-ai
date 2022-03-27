@@ -1,5 +1,4 @@
-import { fork } from 'kernel/sys-calls';
-import { Process, Thread } from '../kernel/Process';
+import { Process, Thread, fork } from 'kernel';
 import { RoomPlanner } from './RoomPlanner';
 import { CreepManager } from './CreepManager';
 import { SpawnManager } from './SpawnManager';

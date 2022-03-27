@@ -1,5 +1,4 @@
-import { Process, Thread } from 'kernel/Process';
-import { sleep } from 'kernel/sys-calls';
+import { Process, Thread, sleep } from 'kernel';
 import { expandPosition } from 'utils/position';
 
 export class RoomPlanner extends Process {

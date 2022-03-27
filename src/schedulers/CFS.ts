@@ -1,4 +1,4 @@
-import { PID } from 'kernel/Kernel';
+import { PID } from 'kernel';
 import { RBTreeIndex } from 'scl';
 import { ResolveAction } from 'scl/lib/util';
 import { Scheduler, SchedulerThreadReturn } from './Scheduler';

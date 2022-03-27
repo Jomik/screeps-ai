@@ -1,5 +1,5 @@
 import { Logger } from 'Logger';
-import { PID } from './Kernel';
+import { PID, Socket, SocketIn, SocketOut } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
@@ -17,7 +17,7 @@ type Config<M extends ProcessMemory> = {
   logger: Logger;
 };
 
-type AugmentedMemory<M extends ProcessMemory> = {
+type ObjectsFromMemory<M extends ProcessMemory> = {
   [Key in keyof M as M[Key] extends Id<_HasId> | undefined
     ? Key
     : never]: M[Key] extends Id<_HasId> | undefined
@@ -25,16 +25,22 @@ type AugmentedMemory<M extends ProcessMemory> = {
     : never;
 };
 
+type SocketsFromMemory<M extends ProcessMemory> = {
+  [Key in keyof M as M[Key] extends SocketIn | SocketOut | undefined
+    ? Key
+    : never]: M[Key];
+};
+
 export abstract class Process<M extends ProcessMemory = Record<string, never>> {
   protected readonly logger: Logger;
   private config: Config<M>;
-  protected objects: AugmentedMemory<M>;
+  protected objects: ObjectsFromMemory<M>;
 
   constructor(config: Config<M>) {
     this.logger = config.logger;
     this.config = config;
 
-    this.objects = new Proxy<Config<M>, AugmentedMemory<M>>(this.config, {
+    this.objects = new Proxy<Config<M>, ObjectsFromMemory<M>>(this.config, {
       set(target, property: string, value: _HasId | undefined) {
         const memory = target.memory();
         return Reflect.set(memory, property, value?.id, memory);
@@ -50,7 +56,15 @@ export abstract class Process<M extends ProcessMemory = Record<string, never>> {
     });
   }
 
-  protected get memory(): M {
+  protected get memory(): {
+    [K in keyof M as M[K] extends Id<_HasId> | SocketIn | SocketOut
+      ? never
+      : K]: M[K];
+  } {
+    return this.config.memory();
+  }
+
+  protected get sockets(): SocketsFromMemory<M> {
     return this.config.memory();
   }
 

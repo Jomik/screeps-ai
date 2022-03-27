@@ -1,5 +1,4 @@
 import { getMemoryRef } from 'kernel/memory';
-import { filter } from 'lodash';
 
 export enum LogLevel {
   Alert = 1,

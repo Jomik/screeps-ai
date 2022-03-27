@@ -1,6 +1,6 @@
 import './polyfills';
 
-import { Kernel } from 'kernel/Kernel';
+import { Kernel } from 'kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
 import * as processes from 'processes';
 import { Init } from 'processes';

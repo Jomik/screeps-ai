@@ -1,8 +1,8 @@
-import { PID } from './Kernel';
+import { PID, Socket, SocketIn, SocketOut } from './Kernel';
 import { ProcessConstructor, Thread } from './Process';
 
-export type SysCall = Sleep | Fork | Kill;
-export type SysCallResults = void | ForkResult;
+export type SysCall = Sleep | Fork | Kill | OpenSocket | Read | Write;
+export type SysCallResults = void | ForkResult | OpenSocketResult | ReadResult;
 
 function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   res: SysCallResults,
@@ -66,18 +66,49 @@ export function* kill(pid: PID): Thread {
   };
 }
 
-export function* restartOnTickChange(process: () => Thread): Thread {
-  for (;;) {
-    const tick = Game.time;
-    const thread = process();
-    while (tick === Game.time) {
-      const { done, value } = thread.next();
+type OpenSocket = {
+  type: 'open_socket';
+  path: string;
+};
+type OpenSocketResult = {
+  type: 'open_socket';
+  path: Socket;
+};
+export function* openSocket<T>(path: string): Thread<Socket<T>> {
+  const res = yield {
+    type: 'open_socket',
+    path,
+  };
+  assertResultType(res, 'open_socket');
+  return res.path as Socket<T>;
+}
 
-      if (done) {
-        return value;
-      }
+type Read = {
+  type: 'read';
+  path: SocketOut<unknown>;
+};
+type ReadResult = {
+  type: 'read';
+  message: unknown | null;
+};
+export function* read<T>(path: SocketOut<T>): Thread<T | null> {
+  const res = yield {
+    type: 'read',
+    path,
+  };
+  assertResultType(res, 'read');
+  return res.message as T | null;
+}
 
-      yield value;
-    }
-  }
+type Write = {
+  type: 'write';
+  path: SocketIn<unknown>;
+  message: unknown;
+};
+export function* write<T>(path: SocketIn<T>, message: T): Thread {
+  yield {
+    type: 'write',
+    path,
+    message,
+  };
 }

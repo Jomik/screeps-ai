@@ -14,6 +14,17 @@ import { ErrorMapper } from 'utils/ErrorMapper';
 
 export type PID = number;
 
+declare const SocketInSymbol: unique symbol;
+declare const SocketOutSymbol: unique symbol;
+
+export type SocketIn<T = unknown> = string & {
+  [SocketInSymbol]: T;
+};
+export type SocketOut<T = unknown> = string & {
+  [SocketOutSymbol]: T;
+};
+export type Socket<T = unknown> = SocketIn<T> & SocketOut<T>;
+
 type ProcessDescriptor<M extends ProcessMemory> = {
   type: string;
   pid: PID;
@@ -55,11 +66,6 @@ class Tron extends Process {
   }
 }
 
-export interface ROMHandle<T> {
-  get(): T;
-  set(value: T): void;
-}
-
 export class Kernel {
   private readonly tableRef = getMemoryRef<ProcessTable>('processTable', {});
   private get table(): ProcessTable {
@@ -73,8 +79,9 @@ export class Kernel {
   private readonly scheduler: Scheduler;
 
   private readonly loggerFactory: (name: string) => Logger;
-  private readonly threads: Record<PID, Thread> = {};
-  private readonly registry: Record<string, ProcessConstructor<any>> = {};
+  private readonly threads = new Map<PID, Thread>();
+  private readonly registry = new Map<string, ProcessConstructor<any>>();
+  private readonly sockets = new Map<Socket, unknown[]>();
 
   constructor(
     private readonly Init: ProcessConstructor,
@@ -128,12 +135,12 @@ export class Kernel {
 
   private registerProcess<Type extends ProcessConstructor<any>>(type: Type) {
     // istanbul ignore next
-    if (this.registry[type.name] && this.registry[type.name] !== type) {
+    if (this.registry.has(type.name) && this.registry.get(type.name) !== type) {
       throw new Error(
         `A different version already exists in registry: ${type.name}`
       );
     }
-    this.registry[type.name] = type;
+    this.registry.set(type.name, type);
   }
 
   private createProcess<
@@ -146,7 +153,7 @@ export class Kernel {
     }
 
     // istanbul ignore next
-    if (!this.registry[type.name]) {
+    if (!this.registry.has(type.name)) {
       throw new Error(`No process of type, ${type.name}, has been registered`);
     }
 
@@ -162,28 +169,33 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const descriptor = unpackEntry(this.table[pid]);
-    if (!(descriptor.type in this.registry)) {
+    const Type = this.registry.get(descriptor.type);
+    if (!Type) {
       this.kill(pid);
       this.logger.error(
         `Error trying to initialise pid ${pid} with unknown type ${descriptor.type}`
       );
       return;
     }
-    const process = new this.registry[descriptor.type]({
+    const process = new Type({
       memory: () => unpackEntry(this.table[pid]).memory as never,
       children: () => this.findChildren(pid),
       logger: this.loggerFactory(`${descriptor.type}:${pid}`),
     });
 
-    this.threads[pid] = process.run.bind(process)();
+    this.threads.set(pid, process.run.bind(process)());
     this.scheduler.add(pid);
   }
 
   private findChildren(pid: PID): ChildDescriptor[] {
-    return Object.values(this.table)
-      .map((v) => unpackEntry(v))
-      .filter(({ parent }) => parent === pid)
-      .map((v) => ({ type: this.registry[v.type], pid: v.pid }));
+    return (
+      Object.values(this.table)
+        .map((v) => unpackEntry(v))
+        .filter(({ parent }) => parent === pid)
+        // The type has to be in the registry, or it will not be part of the process table.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        .map((v) => ({ type: this.registry.get(v.type)!, pid: v.pid }))
+    );
   }
 
   public kill(pid: PID) {
@@ -193,7 +205,7 @@ export class Kernel {
       return;
     }
 
-    delete this.threads[pid];
+    this.threads.delete(pid);
     delete this.table[pid];
     this.scheduler.remove(pid);
 
@@ -207,8 +219,22 @@ export class Kernel {
     });
   }
 
+  private getSocket(path: SocketIn | SocketOut) {
+    let socket = this.sockets.get(path as Socket);
+    if (socket === undefined) {
+      socket = [];
+      this.sockets.set(path as Socket, socket);
+    }
+    return socket;
+  }
+
   private runThread(pid: PID): SchedulerThreadReturn {
-    const thread = this.threads[pid];
+    const thread = this.threads.get(pid);
+    if (!thread) {
+      this.logger.error(`Attempting to run ${pid} with missing thread.`);
+      this.kill(pid);
+      return undefined;
+    }
 
     let nextArg: SysCallResults = undefined;
     for (;;) {
@@ -255,6 +281,27 @@ export class Kernel {
           this.kill(childPID);
           break;
         }
+        case 'open_socket': {
+          const { path } = sysCall.value;
+          const entry = unpackEntry(this.table[pid]);
+          nextArg = {
+            type: 'open_socket',
+            path: `/${entry.type}/${pid}/${path}` as Socket,
+          };
+          break;
+        }
+        case 'read': {
+          const { path } = sysCall.value;
+          const socket = this.getSocket(path);
+          nextArg = { type: 'read', message: socket.shift() ?? null };
+          break;
+        }
+        case 'write': {
+          const { path, message } = sysCall.value;
+          const socket = this.getSocket(path);
+          socket.push(message);
+          break;
+        }
       }
     }
   }
@@ -283,6 +330,12 @@ export class Kernel {
         },
       });
     }
+    recordStats({
+      sockets: [...this.sockets.entries()].reduce(
+        (acc, [path, messages]) => ({ ...acc, [path]: messages.length }),
+        {}
+      ),
+    });
   }
 
   /* istanbul ignore next */

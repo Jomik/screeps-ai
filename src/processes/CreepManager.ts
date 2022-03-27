@@ -1,5 +1,5 @@
-import { Process, Thread } from 'kernel/Process';
-import { restartOnTickChange, sleep } from 'kernel/sys-calls';
+import { Process, Thread, sleep } from 'kernel';
+import { restartOnTickChange } from './utils';
 
 export class CreepManager extends Process {
   private runMiners() {
