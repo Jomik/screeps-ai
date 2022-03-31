@@ -9,6 +9,8 @@
     "strict": true,
     "experimentalDecorators": true,
     "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "noUnusedLocals": true,
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "paths": {

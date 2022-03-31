@@ -3,11 +3,13 @@ import { expandPosition } from 'utils/position';
 
 export class RoomPlanner extends Process {
   private get center(): RoomPosition {
-    return Game.spawns['Spawn1'].pos;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return Game.spawns['Spawn1']!.pos;
   }
 
   private get room(): Room {
-    return Game.rooms[this.center.roomName];
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return Game.rooms[this.center.roomName]!;
   }
 
   private search(

@@ -1,5 +1,5 @@
 import { Logger } from 'Logger';
-import { PID, Socket, SocketIn, SocketOut } from './Kernel';
+import { PID, SocketIn, SocketOut } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
@@ -41,7 +41,7 @@ export abstract class Process<M extends ProcessMemory = Record<string, never>> {
     this.config = config;
 
     this.objects = new Proxy<Config<M>, ObjectsFromMemory<M>>(this.config, {
-      set(target, property: string, value: _HasId | undefined) {
+      set(target, property: string, value: _HasId | null | undefined) {
         const memory = target.memory();
         return Reflect.set(memory, property, value?.id, memory);
       },

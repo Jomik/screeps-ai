@@ -12,12 +12,12 @@ export class CreepManager extends Process {
       if (miner.pos.x !== x || miner.pos.y !== y) {
         miner.moveTo(x, y, { visualizePathStyle: { lineStyle: 'dashed' } });
       }
-      const source = miner.pos.findInRange(FIND_SOURCES, 1);
-      if (source.length === 0) {
+      const [source] = miner.pos.findInRange(FIND_SOURCES, 1);
+      if (source === undefined) {
         continue;
       }
 
-      miner.harvest(source[0]);
+      miner.harvest(source);
       if (miner.store.getFreeCapacity()) {
         continue;
       }

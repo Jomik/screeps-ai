@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
 type Poly = [number, number][];
 interface SpeechStyle {
   background?: string;
@@ -112,7 +114,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         [-0.68, 0.11],
       ];
       this.poly(
-        outline.map((p) => [p[0] + x, p[1] + y]),
+        outline.map((p) => [p[0]! + x, p[1]! + y]),
         {
           fill: undefined,
           stroke: colors.outline,
@@ -162,7 +164,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         [-0.4, 0.1],
       ];
       this.poly(
-        spikes.map((p) => [p[0] + x, p[1] + y]),
+        spikes.map((p) => [p[0]! + x, p[1]! + y]),
         {
           fill: colors.gray,
           stroke: '#140a0a',
@@ -179,7 +181,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         opacity: opts.opacity,
       });
       this.poly(
-        factoryLevelGaps.map((p) => [p[0] + x, p[1] + y]),
+        factoryLevelGaps.map((p) => [p[0]! + x, p[1]! + y]),
         {
           fill: '#140a0a',
           stroke: undefined,
@@ -256,8 +258,8 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       ];
       outer = relPoly(x, y, outer);
       inner = relPoly(x, y, inner);
-      outer.push(outer[0]);
-      inner.push(inner[0]);
+      outer.push(outer[0]!);
+      inner.push(inner[0]!);
       this.poly(outer, {
         fill: colors.dark,
         stroke: colors.outline,
@@ -294,8 +296,8 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
       ];
       outer = relPoly(x, y, outer);
       inner = relPoly(x, y, inner);
-      outer.push(outer[0]);
-      inner.push(inner[0]);
+      outer.push(outer[0]!);
+      inner.push(inner[0]!);
       this.poly(outer, {
         fill: colors.dark,
         stroke: colors.outline,
@@ -529,11 +531,11 @@ RoomVisual.prototype.connectRoads = function (opts = {}) {
   if (!this.roads) return this;
   this.roads.forEach((r) => {
     for (let i = 1; i <= 4; i++) {
-      const d = dirs[i];
-      const c = [r[0] + d[0], r[1] + d[1]];
+      const d = dirs[i]!;
+      const c = [r[0]! + d[0]!, r[1]! + d[1]!];
       const rd = _.some(this.roads, (r) => r[0] == c[0] && r[1] == c[1]);
       if (rd) {
-        this.line(r[0], r[1], c[0], c[1], {
+        this.line(r[0], r[1], c[0]!, c[1]!, {
           color: color,
           width: 0.35,
           opacity: opts.opacity || 1,
@@ -566,7 +568,7 @@ RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
     [0, -0.3],
   ];
   pointer = relPoly(x, y, pointer);
-  pointer.push(pointer[0]);
+  pointer.push(pointer[0]!);
 
   this.poly(pointer, {
     fill: background,
@@ -608,19 +610,6 @@ RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
   ].map((p) => [p.x, p.y]);
 
   this.poly(points, { stroke: color, opacity: opacity });
-
-  return this;
-};
-
-RoomVisual.prototype.test = function test() {
-  const demopos = [19, 24];
-  this.clear();
-  this.structure(demopos[0] + 0, demopos[1] + 0, STRUCTURE_LAB);
-  this.structure(demopos[0] + 1, demopos[1] + 1, STRUCTURE_TOWER);
-  this.structure(demopos[0] + 2, demopos[1] + 0, STRUCTURE_LINK);
-  this.structure(demopos[0] + 3, demopos[1] + 1, STRUCTURE_TERMINAL);
-  this.structure(demopos[0] + 4, demopos[1] + 0, STRUCTURE_EXTENSION);
-  this.structure(demopos[0] + 5, demopos[1] + 1, STRUCTURE_SPAWN);
 
   return this;
 };

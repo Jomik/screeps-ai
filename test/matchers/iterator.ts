@@ -22,7 +22,8 @@ function matchYields<Y, N>(
     if (argumentForYield instanceof Error) {
       iteratorValue = iterator.throw?.(argumentForYield);
     } else {
-      iteratorValue = iterator.next(argumentForYield);
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      iteratorValue = iterator.next(argumentForYield!);
     }
 
     const yieldedValue = iteratorValue?.value;

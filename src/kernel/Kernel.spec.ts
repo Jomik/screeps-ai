@@ -8,7 +8,7 @@ import {
   sleep,
   write,
 } from 'kernel/sys-calls';
-import { Kernel, PID, SocketIn, SocketOut } from './Kernel';
+import { Kernel, PID, SocketOut } from './Kernel';
 import { Process, Thread } from './Process';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
@@ -281,7 +281,7 @@ describe('Kernel', () => {
           *run(): Thread {
             yield* fork(Thread1, {});
             yield* sleep();
-            yield* kill(this.children[0].pid);
+            yield* kill(this.children[0]?.pid ?? 0);
             thread(this.children);
           }
         }

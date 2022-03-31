@@ -2,8 +2,9 @@ import { Process, Thread, sleep } from 'kernel';
 import { expandPosition } from 'utils/position';
 
 export class SpawnManager extends Process {
-  private get spawn() {
-    return Game.spawns['Spawn1'];
+  private get spawn(): StructureSpawn {
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    return Game.spawns['Spawn1']!;
   }
   private spawnHauler() {
     this.spawn.spawnCreep(

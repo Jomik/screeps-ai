@@ -71,6 +71,22 @@ export class Kernel {
   private get table(): ProcessTable {
     return this.tableRef.get();
   }
+  private getProcessDescriptor<M extends ProcessMemory>(
+    pid: PID
+  ): ProcessDescriptor<M> {
+    const descriptor = this.table[pid];
+    if (!descriptor) {
+      throw new Error(`Attempted to access non-existant process ${pid}`);
+    }
+
+    return unpackEntry(descriptor);
+  }
+  private setProcessDescriptor(
+    descriptor: ProcessDescriptor<ProcessMemory>
+  ): void {
+    this.table[descriptor.pid] = packEntry(descriptor);
+  }
+
   get pids() {
     return Object.keys(this.table).map((k) => Number.parseInt(k));
   }
@@ -148,7 +164,7 @@ export class Kernel {
     Type extends ProcessConstructor<M>
   >(type: Type, memory: M, pid: number, parent: number) {
     // istanbul ignore next
-    if (this.table[pid]) {
+    if (pid in this.table) {
       throw new Error(`PID already occupied: ${pid}`);
     }
 
@@ -157,7 +173,7 @@ export class Kernel {
       throw new Error(`No process of type, ${type.name}, has been registered`);
     }
 
-    this.table[pid] = packEntry({
+    this.setProcessDescriptor({
       type: type.name,
       pid,
       parent,
@@ -168,7 +184,7 @@ export class Kernel {
   }
 
   private initThread(pid: PID) {
-    const descriptor = unpackEntry(this.table[pid]);
+    const descriptor = this.getProcessDescriptor(pid);
     const Type = this.registry.get(descriptor.type);
     if (!Type) {
       this.kill(pid);
@@ -178,7 +194,7 @@ export class Kernel {
       return;
     }
     const process = new Type({
-      memory: () => unpackEntry(this.table[pid]).memory as never,
+      memory: () => this.getProcessDescriptor(pid).memory as never,
       children: () => this.findChildren(pid),
       logger: this.loggerFactory(`${descriptor.type}:${pid}`),
     });
@@ -211,8 +227,8 @@ export class Kernel {
 
     // Children are adopted by Tron
     this.findChildren(pid).forEach((child) => {
-      const entry = unpackEntry(this.table[child.pid]);
-      this.table[child.pid] = packEntry({
+      const entry = this.getProcessDescriptor(child.pid);
+      this.setProcessDescriptor({
         ...entry,
         parent: 0,
       });
@@ -244,7 +260,7 @@ export class Kernel {
       } catch (err) {
         this.logger.error(
           `Error while running ${
-            unpackEntry(this.table[pid]).type
+            this.getProcessDescriptor(pid).type
           }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
         );
         this.kill(pid);
@@ -283,7 +299,7 @@ export class Kernel {
         }
         case 'open_socket': {
           const { path } = sysCall.value;
-          const entry = unpackEntry(this.table[pid]);
+          const entry = this.getProcessDescriptor(pid);
           nextArg = {
             type: 'open_socket',
             path: `/${entry.type}/${pid}/${path}` as Socket,
@@ -316,7 +332,7 @@ export class Kernel {
       }
 
       const pid = next.value;
-      const entry = unpackEntry(this.table[pid]);
+      const entry = this.getProcessDescriptor(pid);
       this.logger.verbose(`Running thread ${entry.type}:${pid}`);
       const startCPU = Game.cpu.getUsed();
       nextArg = this.runThread(pid);
@@ -348,7 +364,7 @@ export class Kernel {
     );
 
     const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
-      const entry = unpackEntry(this.table[pid]);
+      const entry = this.getProcessDescriptor(pid);
       const { type } = entry;
 
       const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;

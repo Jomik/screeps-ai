@@ -16,7 +16,7 @@ export class ErrorMapper {
   }
 
   // Cache previously mapped traces to improve performance
-  public static cache: { [key: string]: string } = {};
+  public static cache = new Map<string, string>();
 
   /**
    * Generates a stack trace using a source map generate original symbol names.
@@ -30,8 +30,9 @@ export class ErrorMapper {
   public static sourceMappedStackTrace(error: Error | string): string {
     const stack: string =
       error instanceof Error ? (error.stack as string) : error;
-    if (Object.prototype.hasOwnProperty.call(this.cache, stack)) {
-      return this.cache[stack];
+    const cached = this.cache.get(stack);
+    if (cached) {
+      return cached;
     }
 
     // eslint-disable-next-line no-useless-escape
@@ -42,8 +43,8 @@ export class ErrorMapper {
     while ((match = re.exec(stack))) {
       if (match[2] === 'main') {
         const pos = this.consumer.originalPositionFor({
-          column: parseInt(match[4], 10),
-          line: parseInt(match[3], 10),
+          column: parseInt(match[4] ?? 'NaN', 10),
+          line: parseInt(match[3] ?? 'NaN', 10),
         });
 
         if (pos.line != null) {
@@ -68,7 +69,7 @@ export class ErrorMapper {
       }
     }
 
-    this.cache[stack] = outStack;
+    this.cache.set(stack, outStack);
     return outStack;
   }
 
