@@ -1,8 +1,18 @@
-import { PID, Socket, SocketIn, SocketOut } from './Kernel';
+import {
+  File,
+  FileIn,
+  FileOut,
+  FilePath,
+  Socket,
+  SocketIn,
+  SocketOut,
+  SocketPath,
+} from './io';
+import { PID } from './Kernel';
 import { ProcessConstructor, Thread } from './Process';
 
-export type SysCall = Sleep | Fork | Kill | OpenSocket | Read | Write;
-export type SysCallResults = void | ForkResult | OpenSocketResult | ReadResult;
+export type SysCall = Sleep | Fork | Kill | Open | Read | Write;
+export type SysCallResults = void | ForkResult | OpenResult | ReadResult;
 
 function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   res: SysCallResults,
@@ -66,32 +76,40 @@ export function* kill(pid: PID): Thread {
   };
 }
 
-type OpenSocket = {
-  type: 'open_socket';
-  path: string;
+type Open = {
+  type: 'open';
+  path: SocketPath | FilePath;
 };
-type OpenSocketResult = {
-  type: 'open_socket';
-  path: Socket;
+type OpenResult = {
+  type: 'open';
+  path: Socket | File;
 };
 export function* openSocket<T>(path: string): Thread<Socket<T>> {
   const res = yield {
-    type: 'open_socket',
-    path,
+    type: 'open',
+    path: `sock://${path}`,
   };
-  assertResultType(res, 'open_socket');
+  assertResultType(res, 'open');
   return res.path as Socket<T>;
+}
+export function* openFile<T>(path: string): Thread<File<T>> {
+  const res = yield {
+    type: 'open',
+    path: `file://${path}`,
+  };
+  assertResultType(res, 'open');
+  return res.path as File<T>;
 }
 
 type Read = {
   type: 'read';
-  path: SocketOut<unknown>;
+  path: SocketOut | FileOut;
 };
 type ReadResult = {
   type: 'read';
   message: unknown | null;
 };
-export function* read<T>(path: SocketOut<T>): Thread<T | null> {
+export function* read<T>(path: SocketOut<T> | FileOut<T>): Thread<T | null> {
   const res = yield {
     type: 'read',
     path,
@@ -102,13 +120,13 @@ export function* read<T>(path: SocketOut<T>): Thread<T | null> {
 
 type Write = {
   type: 'write';
-  path: SocketIn<unknown>;
-  message: unknown;
+  path: SocketIn | FileIn;
+  data: unknown;
 };
-export function* write<T>(path: SocketIn<T>, message: T): Thread {
+export function* write<T>(path: SocketIn<T> | FileIn<T>, data: T): Thread {
   yield {
     type: 'write',
     path,
-    message,
+    data,
   };
 }

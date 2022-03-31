@@ -7,23 +7,21 @@ import {
   Thread,
 } from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
-import { hibernate, SysCall, SysCallResults } from './sys-calls';
+import { hibernate, SysCallResults } from './sys-calls';
 import { getMemoryRef } from './memory';
 import { recordStats } from 'library';
 import { ErrorMapper } from 'utils/ErrorMapper';
+import {
+  File,
+  FileHandle,
+  FilePath,
+  IOHandle,
+  Socket,
+  SocketHandle,
+  SocketPath,
+} from './io';
 
 export type PID = number;
-
-declare const SocketInSymbol: unique symbol;
-declare const SocketOutSymbol: unique symbol;
-
-export type SocketIn<T = unknown> = string & {
-  [SocketInSymbol]: T;
-};
-export type SocketOut<T = unknown> = string & {
-  [SocketOutSymbol]: T;
-};
-export type Socket<T = unknown> = SocketIn<T> & SocketOut<T>;
 
 type ProcessDescriptor<M extends ProcessMemory> = {
   type: string;
@@ -97,7 +95,7 @@ export class Kernel {
   private readonly loggerFactory: (name: string) => Logger;
   private readonly threads = new Map<PID, Thread>();
   private readonly registry = new Map<string, ProcessConstructor<any>>();
-  private readonly sockets = new Map<Socket, unknown[]>();
+  private readonly files = new Map<string, IOHandle<unknown>>();
 
   constructor(
     private readonly Init: ProcessConstructor,
@@ -235,13 +233,25 @@ export class Kernel {
     });
   }
 
-  private getSocket(path: SocketIn | SocketOut) {
-    let socket = this.sockets.get(path as Socket);
-    if (socket === undefined) {
-      socket = [];
-      this.sockets.set(path as Socket, socket);
+  private getIO(path: SocketPath | FilePath) {
+    let handle = this.files.get(path);
+    if (handle === undefined) {
+      if (path.startsWith('sock://')) {
+        handle = new SocketHandle();
+      } else {
+        handle = new FileHandle();
+      }
+      this.files.set(path, handle);
     }
-    return socket;
+
+    if (path.startsWith('sock://') && !(handle instanceof SocketHandle)) {
+      throw new Error(`File at ${path} is not a socket.`);
+    }
+    if (path.startsWith('file://') && !(handle instanceof FileHandle)) {
+      throw new Error(`File at ${path} is not a socket.`);
+    }
+
+    return handle;
   }
 
   private runThread(pid: PID): SchedulerThreadReturn {
@@ -254,18 +264,7 @@ export class Kernel {
 
     let nextArg: SysCallResults = undefined;
     for (;;) {
-      let sysCall: IteratorResult<SysCall | void>;
-      try {
-        sysCall = thread.next(nextArg);
-      } catch (err) {
-        this.logger.error(
-          `Error while running ${
-            this.getProcessDescriptor(pid).type
-          }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
-        );
-        this.kill(pid);
-        return;
-      }
+      const sysCall = thread.next(nextArg);
       nextArg = undefined;
 
       if (sysCall.done) {
@@ -297,25 +296,30 @@ export class Kernel {
           this.kill(childPID);
           break;
         }
-        case 'open_socket': {
+        case 'open': {
           const { path } = sysCall.value;
           const entry = this.getProcessDescriptor(pid);
           nextArg = {
-            type: 'open_socket',
-            path: `/${entry.type}/${pid}/${path}` as Socket,
+            type: 'open',
+            path: path.startsWith('file://')
+              ? (path as File)
+              : (`sock://${entry.type}/${entry.pid}/${path.substring(
+                  'sock://'.length
+                )}` as Socket),
           };
           break;
         }
         case 'read': {
           const { path } = sysCall.value;
-          const socket = this.getSocket(path);
-          nextArg = { type: 'read', message: socket.shift() ?? null };
+          const handle = this.getIO(path);
+          nextArg = { type: 'read', message: handle.read() };
           break;
         }
         case 'write': {
-          const { path, message } = sysCall.value;
-          const socket = this.getSocket(path);
-          socket.push(message);
+          const { path, data: message } = sysCall.value;
+          const handle = this.getIO(path);
+          handle.write(message);
+
           break;
         }
       }
@@ -335,7 +339,17 @@ export class Kernel {
       const entry = this.getProcessDescriptor(pid);
       this.logger.verbose(`Running thread ${entry.type}:${pid}`);
       const startCPU = Game.cpu.getUsed();
-      nextArg = this.runThread(pid);
+      try {
+        nextArg = this.runThread(pid);
+      } catch (err) {
+        this.logger.error(
+          `Error while running ${
+            this.getProcessDescriptor(pid).type
+          }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
+        );
+        this.kill(pid);
+        continue;
+      }
       const endCpu = Game.cpu.getUsed();
       this.logger.verbose(`${entry.type}:${pid} ${nextArg?.type ?? 'yield'}`);
       recordStats({
@@ -347,8 +361,11 @@ export class Kernel {
       });
     }
     recordStats({
-      sockets: [...this.sockets.entries()].reduce(
-        (acc, [path, messages]) => ({ ...acc, [path]: messages.length }),
+      sockets: [...this.files.entries()].reduce(
+        (acc, [path, handle]) =>
+          handle instanceof SocketHandle
+            ? { ...acc, [path]: handle.size() }
+            : acc,
         {}
       ),
     });

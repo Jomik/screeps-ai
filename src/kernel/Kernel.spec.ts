@@ -3,16 +3,18 @@ import {
   fork,
   hibernate,
   kill,
+  openFile,
   openSocket,
   read,
   sleep,
   write,
 } from 'kernel/sys-calls';
-import { Kernel, PID, SocketOut } from './Kernel';
+import { Kernel, PID } from './Kernel';
 import { Process, Thread } from './Process';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
 import { mockGlobal } from 'screeps-jest';
+import { FileOut, SocketOut } from './io';
 
 describe('Kernel', () => {
   beforeEach(() => {
@@ -352,7 +354,7 @@ describe('Kernel', () => {
       class Thread1 extends Process<{ in: SocketOut<string> }> {
         *run(): Thread {
           let message: string | null = null;
-          while (!(message = yield* read(this.sockets.in))) {
+          while (!(message = yield* read(this.memory.in))) {
             yield* sleep();
           }
           thread(message);
@@ -368,6 +370,45 @@ describe('Kernel', () => {
       uut.run();
       uut.run();
 
+      expect(thread).toHaveBeenCalledWith(expected);
+    });
+  });
+  describe('files', () => {
+    it('saves', () => {
+      const init = jest.fn();
+      const thread = jest.fn();
+      const expected = 'data';
+      class Init extends Process {
+        *run(): Thread {
+          const file = yield* openFile<string>('file');
+          yield* fork(Thread1, { in: file });
+          yield* sleep();
+          yield* write(file, expected);
+          yield* sleep();
+          const data = yield* read(file);
+          init(data);
+        }
+      }
+      class Thread1 extends Process<{ in: FileOut<string> }> {
+        *run(): Thread {
+          let message: string | null = null;
+          while (!(message = yield* read(this.memory.in))) {
+            yield* sleep();
+          }
+          thread(message);
+        }
+      }
+      const uut = new Kernel(Init, {
+        processes: [Thread1],
+        loggerFactory: () => new SilentLogger(''),
+        scheduler: new RoundRobinScheduler(() => 1),
+      });
+
+      uut.run();
+      uut.run();
+      uut.run();
+
+      expect(init).toHaveBeenCalledWith(expected);
       expect(thread).toHaveBeenCalledWith(expected);
     });
   });

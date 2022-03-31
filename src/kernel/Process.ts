@@ -1,5 +1,5 @@
 import { Logger } from 'Logger';
-import { PID, SocketIn, SocketOut } from './Kernel';
+import { PID } from './Kernel';
 import { SysCall, SysCallResults } from './sys-calls';
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
@@ -25,11 +25,11 @@ type ObjectsFromMemory<M extends ProcessMemory> = {
     : never;
 };
 
-type SocketsFromMemory<M extends ProcessMemory> = {
-  [Key in keyof M as M[Key] extends SocketIn | SocketOut | undefined
-    ? Key
-    : never]: M[Key];
-};
+// type SocketsFromMemory<M extends ProcessMemory> = {
+//   [Key in keyof M as M[Key] extends SocketIn | SocketOut | undefined
+//     ? Key
+//     : never]: M[Key];
+// };
 
 export abstract class Process<M extends ProcessMemory = Record<string, never>> {
   protected readonly logger: Logger;
@@ -57,16 +57,14 @@ export abstract class Process<M extends ProcessMemory = Record<string, never>> {
   }
 
   protected get memory(): {
-    [K in keyof M as M[K] extends Id<_HasId> | SocketIn | SocketOut
-      ? never
-      : K]: M[K];
+    [K in keyof M as M[K] extends Id<_HasId> ? never : K]: M[K];
   } {
     return this.config.memory();
   }
 
-  protected get sockets(): SocketsFromMemory<M> {
-    return this.config.memory();
-  }
+  // protected get sockets(): SocketsFromMemory<M> {
+  //   return this.config.memory();
+  // }
 
   protected get children(): ChildDescriptor[] {
     return this.config.children();
