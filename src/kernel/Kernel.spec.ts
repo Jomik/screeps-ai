@@ -22,6 +22,7 @@ describe('Kernel', () => {
       cpu: {
         getUsed: jest.fn().mockReturnValue(1),
       },
+      time: 0,
     });
   });
   describe('init', () => {
@@ -353,16 +354,16 @@ describe('Kernel', () => {
           yield* write(socket, expected);
           yield* sleep();
           const data = yield* read(socket);
-          init(data);
+          init(...data);
         }
       }
       class Thread1 extends Process<{ in: SocketOut<string> }> {
         *run(): Thread {
-          let message: string | null = null;
-          while (!(message = yield* read(this.memory.in))) {
+          let message: [string, string] | [] = [];
+          while ((message = yield* read(this.memory.in)).length === 0) {
             yield* sleep();
           }
-          thread(message);
+          thread(...message);
         }
       }
       const uut = new Kernel(Init, {
@@ -375,8 +376,8 @@ describe('Kernel', () => {
       uut.run();
       uut.run();
 
-      expect(thread).toHaveBeenCalledWith(expected);
-      expect(init).toHaveBeenCalledWith(null);
+      expect(thread).toHaveBeenCalledWith(expected, expect.anything());
+      expect(init).toHaveBeenCalledWith();
     });
   });
   describe('files', () => {
@@ -397,7 +398,7 @@ describe('Kernel', () => {
       }
       class Thread1 extends Process<{ in: FileOut<string> }> {
         *run(): Thread {
-          let message: string | null = null;
+          let message: string | undefined = undefined;
           while (!(message = yield* read(this.memory.in))) {
             yield* sleep();
           }

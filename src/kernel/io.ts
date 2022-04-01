@@ -22,15 +22,18 @@ export type FileOut<T = unknown> = FilePath & {
 export type File<T = unknown> = FileIn<T> & FileOut<T>;
 
 export interface IOHandle<T> {
-  read(): T | null;
+  read(): { data: T } | undefined;
   write(value: T): void;
 }
 
 export class SocketHandle<T> implements IOHandle<T> {
   private queue: T[] = [];
 
-  read(): T | null {
-    return this.queue.shift() ?? null;
+  read(): { data: T } | undefined {
+    if (this.queue.length > 0) {
+      return { data: this.queue.shift() as T };
+    }
+    return undefined;
   }
   write(value: T): void {
     this.queue.push(value);
@@ -41,12 +44,17 @@ export class SocketHandle<T> implements IOHandle<T> {
 }
 
 export class FileHandle<T> implements IOHandle<T> {
-  private value: T | null = null;
+  private written = false;
+  private value: T | undefined = undefined;
 
-  read(): T | null {
-    return this.value;
+  read(): { data: T } | undefined {
+    if (!this.written) {
+      return undefined;
+    }
+    return { data: this.value as T };
   }
   write(value: T): void {
+    this.written = true;
     this.value = value;
   }
 }

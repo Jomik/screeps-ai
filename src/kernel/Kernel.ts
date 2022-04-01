@@ -20,6 +20,7 @@ import {
   SocketHandle,
   SocketPath,
 } from './io';
+import { getGuid } from './utils';
 
 export type PID = number;
 
@@ -298,27 +299,33 @@ export class Kernel {
         }
         case 'open': {
           const { path } = sysCall.value;
-          const entry = this.getProcessDescriptor(pid);
           nextArg = {
             type: 'open',
-            path: path.startsWith('sock://')
-              ? (`sock://${entry.type}/${entry.pid}/${path.substring(
-                  'sock://'.length
-                )}` as Socket)
-              : (path as File),
+            path: path as Socket | File,
           };
           break;
         }
         case 'read': {
           const { path } = sysCall.value;
           const handle = this.getIO(path);
-          nextArg = { type: 'read', data: handle.read() };
+          if (handle instanceof SocketHandle) {
+            nextArg = { type: 'read', data: handle.read()?.data ?? [] };
+          } else {
+            nextArg = { type: 'read', data: handle.read()?.data };
+          }
           break;
         }
         case 'write': {
           const { path, data } = sysCall.value;
           const handle = this.getIO(path);
-          handle.write(data);
+          if (handle instanceof SocketHandle) {
+            const id = getGuid();
+            handle.write([data, id]);
+            nextArg = { type: 'write', id };
+          } else {
+            handle.write(data);
+            nextArg = { type: 'write' };
+          }
 
           break;
         }

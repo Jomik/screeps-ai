@@ -12,7 +12,12 @@ import { PID } from './Kernel';
 import { ProcessConstructor, Thread } from './Process';
 
 export type SysCall = Sleep | Fork | Kill | Open | Read | Write;
-export type SysCallResults = void | ForkResult | OpenResult | ReadResult;
+export type SysCallResults =
+  | void
+  | ForkResult
+  | OpenResult
+  | ReadResult
+  | WriteResult;
 
 function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   res: SysCallResults,
@@ -21,7 +26,7 @@ function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   // istanbul ignore next
   if (!res || res.type !== type) {
     throw new Error(
-      `Expected to receive a fork result, but got ${res?.type ?? 'unknown'}`
+      `Expected to receive a ${type} result, but got ${res?.type ?? 'unknown'}`
     );
   }
 }
@@ -107,15 +112,19 @@ type Read = {
 };
 type ReadResult = {
   type: 'read';
-  data: unknown | null;
+  data: [] | [unknown, string] | unknown | undefined;
 };
-export function* read<T>(path: SocketOut<T> | FileOut<T>): Thread<T | null> {
+export function read<T>(path: SocketOut<T>): Thread<[] | [T, string]>;
+export function read<T>(path: FileOut<T>): Thread<T | undefined>;
+export function* read<T>(
+  path: SocketOut<T> | FileOut<T>
+): Thread<[] | [T, string] | T | undefined> {
   const res = yield {
     type: 'read',
     path,
   };
   assertResultType(res, 'read');
-  return res.data as T | null;
+  return res.data as never;
 }
 
 type Write = {
@@ -123,10 +132,22 @@ type Write = {
   path: SocketIn | FileIn;
   data: unknown;
 };
-export function* write<T>(path: SocketIn<T> | FileIn<T>, data: T): Thread {
-  yield {
+type WriteResult = {
+  type: 'write';
+  id?: string;
+};
+export function write<T>(path: SocketIn<T>, data: T): Thread<string>;
+export function write<T>(path: FileIn<T>, data: T): Thread<undefined>;
+export function* write<T>(
+  path: SocketIn<T> | FileIn<T>,
+  data: T
+): Thread<string | undefined> {
+  const res = yield {
     type: 'write',
     path,
     data,
   };
+
+  assertResultType(res, 'write');
+  return res.id;
 }
