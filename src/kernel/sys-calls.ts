@@ -107,7 +107,7 @@ type Read = {
 };
 type ReadResult = {
   type: 'read';
-  message: unknown | null;
+  data: unknown | null;
 };
 export function* read<T>(path: SocketOut<T> | FileOut<T>): Thread<T | null> {
   const res = yield {
@@ -115,7 +115,7 @@ export function* read<T>(path: SocketOut<T> | FileOut<T>): Thread<T | null> {
     path,
   };
   assertResultType(res, 'read');
-  return res.message as T | null;
+  return res.data as T | null;
 }
 
 type Write = {

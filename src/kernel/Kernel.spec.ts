@@ -342,13 +342,18 @@ describe('Kernel', () => {
 
   describe('sockets', () => {
     it('communicates', () => {
+      const init = jest.fn();
       const thread = jest.fn();
       const expected = 'message';
       class Init extends Process {
         *run(): Thread {
           const socket = yield* openSocket<string>('message');
           yield* fork(Thread1, { in: socket });
+          yield* sleep();
           yield* write(socket, expected);
+          yield* sleep();
+          const data = yield* read(socket);
+          init(data);
         }
       }
       class Thread1 extends Process<{ in: SocketOut<string> }> {
@@ -371,6 +376,7 @@ describe('Kernel', () => {
       uut.run();
 
       expect(thread).toHaveBeenCalledWith(expected);
+      expect(init).toHaveBeenCalledWith(null);
     });
   });
   describe('files', () => {

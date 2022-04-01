@@ -301,24 +301,24 @@ export class Kernel {
           const entry = this.getProcessDescriptor(pid);
           nextArg = {
             type: 'open',
-            path: path.startsWith('file://')
-              ? (path as File)
-              : (`sock://${entry.type}/${entry.pid}/${path.substring(
+            path: path.startsWith('sock://')
+              ? (`sock://${entry.type}/${entry.pid}/${path.substring(
                   'sock://'.length
-                )}` as Socket),
+                )}` as Socket)
+              : (path as File),
           };
           break;
         }
         case 'read': {
           const { path } = sysCall.value;
           const handle = this.getIO(path);
-          nextArg = { type: 'read', message: handle.read() };
+          nextArg = { type: 'read', data: handle.read() };
           break;
         }
         case 'write': {
-          const { path, data: message } = sysCall.value;
+          const { path, data } = sysCall.value;
           const handle = this.getIO(path);
-          handle.write(message);
+          handle.write(data);
 
           break;
         }
