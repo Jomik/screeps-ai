@@ -5,5 +5,5 @@ export const getGuid = (): string => {
     time = Game.time;
     counter = 0;
   }
-  return `${time}:${++counter}`;
+  return `${time.toString(36)}:${(++counter).toString(36)}`;
 };

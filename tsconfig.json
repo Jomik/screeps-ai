@@ -10,9 +10,9 @@
     "experimentalDecorators": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
     "allowSyntheticDefaultImports": true,
-    "allowUnreachableCode": false,
+    "noUnusedLocals": false,
+    "allowUnreachableCode": true,
     "paths": {
       "test/*": ["../test/*"]
     }

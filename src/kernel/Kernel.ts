@@ -21,6 +21,7 @@ import {
   SocketPath,
 } from './io';
 import { getGuid } from './utils';
+import { OSExit } from './errors';
 
 export type PID = number;
 
@@ -349,12 +350,18 @@ export class Kernel {
       try {
         nextArg = this.runThread(pid);
       } catch (err) {
+        this.kill(pid);
+        if (err instanceof OSExit) {
+          this.logger.debug(
+            `${entry.type}:${pid} exited with reason: ${err.message}`
+          );
+          continue;
+        }
         this.logger.error(
           `Error while running ${
-            this.getProcessDescriptor(pid).type
+            entry.type
           }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
         );
-        this.kill(pid);
         continue;
       }
       const endCpu = Game.cpu.getUsed();
