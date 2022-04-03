@@ -23,19 +23,22 @@ import {
 import { getGuid } from './utils';
 import { OSExit } from './errors';
 
-export type PID = number;
+declare const PIDSymbol: unique symbol;
+export type PID = number & {
+  [PIDSymbol]: number;
+};
 
 type ProcessDescriptor<M extends ProcessMemory> = {
   type: string;
   pid: PID;
-  parent: number;
+  parent: PID;
   memory: M;
 };
 
 type PackedProcessDescriptor<M extends ProcessMemory> = [
   type: string,
   pid: PID,
-  parent: number,
+  parent: PID,
   memory: M
 ];
 
@@ -87,8 +90,8 @@ export class Kernel {
     this.table[descriptor.pid] = packEntry(descriptor);
   }
 
-  get pids() {
-    return Object.keys(this.table).map((k) => Number.parseInt(k));
+  get pids(): PID[] {
+    return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
   }
 
   private readonly logger: Logger;
@@ -114,7 +117,7 @@ export class Kernel {
     for (const type of [Tron, this.Init, ...processes]) {
       this.registerProcess(type);
     }
-    if (!this.table[0]) {
+    if (!this.table[0 as PID]) {
       this.logger.warn('Tron missing');
       this.reboot();
     } else {
@@ -122,7 +125,7 @@ export class Kernel {
         this.initThread(pid);
       }
     }
-    this.PIDCount = Math.max(0, ...this.pids);
+    this.PIDCount = Math.max(0, ...this.pids) as PID;
   }
 
   reboot() {
@@ -133,14 +136,14 @@ export class Kernel {
     }
 
     this.tableRef.set({});
-    this.createProcess(Tron, {}, 0, 0);
-    this.createProcess(this.Init, {}, 1, 0);
+    this.createProcess(Tron, {}, 0 as PID, 0 as PID);
+    this.createProcess(this.Init, {}, 1 as PID, 0 as PID);
   }
 
-  private PIDCount: number;
-  private acquirePID(): number {
+  private PIDCount: PID;
+  private acquirePID(): PID {
     if (this.PIDCount >= 50000) {
-      this.PIDCount = 0;
+      this.PIDCount = 0 as PID;
     }
     ++this.PIDCount;
     if (this.table[this.PIDCount]) {
@@ -162,7 +165,7 @@ export class Kernel {
   private createProcess<
     M extends ProcessMemory,
     Type extends ProcessConstructor<M>
-  >(type: Type, memory: M, pid: number, parent: number) {
+  >(type: Type, memory: M, pid: PID, parent: PID) {
     // istanbul ignore next
     if (pid in this.table) {
       throw new Error(`PID already occupied: ${pid}`);
@@ -230,7 +233,7 @@ export class Kernel {
       const entry = this.getProcessDescriptor(child.pid);
       this.setProcessDescriptor({
         ...entry,
-        parent: 0,
+        parent: 0 as PID,
       });
     });
   }
@@ -386,7 +389,7 @@ export class Kernel {
   }
 
   /* istanbul ignore next */
-  public ps(pid: PID = 0) {
+  public ps(pid = 0 as PID) {
     const tableByParent = _.groupBy(
       Object.values(this.table)
         .map(unpackEntry)

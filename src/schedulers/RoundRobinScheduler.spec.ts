@@ -1,5 +1,6 @@
 import { RoundRobinScheduler } from './RoundRobinScheduler';
 import { ScheduleGenerator, Scheduler } from './Scheduler';
+import { PID } from 'kernel';
 
 describe('RoundRobinScheduler', () => {
   let quota: jest.Mock<number, []>;
@@ -14,7 +15,7 @@ describe('RoundRobinScheduler', () => {
   });
 
   it('yields a pid', () => {
-    const expected = 42;
+    const expected = 42 as PID;
     scheduler.add(expected);
 
     expect(scheduler.run()).toMatchYields<ScheduleGenerator>([
@@ -22,7 +23,7 @@ describe('RoundRobinScheduler', () => {
     ]);
   });
   it('yields until done', () => {
-    const expected = 42;
+    const expected = 42 as PID;
     scheduler.add(expected);
 
     expect(scheduler.run()).toMatchYieldsExactly<ScheduleGenerator>([
@@ -38,7 +39,7 @@ describe('RoundRobinScheduler', () => {
     ]);
   });
   it('yields until no quota', () => {
-    const expected = 42;
+    const expected = 42 as PID;
     scheduler.add(expected);
 
     expect(scheduler.run()).toMatchYieldsExactly<ScheduleGenerator>([
@@ -53,31 +54,31 @@ describe('RoundRobinScheduler', () => {
     ]);
   });
   it('yields round robin', () => {
-    scheduler.add(0);
-    scheduler.add(1);
+    scheduler.add(0 as PID);
+    scheduler.add(1 as PID);
 
     expect(scheduler.run()).toMatchYields<ScheduleGenerator>([
-      [0, undefined],
-      [1, undefined],
-      [0, undefined],
-      [1, undefined],
+      [0 as PID, undefined],
+      [1 as PID, undefined],
+      [0 as PID, undefined],
+      [1 as PID, undefined],
     ]);
   });
   it('handles removing while running', () => {
-    scheduler.add(0);
-    scheduler.add(1);
+    scheduler.add(0 as PID);
+    scheduler.add(1 as PID);
 
     expect(scheduler.run()).toMatchYields<ScheduleGenerator>([
-      [0, undefined],
-      [1, undefined],
+      [0 as PID, undefined],
+      [1 as PID, undefined],
       [
-        0,
+        0 as PID,
         () => {
-          scheduler.remove(1);
+          scheduler.remove(1 as PID);
           return undefined;
         },
       ],
-      [0, undefined],
+      [0 as PID, undefined],
     ]);
   });
 });

@@ -284,7 +284,7 @@ describe('Kernel', () => {
           *run(): Thread {
             yield* fork(Thread1, {});
             yield* sleep();
-            yield* kill(this.children[0]?.pid ?? 0);
+            yield* kill(this.children[0]?.pid ?? (0 as PID));
             thread(this.children);
           }
         }
@@ -306,7 +306,7 @@ describe('Kernel', () => {
         expect(thread).toHaveBeenCalledWith([]);
       });
       it('cannot kill other processes', () => {
-        let expected: PID = -1;
+        let expected: PID = -1 as PID;
         class Init extends Process {
           *run(): Thread {
             expected = yield* fork(Thread1, {});
