@@ -9,7 +9,7 @@ import {
   SocketPath,
 } from './io';
 import { PID } from './Kernel';
-import { ProcessConstructor, Thread } from './Process';
+import { ProcessConstructor, ProcessMemory, Thread } from './Process';
 
 export type SysCall = Sleep | Fork | Kill | Open | Read | Write;
 export type SysCallResults =
@@ -50,8 +50,8 @@ export function* hibernate() {
 
 type Fork = {
   type: 'fork';
-  processType: ProcessConstructor<Record<string, unknown>>;
-  memory: Record<string, unknown>;
+  processType: ProcessConstructor<ProcessMemory>;
+  memory: ProcessMemory;
 };
 type ForkResult = {
   type: 'fork';
@@ -137,11 +137,11 @@ type WriteResult = {
   id?: string;
 };
 export function write<T>(path: SocketIn<T>, data: T): Thread<string>;
-export function write<T>(path: FileIn<T>, data: T): Thread<undefined>;
+export function write<T>(path: FileIn<T>, data: T): Thread<void>;
 export function* write<T>(
   path: SocketIn<T> | FileIn<T>,
   data: T
-): Thread<string | undefined> {
+): Thread<string | void> {
   const res = yield {
     type: 'write',
     path,

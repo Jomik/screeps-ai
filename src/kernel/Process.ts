@@ -4,7 +4,13 @@ import { SysCall, SysCallResults } from './sys-calls';
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
-export type ProcessMemory = Record<string, unknown>;
+type JSONValue =
+  | string
+  | number
+  | boolean
+  | { [x: string]: JSONValue }
+  | Array<JSONValue>;
+export type ProcessMemory = Record<string, JSONValue>;
 
 export type ChildDescriptor = {
   type: ProcessConstructor<any>;
@@ -18,12 +24,10 @@ type Config<M extends ProcessMemory> = {
 };
 
 export abstract class Process<M extends ProcessMemory = Record<string, never>> {
-  protected readonly logger: Logger;
-  private config: Config<M>;
+  constructor(private readonly config: Config<M>) {}
 
-  constructor(config: Config<M>) {
-    this.logger = config.logger;
-    this.config = config;
+  protected get logger(): Logger {
+    return this.config.logger;
   }
 
   protected get memory(): M {
