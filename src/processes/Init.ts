@@ -1,14 +1,12 @@
-import { Process, Thread, fork } from 'kernel';
-import { RoomPlanner } from './RoomPlanner';
-import { CreepManager } from './CreepManager';
-import { SpawnManager } from './SpawnManager';
+import { createProcess, fork } from 'system';
 
-const InitProcesses = [SpawnManager, CreepManager, RoomPlanner];
+export const init = createProcess(function* () {
+  yield* fork('creepManager');
+  yield* fork('spawnManager');
 
-export class Init extends Process {
-  *run(): Thread {
-    for (const type of InitProcesses) {
-      yield* fork(type, {});
+  for (const room of Object.values(Game.rooms)) {
+    if (room.find(FIND_MY_SPAWNS).length > 0) {
+      yield* fork('roomPlanner', room.name);
     }
   }
-}
+});

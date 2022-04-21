@@ -1,92 +1,73 @@
 import { Logger } from 'Logger';
-import {
-  ChildDescriptor,
-  Process,
-  ProcessConstructor,
-  ProcessMemory,
-  Thread,
-} from './Process';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
-import { hibernate, SysCallResults } from './sys-calls';
+import { hibernate, Process, SysCallResults, Thread } from 'system';
 import { getMemoryRef } from './memory';
 import { recordStats } from 'library';
 import { ErrorMapper } from 'utils/ErrorMapper';
-import {
-  File,
-  FileHandle,
-  FilePath,
-  IOHandle,
-  Socket,
-  SocketHandle,
-  SocketPath,
-} from './io';
-import { getGuid } from './utils';
 import { OSExit } from './errors';
+import { registry, Registry } from 'processes';
+
+const ArgsMemoryKey = '__args';
 
 declare const PIDSymbol: unique symbol;
 export type PID = number & {
   [PIDSymbol]: number;
 };
 
-type ProcessDescriptor<M extends ProcessMemory> = {
-  type: string;
-  pid: PID;
-  parent: PID;
-  memory: M;
+type ProcessMemory = {
+  [ArgsMemoryKey]: JSONValue[];
+  [k: string]: JSONPointer;
 };
 
-type PackedProcessDescriptor<M extends ProcessMemory> = [
-  type: string,
+type ProcessDescriptor = {
+  type: keyof Registry;
+  pid: PID;
+  parent: PID;
+  memory: ProcessMemory;
+};
+
+type PackedProcessDescriptor = [
+  type: keyof Registry,
   pid: PID,
   parent: PID,
-  memory: M
+  memory: ProcessMemory
 ];
 
-const packEntry = <M extends ProcessMemory>(
-  entry: ProcessDescriptor<M>
-): PackedProcessDescriptor<M> => [
+const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
   entry.type,
   entry.pid,
   entry.parent,
   entry.memory,
 ];
 
-const unpackEntry = <M extends ProcessMemory>(
-  entry: PackedProcessDescriptor<M>
-): ProcessDescriptor<M> => ({
+const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
   type: entry[0],
   pid: entry[1],
   parent: entry[2],
   memory: entry[3],
 });
 
-type ProcessTable = Record<PID, PackedProcessDescriptor<any>>;
+type ProcessTable = Record<PID, PackedProcessDescriptor>;
 
-class Tron extends Process {
-  *run(): Thread {
-    this.logger.alert('Global reset');
-    yield* hibernate();
-  }
-}
+const tron: Process = function* () {
+  // TODO: Log global reset
+  yield* hibernate();
+};
 
 export class Kernel {
   private readonly tableRef = getMemoryRef<ProcessTable>('processTable', {});
   private get table(): ProcessTable {
     return this.tableRef.get();
   }
-  private getProcessDescriptor<M extends ProcessMemory>(
-    pid: PID
-  ): ProcessDescriptor<M> {
+  private getProcessDescriptor(pid: PID): ProcessDescriptor {
     const descriptor = this.table[pid];
     if (!descriptor) {
-      throw new Error(`Attempted to access non-existant process ${pid}`);
+      throw new Error(`Attempted to access non-existent process ${pid}`);
     }
 
     return unpackEntry(descriptor);
   }
-  private setProcessDescriptor(
-    descriptor: ProcessDescriptor<ProcessMemory>
-  ): void {
+  private setProcessDescriptor(descriptor: ProcessDescriptor): void {
     this.table[descriptor.pid] = packEntry(descriptor);
   }
 
@@ -97,28 +78,18 @@ export class Kernel {
   private readonly logger: Logger;
   private readonly scheduler: Scheduler;
 
-  private readonly loggerFactory: (name: string) => Logger;
   private readonly threads = new Map<PID, Thread>();
-  private readonly registry = new Map<string, ProcessConstructor<any>>();
-  private readonly files = new Map<string, IOHandle<unknown>>();
+  // private readonly registry = new Map<string, ProcessConstructor<any>>();
 
-  constructor(
-    private readonly Init: ProcessConstructor,
-    config: {
-      processes: ProcessConstructor<any>[];
-      loggerFactory: (name: string) => Logger;
-      scheduler: Scheduler;
-    }
-  ) {
-    const { processes, loggerFactory, scheduler } = config;
+  constructor(config: {
+    loggerFactory: (name: string) => Logger;
+    scheduler: Scheduler;
+  }) {
+    const { loggerFactory, scheduler } = config;
     this.scheduler = scheduler;
-    this.loggerFactory = loggerFactory;
     this.logger = loggerFactory(this.constructor.name);
-    for (const type of [Tron, this.Init, ...processes]) {
-      this.registerProcess(type);
-    }
     if (!this.table[0 as PID]) {
-      this.logger.warn('Tron missing');
+      this.logger.warn('tron missing');
       this.reboot();
     } else {
       for (const pid of this.pids) {
@@ -136,8 +107,8 @@ export class Kernel {
     }
 
     this.tableRef.set({});
-    this.createProcess(Tron, {}, 0 as PID, 0 as PID);
-    this.createProcess(this.Init, {}, 1 as PID, 0 as PID);
+    this.createProcess('tron' as never, [], 0 as PID, 0 as PID);
+    this.createProcess('init', [], 1 as PID, 0 as PID);
   }
 
   private PIDCount: PID;
@@ -152,69 +123,49 @@ export class Kernel {
     return this.PIDCount;
   }
 
-  private registerProcess<Type extends ProcessConstructor<any>>(type: Type) {
-    // istanbul ignore next
-    if (this.registry.has(type.name) && this.registry.get(type.name) !== type) {
-      throw new Error(
-        `A different version already exists in registry: ${type.name}`
-      );
-    }
-    this.registry.set(type.name, type);
-  }
-
-  private createProcess<
-    M extends ProcessMemory,
-    Type extends ProcessConstructor<M>
-  >(type: Type, memory: M, pid: PID, parent: PID) {
+  private createProcess(
+    type: keyof Registry,
+    args: JSONValue[],
+    pid: PID,
+    parent: PID
+  ) {
     // istanbul ignore next
     if (pid in this.table) {
       throw new Error(`PID already occupied: ${pid}`);
     }
 
-    // istanbul ignore next
-    if (!this.registry.has(type.name)) {
-      throw new Error(`No process of type, ${type.name}, has been registered`);
-    }
-
     this.setProcessDescriptor({
-      type: type.name,
+      type,
       pid,
       parent,
-      memory,
+      memory: {
+        [ArgsMemoryKey]: args,
+      },
     });
 
     this.initThread(pid);
   }
 
   private initThread(pid: PID) {
-    const descriptor = this.getProcessDescriptor(pid);
-    const Type = this.registry.get(descriptor.type);
-    if (!Type) {
+    const { type, memory } = this.getProcessDescriptor(pid);
+    const process = (type as string) === 'tron' ? tron : registry[type];
+    if (!process) {
       this.kill(pid);
       this.logger.error(
-        `Error trying to initialise pid ${pid} with unknown type ${descriptor.type}`
+        `Error trying to initialise pid ${pid} with unknown type ${type}`
       );
       return;
     }
-    const process = new Type({
-      memory: () => this.getProcessDescriptor(pid).memory as never,
-      children: () => this.findChildren(pid),
-      logger: this.loggerFactory(`${descriptor.type}:${pid}`),
-    });
 
-    this.threads.set(pid, process.run.bind(process)());
+    const args = memory[ArgsMemoryKey] as [never];
+    this.threads.set(pid, process(...args));
     this.scheduler.add(pid);
   }
 
-  private findChildren(pid: PID): ChildDescriptor[] {
-    return (
-      Object.values(this.table)
-        .map((v) => unpackEntry(v))
-        .filter(({ parent }) => parent === pid)
-        // The type has to be in the registry, or it will not be part of the process table.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        .map((v) => ({ type: this.registry.get(v.type)!, pid: v.pid }))
-    );
+  private findChildren(pid: PID): ProcessDescriptor[] {
+    return Object.values(this.table)
+      .map((v) => unpackEntry(v))
+      .filter(({ parent }) => parent === pid);
   }
 
   public kill(pid: PID) {
@@ -236,27 +187,6 @@ export class Kernel {
         parent: 0 as PID,
       });
     });
-  }
-
-  private getIO(path: SocketPath | FilePath) {
-    let handle = this.files.get(path);
-    if (handle === undefined) {
-      if (path.startsWith('sock://')) {
-        handle = new SocketHandle();
-      } else {
-        handle = new FileHandle();
-      }
-      this.files.set(path, handle);
-    }
-
-    if (path.startsWith('sock://') && !(handle instanceof SocketHandle)) {
-      throw new Error(`File at ${path} is not a socket.`);
-    }
-    if (path.startsWith('file://') && !(handle instanceof FileHandle)) {
-      throw new Error(`File at ${path} is not a socket.`);
-    }
-
-    return handle;
   }
 
   private runThread(pid: PID): SchedulerThreadReturn {
@@ -286,11 +216,11 @@ export class Kernel {
           return sysCall.value;
         }
         case 'fork': {
-          const { memory, processType } = sysCall.value;
+          const { args, processType } = sysCall.value;
           const childPID = this.acquirePID();
-          this.createProcess(processType, memory, childPID, pid);
+          this.createProcess(processType, args, childPID, pid);
           nextArg = { type: 'fork', pid: childPID };
-          this.logger.info(`PID ${pid} forked ${processType.name}:${childPID}`);
+          this.logger.info(`PID ${pid} forked ${processType}:${childPID}`);
           break;
         }
         case 'kill': {
@@ -301,37 +231,8 @@ export class Kernel {
           this.kill(childPID);
           break;
         }
-        case 'open': {
-          const { path } = sysCall.value;
-          nextArg = {
-            type: 'open',
-            path: path as Socket | File,
-          };
-          break;
-        }
-        case 'read': {
-          const { path } = sysCall.value;
-          const handle = this.getIO(path);
-          if (handle instanceof SocketHandle) {
-            nextArg = { type: 'read', data: handle.read()?.data ?? [] };
-          } else {
-            nextArg = { type: 'read', data: handle.read()?.data };
-          }
-          break;
-        }
-        case 'write': {
-          const { path, data } = sysCall.value;
-          const handle = this.getIO(path);
-          if (handle instanceof SocketHandle) {
-            const id = getGuid();
-            handle.write([data, id]);
-            nextArg = { type: 'write', id };
-          } else {
-            handle.write(data);
-            nextArg = { type: 'write' };
-          }
-
-          break;
+        case 'allocate': {
+          throw new Error('Not implemented yet: "allocate" case');
         }
       }
     }
@@ -377,15 +278,6 @@ export class Kernel {
         },
       });
     }
-    recordStats({
-      sockets: [...this.files.entries()].reduce(
-        (acc, [path, handle]) =>
-          handle instanceof SocketHandle
-            ? { ...acc, [path]: handle.size() }
-            : acc,
-        {}
-      ),
-    });
   }
 
   /* istanbul ignore next */

@@ -9,7 +9,7 @@ type ThreadMeta = {
   cpuSpent?: number;
 };
 
-class RedBlackTree extends RBTreeIndex<ThreadMeta, PID> {
+class RedBlackTree extends RBTreeIndex<ThreadMeta, number> {
   constructor() {
     super({
       getKey: (meta) => meta.cpuSpent ?? 0,

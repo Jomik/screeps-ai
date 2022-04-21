@@ -4,9 +4,12 @@ interface CreepMemory {
 
 interface Memory extends Record<string, unknown> {}
 
-interface ProxyConstructor {
-  new <TSource extends object, TTarget extends object>(
-    target: TSource,
-    handler: ProxyHandler<TSource>
-  ): TTarget;
-}
+type JSONValue =
+  | string
+  | number
+  | boolean
+  | undefined
+  | null
+  | { [x: string]: JSONValue }
+  | Array<JSONValue>;
+type JSONPointer = Record<string, JSONValue> | Array<JSONValue>;
