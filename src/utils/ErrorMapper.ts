@@ -8,7 +8,7 @@ export class ErrorMapper {
     if (this._consumer == null) {
       this._consumer = new SourceMapConsumer(
         // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require('main.js.map') as RawSourceMap
+        require('./main.js.map') as RawSourceMap
       );
     }
 

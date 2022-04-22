@@ -1,5 +1,5 @@
-import { Logger } from 'Logger';
-import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
+import type { Logger } from '../Logger';
+import type { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
 import {
   hibernate,
   Process,
@@ -15,9 +15,8 @@ import { registry, Registry } from 'processes';
 
 const ArgsMemoryKey = '__args';
 
-declare const PIDSymbol: unique symbol;
 export type PID = number & {
-  [PIDSymbol]: number;
+  __: 'PID';
 };
 
 type ProcessMemory = {

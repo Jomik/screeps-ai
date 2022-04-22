@@ -1,5 +1,5 @@
-import { Registry } from 'processes';
-import { PID } from './kernel/Kernel';
+import type { Registry } from 'processes';
+import { PID } from 'kernel/Kernel';
 
 export type SysCall = Sleep | Fork | Kill | Allocate | Children;
 export type SysCallResults =

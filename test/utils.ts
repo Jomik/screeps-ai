@@ -1,4 +1,4 @@
-import { Logger } from 'Logger';
+import { Logger } from 'src/Logger';
 
 export class SilentLogger extends Logger {
   protected log(): void {

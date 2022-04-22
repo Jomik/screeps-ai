@@ -2,7 +2,7 @@ import './polyfills';
 
 import { Kernel, PID } from 'kernel';
 import { ErrorMapper } from 'utils/ErrorMapper';
-import { LogLevel, ScreepsLogger } from 'Logger';
+import { LogLevel, ScreepsLogger } from './Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
 import { recordGlobals, resetStats } from 'library';
 

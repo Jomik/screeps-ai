@@ -49,8 +49,17 @@
     "typescript": "^4.7.0-beta"
   },
   "dependencies": {
+    "kernel": "link:./src/kernel",
+    "library": "link:./src/library",
+    "processes": "link:./src/processes",
+    "schedulers": "link:./src/schedulers",
     "scl": "^4.1.1",
     "source-map": "~0.6.1",
-    "ts-polyfill": "^3.8.2"
-  }
+    "src": "link:./src",
+    "system": "link:./src/system",
+    "test": "link:./test",
+    "ts-polyfill": "^3.8.2",
+    "utils": "link:./src/utils"
+  },
+  "packageManager": "yarn@3.2.0"
 }

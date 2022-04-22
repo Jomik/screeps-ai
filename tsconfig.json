@@ -4,7 +4,6 @@
     "target": "ES2018",
     "moduleResolution": "node",
     "outDir": "dist",
-    "baseUrl": "src",
     "sourceMap": true,
     "strict": true,
     "experimentalDecorators": true,
@@ -12,10 +11,7 @@
     "noUncheckedIndexedAccess": true,
     "allowSyntheticDefaultImports": true,
     "noUnusedLocals": false,
-    "allowUnreachableCode": true,
-    "paths": {
-      "test/*": ["../test/*"]
-    }
+    "allowUnreachableCode": true
   },
   "exclude": ["node_modules"],
   "ts-node": {
