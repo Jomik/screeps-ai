@@ -1,15 +1,15 @@
 import { RawSourceMap, SourceMapConsumer } from 'source-map';
 
+declare const console: { log(msg: string): void };
+declare const require: (module: `${string}.js.map`) => RawSourceMap;
+
 export class ErrorMapper {
   // Cache consumer
   private static _consumer?: SourceMapConsumer;
 
   public static get consumer(): SourceMapConsumer {
     if (this._consumer == null) {
-      this._consumer = new SourceMapConsumer(
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        require('./main.js.map') as RawSourceMap
-      );
+      this._consumer = new SourceMapConsumer(require('./main.js.map'));
     }
 
     return this._consumer;

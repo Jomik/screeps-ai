@@ -24,7 +24,7 @@
     "**/Thumbs.db": true,
     "node_modules/": true
   },
-  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.tsdk": ".yarn/sdks/typescript/lib",
   "eslint.enable": true,
   "jest.autoRun": {
     "watch": false,

@@ -6,6 +6,8 @@ import { LogLevel, ScreepsLogger } from './Logger';
 import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
 import { recordGlobals, resetStats } from 'library';
 
+declare const global: Record<string, any>;
+
 const kernel = new Kernel({
   loggerFactory: (name) => new ScreepsLogger(name),
   scheduler: new RoundRobinScheduler(

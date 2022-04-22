@@ -22,6 +22,8 @@ type LocationArg =
   | RoomPosition
   | string;
 
+declare const console: { log(msg: string): void };
+
 export abstract class Logger {
   constructor(protected readonly name: string) {}
 
