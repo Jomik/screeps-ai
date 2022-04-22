@@ -1,6 +1,12 @@
 import { Logger } from 'Logger';
 import { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
-import { hibernate, Process, SysCallResults, Thread } from 'system';
+import {
+  hibernate,
+  Process,
+  ProcessInfo,
+  SysCallResults,
+  Thread,
+} from 'system';
 import { getMemoryRef } from './memory';
 import { recordStats } from 'library';
 import { ErrorMapper } from 'utils/ErrorMapper';
@@ -148,7 +154,8 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const { type, memory } = this.getProcessDescriptor(pid);
-    const process = (type as string) === 'tron' ? tron : registry[type];
+    const process: Process<any[]> | undefined =
+      (type as string) === 'tron' ? tron : registry[type];
     if (!process) {
       this.kill(pid);
       this.logger.error(
@@ -157,7 +164,7 @@ export class Kernel {
       return;
     }
 
-    const args = memory[ArgsMemoryKey] as [never];
+    const args = memory[ArgsMemoryKey] as [];
     this.threads.set(pid, process(...args));
     this.scheduler.add(pid);
   }
@@ -179,13 +186,9 @@ export class Kernel {
     delete this.table[pid];
     this.scheduler.remove(pid);
 
-    // Children are adopted by Tron
+    // Orphans are killed
     this.findChildren(pid).forEach((child) => {
-      const entry = this.getProcessDescriptor(child.pid);
-      this.setProcessDescriptor({
-        ...entry,
-        parent: 0 as PID,
-      });
+      this.kill(child.pid);
     });
   }
 
@@ -232,7 +235,22 @@ export class Kernel {
           break;
         }
         case 'allocate': {
-          throw new Error('Not implemented yet: "allocate" case');
+          const descriptor = this.getProcessDescriptor(pid);
+          nextArg = { type: 'allocate', pointer: descriptor.memory };
+          break;
+        }
+        case 'children': {
+          const children = this.findChildren(pid).reduce<
+            Record<PID, ProcessInfo>
+          >(
+            (acc, { pid, type, memory }) => ({
+              ...acc,
+              [pid]: { pid, type, args: memory[ArgsMemoryKey] },
+            }),
+            {}
+          );
+          nextArg = { type: 'children', children };
+          break;
         }
       }
     }

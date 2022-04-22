@@ -1,5 +1,13 @@
 /* eslint-disable require-yield */
-import { fork, hibernate, kill, Process, sleep, Thread } from 'system';
+import {
+  fork,
+  getChildren,
+  hibernate,
+  kill,
+  Process,
+  sleep,
+  Thread,
+} from 'system';
 import { Kernel, PID } from './Kernel';
 import { CallbackLogger, SilentLogger } from 'test/utils';
 import { RoundRobinScheduler } from '../schedulers/RoundRobinScheduler';
@@ -197,6 +205,7 @@ describe('Kernel', () => {
       });
       init.mockImplementation(function* () {
         yield* forkTest1();
+        yield* hibernate();
       });
 
       const uut = new Kernel({
@@ -209,120 +218,97 @@ describe('Kernel', () => {
 
       expect(thread).toHaveBeenCalledTimes(1);
     });
-    //   describe('children', () => {
-    //     it('reparents children when parent die', () => {
-    //       const thread = jest.fn();
-    //       class Init extends Process {
-    //         *run(): Thread {
-    //           yield* fork(Thread1, {});
-    //           yield* sleep();
-    //         }
-    //       }
-    //       class Thread1 extends Process {
-    //         *run(): Thread {
-    //           yield* sleep();
-    //           thread();
-    //         }
-    //       }
-    //       const uut = new Kernel(Init, {
-    //         processes: [Thread1],
-    //         loggerFactory: () => new SilentLogger(''),
-    //         scheduler: new RoundRobinScheduler(() => 1),
-    //       });
+    describe('children', () => {
+      it('kills children when parent dies', () => {
+        const thread = jest.fn();
+        const forkTest1 = registerProcess('test1', function* () {
+          yield* sleep();
+          thread();
+          yield* hibernate();
+        });
+        init.mockImplementation(function* () {
+          yield* forkTest1();
+        });
+        const uut = new Kernel({
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
 
-    //       uut.run();
-    //       uut.run();
-    //       uut.run();
+        uut.run();
+        uut.run();
+        uut.run();
 
-    //       expect(thread).toHaveBeenCalled();
-    //     });
-    //     it('should expose children pids', () => {
-    //       const thread = jest.fn();
-    //       class Init extends Process {
-    //         *run(): Thread {
-    //           yield* fork(Thread1, {});
-    //           yield* fork(Thread1, {});
-    //           thread(this.children);
-    //         }
-    //       }
-    //       class Thread1 extends Process {
-    //         *run(): Thread {
-    //           yield* sleep();
-    //         }
-    //       }
-    //       const uut = new Kernel(Init, {
-    //         processes: [Thread1],
-    //         loggerFactory: () => new SilentLogger(''),
-    //         scheduler: new RoundRobinScheduler(() => 1),
-    //       });
+        expect(thread).toHaveBeenCalledTimes(0);
+      });
+      it('should return child pid', () => {
+        const thread = jest.fn();
+        const forkTest1 = registerProcess('test1', function* () {
+          yield* hibernate();
+        });
+        init.mockImplementation(function* () {
+          const pid = yield* forkTest1();
+          thread(pid);
+        });
+        const uut = new Kernel({
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
 
-    //       uut.run();
+        uut.run();
 
-    //       expect(thread).toHaveBeenCalledWith(Array(2).fill(expect.anything()));
-    //     });
-    //   });
+        expect(thread).toHaveBeenCalledWith(expect.any(Number));
+      });
+    });
 
-    //   describe('kill', () => {
-    //     it('kills a child', () => {
-    //       const thread = jest.fn();
-    //       class Init extends Process {
-    //         *run(): Thread {
-    //           yield* fork(Thread1, {});
-    //           yield* sleep();
-    //           yield* kill(this.children[0]?.pid ?? (0 as PID));
-    //           thread(this.children);
-    //         }
-    //       }
-    //       class Thread1 extends Process {
-    //         *run(): Thread {
-    //           yield* sleep();
-    //         }
-    //       }
-    //       const uut = new Kernel(Init, {
-    //         processes: [Thread1],
-    //         loggerFactory: () => new SilentLogger(''),
-    //         scheduler: new RoundRobinScheduler(() => 1),
-    //       });
+    describe('kill', () => {
+      it('kills a child', () => {
+        const thread = jest.fn();
+        const forkTest1 = registerProcess('test1', function* () {
+          yield* hibernate();
+        });
+        init.mockImplementation(function* () {
+          const pid = yield* forkTest1();
+          yield* sleep();
+          yield* kill(pid);
+          const children = yield* getChildren();
+          thread(Object.values(children).map(({ pid }) => pid));
+        });
+        const uut = new Kernel({
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
 
-    //       uut.run();
-    //       uut.run();
-    //       uut.run();
+        uut.run();
+        uut.run();
 
-    //       expect(thread).toHaveBeenCalledWith([]);
-    //     });
-    //     it('cannot kill other processes', () => {
-    //       let expected: PID = -1 as PID;
-    //       class Init extends Process {
-    //         *run(): Thread {
-    //           expected = yield* fork(Thread1, {});
-    //           yield* sleep();
-    //           yield* fork(Thread2, { pid: expected });
-    //           yield* hibernate();
-    //         }
-    //       }
-    //       class Thread1 extends Process {
-    //         *run(): Thread {
-    //           yield* hibernate();
-    //         }
-    //       }
-    //       class Thread2 extends Process<{ pid: PID }> {
-    //         *run(): Thread {
-    //           yield* kill(this.memory.pid);
-    //           yield* hibernate();
-    //         }
-    //       }
-    //       const uut = new Kernel(Init, {
-    //         processes: [Thread1, Thread2],
-    //         loggerFactory: () => new SilentLogger(''),
-    //         scheduler: new RoundRobinScheduler(() => 1),
-    //       });
+        expect(thread).toHaveBeenCalledWith([]);
+      });
+      it('cannot kill other processes', () => {
+        let expected: PID = -1 as PID;
+        const forkTest1 = registerProcess('test1', function* () {
+          yield* hibernate();
+        });
+        const forkTest2 = registerProcess('test2', function* (pid: PID) {
+          yield* kill(pid);
+          yield* hibernate();
+        });
+        init.mockImplementation(function* () {
+          expected = yield* forkTest1();
+          yield* sleep();
+          yield* forkTest2(expected);
+          yield* hibernate();
+        });
+        const uut = new Kernel({
+          loggerFactory: () => new SilentLogger(''),
+          scheduler: new RoundRobinScheduler(() => 1),
+        });
 
-    //       uut.run();
-    //       uut.run();
-    //       uut.run();
+        uut.run();
+        uut.run();
+        uut.run();
 
-    //       expect(uut.pids).toContain(expected);
-    //     });
-    //   });
+        expect(uut.pids).toContain(expected);
+      });
+    });
   });
 });
