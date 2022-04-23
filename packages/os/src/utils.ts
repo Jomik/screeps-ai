@@ -1,4 +1,4 @@
-import { allocate, Thread } from 'system';
+import { allocate, JSONValue, Thread } from './system';
 
 export const restartOnTickChange = <Args extends any[], R>(
   process: (...args: Args) => Thread<R>

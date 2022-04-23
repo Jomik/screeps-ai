@@ -1,19 +1,20 @@
 import './polyfills';
 
-import { Kernel, PID } from 'kernel';
-import { ErrorMapper } from 'utils/ErrorMapper';
-import { LogLevel, ScreepsLogger } from './Logger';
-import { RoundRobinScheduler } from 'schedulers/RoundRobinScheduler';
-import { recordGlobals, resetStats } from 'library';
+import { Kernel, PID, LogLevel, ScreepsLogger } from 'os';
+import { ErrorMapper } from './utils/ErrorMapper';
+import { RoundRobinScheduler } from './schedulers/RoundRobinScheduler';
+import { recordGlobals, resetStats } from './library';
+import { registry } from './registry';
 
 declare const global: Record<string, any>;
 
-const kernel = new Kernel({
-  loggerFactory: (name) => new ScreepsLogger(name),
-  scheduler: new RoundRobinScheduler(
-    () => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()
-  ),
-});
+const kernel = new Kernel(
+  registry,
+  new RoundRobinScheduler(() => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()),
+  new ScreepsLogger('Kernel')
+);
+
+// loggerFactory: (name) => new ScreepsLogger(name),
 
 // @ts-ignore: to use ps in console
 global.ps = (pid?: PID) => {
@@ -22,7 +23,7 @@ global.ps = (pid?: PID) => {
   }
   return kernel.ps(pid);
 };
-// @ts-ignore: to use ps in console
+// @ts-ignore: to use reboot in console
 global.reboot = () => {
   return kernel.reboot();
 };

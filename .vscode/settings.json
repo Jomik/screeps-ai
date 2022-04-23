@@ -29,7 +29,9 @@
   "jest.autoRun": {
     "watch": false,
     "onSave": "test-src-file",
-    "onStartup": ["all-tests"]
+    "onStartup": [
+      "all-tests"
+    ]
   },
   "jest.jestCommandLine": "yarn jest",
   "eslint.nodePath": ".yarn/sdks",

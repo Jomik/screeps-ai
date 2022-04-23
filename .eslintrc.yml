@@ -9,7 +9,9 @@ extends:
   - 'eslint:recommended'
   - 'prettier'
 overrides:
-  - files: ./*.js
+  - files:
+      - ./*.js
+      - ./packages/*/*.js
     env:
       node: true
   - files: jest.config.js
@@ -19,8 +21,6 @@ overrides:
     parser: '@typescript-eslint/parser'
     plugins:
       - '@typescript-eslint'
-    parserOptions:
-      project: ./tsconfig.json
     extends:
       - 'plugin:@typescript-eslint/recommended'
       - 'plugin:@typescript-eslint/recommended-requiring-type-checking'

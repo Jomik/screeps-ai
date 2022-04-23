@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "lib": ["es2018", "es2019.Array"],
+    "target": "es2018",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "sourceMap": true,
+    "strict": true,
+    "experimentalDecorators": true,
+    "noImplicitReturns": true,
+    "noUncheckedIndexedAccess": true,
+    "allowSyntheticDefaultImports": true,
+    "noUnusedLocals": false,
+    "allowUnreachableCode": true
+  },
+  "ts-node": {
+    "files": true
+  }
+}

@@ -1455,6 +1455,26 @@ __metadata:
   languageName: node
   linkType: hard
 
+"bot@workspace:packages/bot":
+  version: 0.0.0-use.local
+  resolution: "bot@workspace:packages/bot"
+  dependencies:
+    "@rollup/plugin-commonjs": "npm:^21.0.2"
+    "@rollup/plugin-node-resolve": "npm:^13.1.3"
+    "@types/lodash": "npm:3.10.2"
+    "@types/screeps": "npm:^3.2.4"
+    os: "workspace:*"
+    rollup: "npm:^2.70.0"
+    rollup-plugin-clear: "npm:^2.0.7"
+    rollup-plugin-screeps: "npm:^1.0.1"
+    rollup-plugin-typescript2: "npm:^0.31.2"
+    scl: "npm:^4.1.1"
+    source-map: "npm:~0.6.1"
+    ts-polyfill: "npm:^3.8.2"
+    typescript: "npm:^4.6.3"
+  languageName: unknown
+  linkType: soft
+
 "brace-expansion@npm:^1.1.7":
   version: 1.1.11
   resolution: "brace-expansion@npm:1.1.11"
@@ -3559,12 +3579,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"kernel@link:./src/kernel::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "kernel@link:./src/kernel::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
-
 "kleur@npm:^3.0.3":
   version: 3.0.3
   resolution: "kleur@npm:3.0.3"
@@ -3598,12 +3612,6 @@ __metadata:
   checksum: ca790d4b61d6ae2357b4e33f5a5da663c403c796f572b90f4fd9f1afd3cd71cf29903905638f81d7c5cb585619ae1d7f959deb0c86802bae02ba37c14a0902a8
   languageName: node
   linkType: hard
-
-"library@link:./src/library::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "library@link:./src/library::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
 
 "lines-and-columns@npm:^1.1.6":
   version: 1.2.4
@@ -4041,6 +4049,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"os@workspace:*, os@workspace:packages/os":
+  version: 0.0.0-use.local
+  resolution: "os@workspace:packages/os"
+  dependencies:
+    "@types/lodash": "npm:3.10.2"
+    "@types/screeps": "npm:^3.2.4"
+    source-map: "npm:~0.6.1"
+    typescript: "npm:^4.6.3"
+  languageName: unknown
+  linkType: soft
+
 "p-limit@npm:^2.2.0":
   version: 2.3.0
   resolution: "p-limit@npm:2.3.0"
@@ -4246,12 +4265,6 @@ __metadata:
   checksum: 757aecacd25b827c5985ae3fe24fac52910b9f56898319f020f4278b788016a25b12bcbd40fe44c466ee68791f11670e2152969b87b292c410f8e7280ca99aef
   languageName: node
   linkType: hard
-
-"processes@link:./src/processes::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "processes@link:./src/processes::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
 
 "promise-inflight@npm:^1.0.1":
   version: 1.0.1
@@ -4484,6 +4497,25 @@ __metadata:
   languageName: node
   linkType: hard
 
+"root-workspace-0b6124@workspace:.":
+  version: 0.0.0-use.local
+  resolution: "root-workspace-0b6124@workspace:."
+  dependencies:
+    "@types/jest": "npm:^27.4.1"
+    "@typescript-eslint/eslint-plugin": "npm:^5.14.0"
+    "@typescript-eslint/parser": "npm:^5.14.0"
+    eslint: "npm:^8.10.0"
+    eslint-config-prettier: "npm:^8.5.0"
+    jest: "npm:^27.5.1"
+    lodash: "npm:3.10.1"
+    prettier: "npm:^2.5.1"
+    screeps-jest: "npm:^2.0.2"
+    ts-jest: "npm:^27.1.3"
+    ts-node: "npm:^10.7.0"
+    typescript: "npm:^4.6.3"
+  languageName: unknown
+  linkType: soft
+
 "run-parallel@npm:^1.1.9":
   version: 1.2.0
   resolution: "run-parallel@npm:1.2.0"
@@ -4523,56 +4555,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"schedulers@link:./src/schedulers::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "schedulers@link:./src/schedulers::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
-
 "scl@npm:^4.1.1":
   version: 4.1.1
   resolution: "scl@npm:4.1.1"
   checksum: 6c1fac399b1855dac0065ed19ecad08d6b70202e0594c612c526869249f9e8f7e9666136d6eb864ea59aafd102944a5c8adae56cd39800b87baa05c99cbc57c0
   languageName: node
   linkType: hard
-
-"screeps-ai@workspace:.":
-  version: 0.0.0-use.local
-  resolution: "screeps-ai@workspace:."
-  dependencies:
-    "@rollup/plugin-commonjs": "npm:^21.0.2"
-    "@rollup/plugin-node-resolve": "npm:^13.1.3"
-    "@types/jest": "npm:^27.4.1"
-    "@types/lodash": "npm:3.10.2"
-    "@types/screeps": "npm:^3.2.4"
-    "@typescript-eslint/eslint-plugin": "npm:^5.14.0"
-    "@typescript-eslint/parser": "npm:^5.14.0"
-    eslint: "npm:^8.10.0"
-    eslint-config-prettier: "npm:^8.5.0"
-    jest: "npm:^27.5.1"
-    kernel: "link:./src/kernel"
-    library: "link:./src/library"
-    lodash: "npm:3.10.1"
-    prettier: "npm:^2.5.1"
-    processes: "link:./src/processes"
-    rollup: "npm:^2.70.0"
-    rollup-plugin-clear: "npm:^2.0.7"
-    rollup-plugin-screeps: "npm:^1.0.1"
-    rollup-plugin-typescript2: "npm:^0.31.2"
-    schedulers: "link:./src/schedulers"
-    scl: "npm:^4.1.1"
-    screeps-jest: "npm:^2.0.2"
-    source-map: "npm:~0.6.1"
-    src: "link:./src"
-    system: "link:./src/system"
-    test: "link:./test"
-    ts-jest: "npm:^27.1.3"
-    ts-node: "npm:^10.7.0"
-    ts-polyfill: "npm:^3.8.2"
-    typescript: "npm:4.7.0-beta"
-    utils: "link:./src/utils"
-  languageName: unknown
-  linkType: soft
 
 "screeps-api@npm:^1.11.0":
   version: 1.16.0
@@ -4755,12 +4743,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"src@link:./src::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "src@link:./src::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
-
 "ssri@npm:^9.0.0":
   version: 9.0.0
   resolution: "ssri@npm:9.0.0"
@@ -4890,12 +4872,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"system@link:./src/system::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "system@link:./src/system::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
-
 "tar@npm:^6.1.11, tar@npm:^6.1.2":
   version: 6.1.11
   resolution: "tar@npm:6.1.11"
@@ -4930,12 +4906,6 @@ __metadata:
   checksum: bcb7eecb486d1441f2c55a05d079f72e2e13e74c8e89051412e33382e745996d646036a7d13d3a74c60222f59dd48c5b8cc83c1f3b5647332262d9c5f04da937
   languageName: node
   linkType: hard
-
-"test@link:./test::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "test@link:./test::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
 
 "text-table@npm:^0.2.0":
   version: 0.2.0
@@ -5147,23 +5117,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:4.7.0-beta":
-  version: 4.7.0-beta
-  resolution: "typescript@npm:4.7.0-beta"
+"typescript@npm:^4.6.3":
+  version: 4.6.3
+  resolution: "typescript@npm:4.6.3"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: cebef22a4aadc1e44110dbd156d88583e1eb658fe42be2a25c63aa945596c8e6ba26f7542d1cb64471a85d9cbb2b38cbb362592ff985ab077443f9574121914e
+  checksum: 6d79afd83b60614b18d469795c0d5725dcc89d8c943b0b09162ce15e1ec7cd73111642accdbb10c2be21bfabccb5b296554b5ea09948b2931d51ecbdece22a48
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A4.7.0-beta#optional!builtin<compat/typescript>":
-  version: 4.7.0-beta
-  resolution: "typescript@patch:typescript@npm%3A4.7.0-beta#optional!builtin<compat/typescript>::version=4.7.0-beta&hash=7ad353"
+"typescript@patch:typescript@npm%3A^4.6.3#optional!builtin<compat/typescript>":
+  version: 4.6.3
+  resolution: "typescript@patch:typescript@npm%3A4.6.3#optional!builtin<compat/typescript>::version=4.6.3&hash=7ad353"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 8c1dfb967ca11421585d0dbb92aea95a02b234fefecc6f65361bcbfd7fe44cce3657fc47eeca7572c1b83dc344fec53ffcf546f49836a28d40a311b231c36043
+  checksum: 694ec10096afa6f172ffeb1b3794bbf4a354f9d59af4f1ac62d4a705a4cdc708f970514deaf7d9a87c7ecdc4b1f5d297ce89ecbde720a251caac801adf5588f6
   languageName: node
   linkType: hard
 
@@ -5237,12 +5207,6 @@ __metadata:
   checksum: 6a88ed8344d07f2324b304ee36def365d967953b5a9c15baa3213eb3909e86a7da1ee70a4c2133e80c23d6c1987590e9c3c57d874e20a124f9e41620b462fa57
   languageName: node
   linkType: hard
-
-"utils@link:./src/utils::locator=screeps-ai%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "utils@link:./src/utils::locator=screeps-ai%40workspace%3A."
-  languageName: node
-  linkType: soft
 
 "v8-compile-cache-lib@npm:^3.0.0":
   version: 3.0.1

@@ -1,17 +1,17 @@
 import type { Logger } from '../Logger';
-import type { Scheduler, SchedulerThreadReturn } from '../schedulers/Scheduler';
+import type { Scheduler, SchedulerThreadReturn } from './Scheduler';
 import {
+  createProcess,
   hibernate,
+  JSONPointer,
+  JSONValue,
   Process,
   ProcessInfo,
   SysCallResults,
   Thread,
-} from 'system';
+} from '../system';
 import { getMemoryRef } from './memory';
-import { recordStats } from 'library';
-import { ErrorMapper } from 'utils/ErrorMapper';
 import { OSExit } from './errors';
-import { registry, Registry } from 'processes';
 
 const ArgsMemoryKey = '__args';
 
@@ -25,14 +25,14 @@ type ProcessMemory = {
 };
 
 type ProcessDescriptor = {
-  type: keyof Registry;
+  type: string;
   pid: PID;
   parent: PID;
   memory: ProcessMemory;
 };
 
 type PackedProcessDescriptor = [
-  type: keyof Registry,
+  type: string,
   pid: PID,
   parent: PID,
   memory: ProcessMemory
@@ -54,10 +54,10 @@ const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
 
 type ProcessTable = Record<PID, PackedProcessDescriptor>;
 
-const tron: Process = function* () {
+const tron = createProcess(function* () {
   // TODO: Log global reset
   yield* hibernate();
-};
+});
 
 export class Kernel {
   private readonly tableRef = getMemoryRef<ProcessTable>('processTable', {});
@@ -80,19 +80,13 @@ export class Kernel {
     return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
   }
 
-  private readonly logger: Logger;
-  private readonly scheduler: Scheduler;
-
   private readonly threads = new Map<PID, Thread>();
-  // private readonly registry = new Map<string, ProcessConstructor<any>>();
 
-  constructor(config: {
-    loggerFactory: (name: string) => Logger;
-    scheduler: Scheduler;
-  }) {
-    const { loggerFactory, scheduler } = config;
-    this.scheduler = scheduler;
-    this.logger = loggerFactory(this.constructor.name);
+  constructor(
+    private readonly registry: Record<string, Process<never>>,
+    private readonly scheduler: Scheduler,
+    private readonly logger: Logger
+  ) {
     if (!this.table[0 as PID]) {
       this.logger.warn('tron missing');
       this.reboot();
@@ -129,7 +123,7 @@ export class Kernel {
   }
 
   private createProcess(
-    type: keyof Registry,
+    type: string,
     args: JSONValue[],
     pid: PID,
     parent: PID
@@ -153,8 +147,7 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const { type, memory } = this.getProcessDescriptor(pid);
-    const process: Process<any[]> | undefined =
-      (type as string) === 'tron' ? tron : registry[type];
+    const process = type === 'tron' ? tron : this.registry[type];
     if (!process) {
       this.kill(pid);
       this.logger.error(
@@ -278,22 +271,24 @@ export class Kernel {
           );
           continue;
         }
+        // TODO: Better error handling
         this.logger.error(
-          `Error while running ${
-            entry.type
-          }:${pid}\n${ErrorMapper.sourceMappedStackTrace(err as Error)}`
+          `Error while running ${entry.type}:${pid}\n${
+            /*ErrorMapper.sourceMappedStackTrace(err as Error)*/ ''
+          }`
         );
         continue;
       }
       const endCpu = Game.cpu.getUsed();
       this.logger.verbose(`${entry.type}:${pid} ${nextArg?.type ?? 'yield'}`);
-      recordStats({
-        threads: {
-          [entry.type]: {
-            [pid]: endCpu - startCPU,
-          },
-        },
-      });
+      // TODO
+      // recordStats({
+      //   threads: {
+      //     [entry.type]: {
+      //       [pid]: endCpu - startCPU,
+      //     },
+      //   },
+      // });
     }
   }
 

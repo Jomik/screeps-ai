@@ -1,7 +1,6 @@
-import { PID } from 'kernel';
+import { PID, Scheduler, SchedulerThreadReturn } from 'os';
 import { RBTreeIndex } from 'scl';
 import { ResolveAction } from 'scl/lib/util';
-import { Scheduler, SchedulerThreadReturn } from './Scheduler';
 
 type ThreadMeta = {
   pid: PID;

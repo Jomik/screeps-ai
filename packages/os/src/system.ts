@@ -1,6 +1,16 @@
-import type { Registry } from 'processes';
-import { PID } from 'kernel/Kernel';
+import { PID } from './kernel';
 
+export type JSONValue =
+  | string
+  | number
+  | boolean
+  | undefined
+  | void
+  | null
+  | { [x: string]: JSONValue }
+  | Array<JSONValue>;
+
+export type JSONPointer = Record<string, JSONValue> | Array<JSONValue>;
 export type SysCall = Sleep | Fork | Kill | Allocate | Children;
 export type SysCallResults =
   | void
@@ -10,11 +20,9 @@ export type SysCallResults =
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
-export type Process<Args extends JSONValue[] = []> = (
-  ...args: Args
-) => Thread<void>;
-export type ArgsForProcess<Type extends keyof Registry> =
-  Registry[Type] extends Process<infer Args> ? Args : never;
+export type Process<Args extends JSONValue[]> = (...args: Args) => Thread<void>;
+export type ArgsForProcess<Type extends Process<JSONValue[]>> =
+  Type extends Process<infer Args> ? Args : never;
 
 export const createProcess = <Args extends JSONValue[]>(
   process: Process<Args>
@@ -51,20 +59,25 @@ export function* hibernate() {
 
 type Fork = {
   type: 'fork';
-  processType: keyof Registry;
+  processType: string;
   args: JSONValue[];
 };
 type ForkResult = {
   type: 'fork';
   pid: PID;
 };
-export function* fork<Type extends keyof Registry>(
+export function fork(type: string, ...args: JSONValue[]): Thread<PID>;
+export function fork<Type extends Process<JSONValue[]>>(
   type: Type,
   ...args: ArgsForProcess<Type>
+): Thread<PID>;
+export function* fork(
+  type: string | Process<JSONValue[]>,
+  ...args: JSONValue[]
 ): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: type,
+    processType: typeof type === 'function' ? type.name : type,
     args,
   };
   assertResultType(res, 'fork');
@@ -105,12 +118,10 @@ export function* allocate<M extends JSONPointer>(
 }
 
 export type ProcessInfo = {
-  [Type in keyof Registry]: {
-    pid: PID;
-    type: Type;
-    args: ArgsForProcess<Type>;
-  };
-}[keyof Registry];
+  pid: PID;
+  type: string;
+  args: JSONValue[];
+};
 
 type Children = {
   type: 'children';
@@ -129,6 +140,6 @@ export function* getChildren(): Thread<Record<PID, ProcessInfo>> {
 }
 
 export const isProcessType =
-  <T extends keyof Registry>(type: T) =>
-  (info: { type: keyof Registry }): info is { type: T } =>
-    info.type === type;
+  <Type extends Process<JSONValue[]> & { name: string }>(type: Type) =>
+  (info: { type: string }): info is { type: Type['name'] } =>
+    info.type === type.name;

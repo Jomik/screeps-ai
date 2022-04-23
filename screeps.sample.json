@@ -7,22 +7,6 @@
     "path": "/",
     "branch": "main"
   },
-  "sim": {
-    "token": "YOUR_TOKEN",
-    "protocol": "https",
-    "hostname": "screeps.com",
-    "port": 443,
-    "path": "/",
-    "branch": "sim"
-  },
-  "season": {
-    "token": "YOUR_TOKEN",
-    "protocol": "https",
-    "hostname": "screeps.com",
-    "port": 443,
-    "path": "/season",
-    "branch": "main"
-  },
   "private": {
     "email": "username",
     "password": "Password",

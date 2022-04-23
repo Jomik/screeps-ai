@@ -1,4 +1,4 @@
-import { getMemoryRef } from 'kernel/memory';
+import { getMemoryRef } from './kernel/memory';
 
 export enum LogLevel {
   Alert = 1,

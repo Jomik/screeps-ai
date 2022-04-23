@@ -1,5 +1,4 @@
-import { PID } from 'kernel/Kernel';
-import { Scheduler, SchedulerThreadReturn } from './Scheduler';
+import { PID, Scheduler, SchedulerThreadReturn } from 'os';
 
 export class RoundRobinScheduler implements Scheduler {
   private pids: PID[] = [];

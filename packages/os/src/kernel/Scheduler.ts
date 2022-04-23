@@ -1,4 +1,4 @@
-import type { PID } from 'kernel';
+import type { PID } from './Kernel';
 
 export type SchedulerThreadReturn =
   | { type: 'sleep'; ticks: number }

@@ -1,5 +1,4 @@
-import { sleep, createProcess } from 'system';
-import { restartOnTickChange } from './utils';
+import { sleep, createProcess, restartOnTickChange } from 'os';
 
 const runMiners = () => {
   const miners = Object.values(Game.creeps).filter(

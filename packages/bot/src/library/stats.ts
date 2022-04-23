@@ -1,4 +1,4 @@
-import { getMemoryRef } from 'kernel/memory';
+import { getMemoryRef } from './memory';
 
 type StatsRecord = {
   [k: string]: number | undefined | StatsRecord;
