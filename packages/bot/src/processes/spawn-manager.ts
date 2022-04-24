@@ -1,5 +1,5 @@
 import { sleep, createProcess } from 'os';
-import { expandPosition } from '../utils/position';
+import { expandPosition } from '../utils';
 
 export const spawnManager = createProcess(function* () {
   const getSpawn = (): StructureSpawn => {

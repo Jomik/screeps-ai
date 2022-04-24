@@ -1,5 +1,9 @@
 import { PID } from './kernel';
 
+declare global {
+  interface OSRegistry {}
+}
+
 export type JSONValue =
   | string
   | number
@@ -21,8 +25,11 @@ export type SysCallResults =
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
 export type Process<Args extends JSONValue[]> = (...args: Args) => Thread<void>;
-export type ArgsForProcess<Type extends Process<JSONValue[]>> =
-  Type extends Process<infer Args> ? Args : never;
+export type ArgsForProcess<Type extends Process<never>> = Type extends Process<
+  infer Args
+>
+  ? Args
+  : never;
 
 export const createProcess = <Args extends JSONValue[]>(
   process: Process<Args>
@@ -66,18 +73,13 @@ type ForkResult = {
   type: 'fork';
   pid: PID;
 };
-export function fork(type: string, ...args: JSONValue[]): Thread<PID>;
-export function fork<Type extends Process<JSONValue[]>>(
+export function* fork<Type extends keyof OSRegistry>(
   type: Type,
-  ...args: ArgsForProcess<Type>
-): Thread<PID>;
-export function* fork(
-  type: string | Process<JSONValue[]>,
-  ...args: JSONValue[]
+  ...args: ArgsForProcess<OSRegistry[Type]>
 ): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: typeof type === 'function' ? type.name : type,
+    processType: type,
     args,
   };
   assertResultType(res, 'fork');
@@ -118,10 +120,12 @@ export function* allocate<M extends JSONPointer>(
 }
 
 export type ProcessInfo = {
-  pid: PID;
-  type: string;
-  args: JSONValue[];
-};
+  [Type in keyof OSRegistry]: {
+    pid: PID;
+    type: Type;
+    args: ArgsForProcess<OSRegistry[Type]>;
+  };
+}[keyof OSRegistry];
 
 type Children = {
   type: 'children';
@@ -140,6 +144,6 @@ export function* getChildren(): Thread<Record<PID, ProcessInfo>> {
 }
 
 export const isProcessType =
-  <Type extends Process<JSONValue[]> & { name: string }>(type: Type) =>
-  (info: { type: string }): info is { type: Type['name'] } =>
-    info.type === type.name;
+  <Type extends keyof OSRegistry>(type: Type) =>
+  (info: { type: keyof OSRegistry }): info is { type: Type } =>
+    info.type === type;

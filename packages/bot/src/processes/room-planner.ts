@@ -1,5 +1,5 @@
 import { Thread, sleep, createProcess } from 'os';
-import { expandPosition } from '../utils/position';
+import { expandPosition } from '../utils';
 
 export const roomPlanner = createProcess(function* (roomName: string) {
   const costMatrix = new PathFinder.CostMatrix();

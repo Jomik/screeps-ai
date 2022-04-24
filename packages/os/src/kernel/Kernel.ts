@@ -83,7 +83,7 @@ export class Kernel {
   private readonly threads = new Map<PID, Thread>();
 
   constructor(
-    private readonly registry: Record<string, Process<never>>,
+    private readonly registry: OSRegistry,
     private readonly scheduler: Scheduler,
     private readonly logger: Logger
   ) {
@@ -147,7 +147,8 @@ export class Kernel {
 
   private initThread(pid: PID) {
     const { type, memory } = this.getProcessDescriptor(pid);
-    const process = type === 'tron' ? tron : this.registry[type];
+    const process =
+      type === 'tron' ? tron : this.registry[type as keyof OSRegistry];
     if (!process) {
       this.kill(pid);
       this.logger.error(

@@ -1,46 +1,22 @@
-import { PID } from 'os';
-import {
-  getChildren,
-  createProcess,
-  fork,
-  sleep,
-  ArgsForProcess,
-  ProcessInfo,
-} from 'os';
-import type { Registry } from '../registry';
-import { creepManager } from './creep-manager';
-import { roomPlanner } from './room-planner';
-import { spawnManager } from './spawn-manager';
+import { getChildren, createProcess, fork, sleep } from 'os';
+import { groupByKey } from '../utils';
 
 export const init = createProcess(function* () {
   for (;;) {
-    const children = yield* getChildren();
-    const childMap = Object.values(children).reduce<{
-      [Type in keyof Registry]?: Array<{
-        type: Type;
-        pid: PID;
-        args: ArgsForProcess<Registry[Type]>;
-      }>;
-    }>((acc, cur) => {
-      return {
-        ...acc,
-        [cur.type]: (
-          acc[cur.type as keyof Registry] ?? ([] as ProcessInfo[])
-        ).concat(cur),
-      };
-    }, {});
+    const childrenByPID = yield* getChildren();
+    const childMap = groupByKey(Object.values(childrenByPID), 'type');
 
     if (
       childMap.creepManager === undefined ||
       childMap.creepManager.length === 0
     ) {
-      yield* fork(creepManager);
+      yield* fork('creepManager');
     }
     if (
       childMap.spawnManager === undefined ||
       childMap.spawnManager.length === 0
     ) {
-      yield* fork(spawnManager);
+      yield* fork('spawnManager');
     }
     for (const room of Object.values(Game.rooms)) {
       if (
@@ -49,7 +25,7 @@ export const init = createProcess(function* () {
         ) &&
         room.find(FIND_MY_SPAWNS).length > 0
       ) {
-        yield* fork(roomPlanner, room.name);
+        yield* fork('roomPlanner', room.name);
       }
     }
 

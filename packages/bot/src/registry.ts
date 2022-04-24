@@ -1,3 +1,8 @@
 import * as registry from './processes';
-export type Registry = typeof registry;
+
+type Registry = typeof registry;
+declare global {
+  interface OSRegistry extends Registry {}
+}
+
 export { registry };
