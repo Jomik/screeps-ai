@@ -1,5 +1,10 @@
 import { allocate, JSONValue, Thread } from './system';
 
+export const isProcessType =
+  <Type extends keyof OSRegistry>(type: Type) =>
+  (info: { type: keyof OSRegistry }): info is { type: Type } =>
+    info.type === type;
+
 export const restartOnTickChange = <Args extends any[], R>(
   process: (...args: Args) => Thread<R>
 ): ((...args: Args) => Thread<R>) => {

@@ -5,19 +5,16 @@ import {
   hibernate,
   JSONPointer,
   JSONValue,
+  OSExit,
+  PID,
   Process,
   ProcessInfo,
   SysCallResults,
   Thread,
 } from '../system';
 import { getMemoryRef } from './memory';
-import { OSExit } from './errors';
 
 const ArgsMemoryKey = '__args';
-
-export type PID = number & {
-  __: 'PID';
-};
 
 type ProcessMemory = {
   [ArgsMemoryKey]: JSONValue[];
@@ -27,29 +24,29 @@ type ProcessMemory = {
 type ProcessDescriptor = {
   type: string;
   pid: PID;
-  parent: PID;
   memory: ProcessMemory;
+  parent: PID;
 };
 
 type PackedProcessDescriptor = [
   type: string,
   pid: PID,
-  parent: PID,
-  memory: ProcessMemory
+  memory: ProcessMemory,
+  parent: PID
 ];
 
 const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
   entry.type,
   entry.pid,
-  entry.parent,
   entry.memory,
+  entry.parent,
 ];
 
 const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
   type: entry[0],
   pid: entry[1],
-  parent: entry[2],
-  memory: entry[3],
+  memory: entry[2],
+  parent: entry[3],
 });
 
 type ProcessTable = Record<PID, PackedProcessDescriptor>;
@@ -80,13 +77,15 @@ export class Kernel {
     return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
   }
 
+  private readonly registry: Record<string, Process<never>>;
   private readonly threads = new Map<PID, Thread>();
 
   constructor(
-    private readonly registry: OSRegistry,
+    registry: OSRegistry,
     private readonly scheduler: Scheduler,
     private readonly logger: Logger
   ) {
+    this.registry = registry as never;
     if (!this.table[0 as PID]) {
       this.logger.warn('tron missing');
       this.reboot();

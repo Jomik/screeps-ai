@@ -1,4 +1,9 @@
-import { PID } from './kernel';
+export class OSExit extends Error {}
+
+declare const PIDSymbol: unique symbol;
+export type PID = number & {
+  [PIDSymbol]: 'PID';
+};
 
 declare global {
   interface OSRegistry {}
@@ -97,6 +102,10 @@ export function* kill(pid: PID): Thread {
   };
 }
 
+export const exit = (reason: string): never => {
+  throw new OSExit(reason);
+};
+
 type Allocate = {
   type: 'allocate';
 };
@@ -142,8 +151,3 @@ export function* getChildren(): Thread<Record<PID, ProcessInfo>> {
   assertResultType(res, 'children');
   return res.children;
 }
-
-export const isProcessType =
-  <Type extends keyof OSRegistry>(type: Type) =>
-  (info: { type: keyof OSRegistry }): info is { type: Type } =>
-    info.type === type;
