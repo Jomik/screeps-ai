@@ -1,11 +1,15 @@
-import { PID, Scheduler, SchedulerThreadReturn } from 'os';
+import { PID, Priority, Scheduler, SchedulerThreadReturn } from 'os';
 
 export class RoundRobinScheduler implements Scheduler {
   private pids: PID[] = [];
 
   constructor(private readonly quota: () => number) {}
+  defaultPriority: Priority = 0;
+  clampPriority(requestedPriority: Priority): Priority {
+    return Math.max(Math.min(10, requestedPriority), 0);
+  }
 
-  add(pid: PID): void {
+  add(pid: PID, priority: Priority): void {
     if (this.pids.includes(pid)) {
       return;
     }

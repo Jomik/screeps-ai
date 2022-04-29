@@ -9,17 +9,17 @@ declare global {
   interface OSRegistry {}
 }
 
-export type JSONValue =
+export type MemoryValue =
   | string
   | number
   | boolean
   | undefined
   | void
   | null
-  | { [x: string]: JSONValue }
-  | Array<JSONValue>;
+  | { [x: string]: MemoryValue }
+  | Array<MemoryValue>;
 
-export type JSONPointer = Record<string, JSONValue> | Array<JSONValue>;
+export type MemoryPointer = Record<string, MemoryValue> | Array<MemoryValue>;
 export type SysCall = Sleep | Fork | Kill | Allocate | Children;
 export type SysCallResults =
   | void
@@ -29,14 +29,16 @@ export type SysCallResults =
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
-export type Process<Args extends JSONValue[]> = (...args: Args) => Thread<void>;
+export type Process<Args extends MemoryValue[]> = (
+  ...args: Args
+) => Thread<void>;
 export type ArgsForProcess<Type extends Process<never>> = Type extends Process<
   infer Args
 >
   ? Args
   : never;
 
-export const createProcess = <Args extends JSONValue[]>(
+export const createProcess = <Args extends MemoryValue[]>(
   process: Process<Args>
 ): Process<Args> => process;
 
@@ -72,7 +74,8 @@ export function* hibernate() {
 type Fork = {
   type: 'fork';
   processType: string;
-  args: JSONValue[];
+  args: MemoryValue[];
+  priority?: number;
 };
 type ForkResult = {
   type: 'fork';
@@ -80,12 +83,14 @@ type ForkResult = {
 };
 export function* fork<Type extends keyof OSRegistry>(
   type: Type,
+  priority?: number,
   ...args: ArgsForProcess<OSRegistry[Type]>
 ): Thread<PID> {
   const res = yield {
     type: 'fork',
     processType: type,
     args,
+    priority,
   };
   assertResultType(res, 'fork');
   return res.pid;
@@ -111,10 +116,10 @@ type Allocate = {
 };
 type AllocateResult = {
   type: 'allocate';
-  pointer: Record<string, JSONPointer>;
+  pointer: Record<string, MemoryPointer>;
 };
 
-export function* allocate<M extends JSONPointer>(
+export function* allocate<M extends MemoryPointer>(
   address: string,
   defaultValue: M
 ): Thread<NonNullable<M>> {
@@ -131,6 +136,7 @@ export function* allocate<M extends JSONPointer>(
 export type ProcessInfo = {
   [Type in keyof OSRegistry]: {
     pid: PID;
+    parent: PID;
     type: Type;
     args: ArgsForProcess<OSRegistry[Type]>;
   };

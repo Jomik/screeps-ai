@@ -1,10 +1,9 @@
-import type { Logger } from '../Logger';
-import type { Scheduler, SchedulerThreadReturn } from './Scheduler';
+import type { Priority, Scheduler, SchedulerThreadReturn } from './Scheduler';
 import {
   createProcess,
   hibernate,
-  JSONPointer,
-  JSONValue,
+  MemoryPointer,
+  MemoryValue,
   OSExit,
   PID,
   Process,
@@ -12,13 +11,12 @@ import {
   SysCallResults,
   Thread,
 } from '../system';
-import { getMemoryRef } from './memory';
 
 const ArgsMemoryKey = '__args';
 
 type ProcessMemory = {
-  [ArgsMemoryKey]: JSONValue[];
-  [k: string]: JSONPointer;
+  [ArgsMemoryKey]: MemoryValue[];
+  [k: string]: MemoryPointer;
 };
 
 type ProcessDescriptor = {
@@ -26,13 +24,15 @@ type ProcessDescriptor = {
   pid: PID;
   memory: ProcessMemory;
   parent: PID;
+  priority: Priority;
 };
 
 type PackedProcessDescriptor = [
   type: string,
   pid: PID,
   memory: ProcessMemory,
-  parent: PID
+  parent: PID,
+  priority: Priority
 ];
 
 const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
@@ -40,6 +40,7 @@ const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
   entry.pid,
   entry.memory,
   entry.parent,
+  entry.priority,
 ];
 
 const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
@@ -47,7 +48,16 @@ const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
   pid: entry[1],
   memory: entry[2],
   parent: entry[3],
+  priority: entry[4],
 });
+
+const entryToInfo = (entry: ProcessDescriptor): ProcessInfo =>
+  ({
+    pid: entry.pid,
+    parent: entry.parent,
+    type: entry.type,
+    args: entry.memory[ArgsMemoryKey],
+  } as never);
 
 type ProcessTable = Record<PID, PackedProcessDescriptor>;
 
@@ -56,11 +66,21 @@ const tron = createProcess(function* () {
   yield* hibernate();
 });
 
-export class Kernel {
-  private readonly tableRef = getMemoryRef<ProcessTable>('processTable', {});
-  private get table(): ProcessTable {
-    return this.tableRef.get();
-  }
+export interface IKernel {
+  run(): void;
+  reboot(): void;
+  kill(pid: PID): boolean;
+  ps(): Array<ProcessInfo>;
+}
+
+interface KernelLogger {
+  onKernelError?(message: string): void;
+  onThreadExit?(process: ProcessInfo, reason: string): void;
+  onThreadError?(process: ProcessInfo, error: unknown): void;
+}
+
+export class Kernel implements IKernel {
+  private table: ProcessTable;
   private getProcessDescriptor(pid: PID): ProcessDescriptor {
     const descriptor = this.table[pid];
     if (!descriptor) {
@@ -69,11 +89,7 @@ export class Kernel {
 
     return unpackEntry(descriptor);
   }
-  private setProcessDescriptor(descriptor: ProcessDescriptor): void {
-    this.table[descriptor.pid] = packEntry(descriptor);
-  }
-
-  get pids(): PID[] {
+  private get pids(): PID[] {
     return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
   }
 
@@ -83,11 +99,14 @@ export class Kernel {
   constructor(
     registry: OSRegistry,
     private readonly scheduler: Scheduler,
-    private readonly logger: Logger
+    memoryReference: Record<string, MemoryValue>,
+    private readonly logger?: KernelLogger
   ) {
+    this.table = memoryReference['table'] as ProcessTable;
     this.registry = registry as never;
-    if (!this.table[0 as PID]) {
-      this.logger.warn('tron missing');
+    const root = this.table[0 as PID];
+    if (!root || unpackEntry(root).type !== 'tron') {
+      this.logger?.onKernelError?.('Root process, tron, is missing or corrupt');
       this.reboot();
     } else {
       for (const pid of this.pids) {
@@ -98,15 +117,14 @@ export class Kernel {
   }
 
   reboot() {
-    this.logger.info('Rebooting...');
-
     for (const pid of this.pids) {
       this.scheduler.remove(pid);
+      delete this.table[pid];
     }
+    this.threads.clear();
 
-    this.tableRef.set({});
-    this.createProcess('tron' as never, [], 0 as PID, 0 as PID);
-    this.createProcess('init', [], 1 as PID, 0 as PID);
+    this.createProcess('tron' as never, [], 0 as PID, 0 as PID, undefined);
+    this.createProcess('init', [], 0 as PID, 1 as PID, undefined);
   }
 
   private PIDCount: PID;
@@ -123,34 +141,39 @@ export class Kernel {
 
   private createProcess(
     type: string,
-    args: JSONValue[],
-    pid: PID,
-    parent: PID
+    args: MemoryValue[],
+    parent: PID,
+    pid: PID = this.acquirePID(),
+    priority: Priority = this.scheduler.defaultPriority
   ) {
     // istanbul ignore next
     if (pid in this.table) {
-      throw new Error(`PID already occupied: ${pid}`);
+      throw new Error(`PID already occupied`);
     }
 
-    this.setProcessDescriptor({
+    const descriptor = {
       type,
       pid,
       parent,
       memory: {
         [ArgsMemoryKey]: args,
       },
-    });
+      priority: this.scheduler.clampPriority(priority),
+    };
+
+    this.table[pid] = packEntry(descriptor);
 
     this.initThread(pid);
+    return descriptor;
   }
 
   private initThread(pid: PID) {
-    const { type, memory } = this.getProcessDescriptor(pid);
+    const { type, memory, priority } = this.getProcessDescriptor(pid);
     const process =
       type === 'tron' ? tron : this.registry[type as keyof OSRegistry];
     if (!process) {
       this.kill(pid);
-      this.logger.error(
+      this.logger?.onKernelError?.(
         `Error trying to initialise pid ${pid} with unknown type ${type}`
       );
       return;
@@ -158,7 +181,7 @@ export class Kernel {
 
     const args = memory[ArgsMemoryKey] as [];
     this.threads.set(pid, process(...args));
-    this.scheduler.add(pid);
+    this.scheduler.add(pid, priority);
   }
 
   private findChildren(pid: PID): ProcessDescriptor[] {
@@ -167,27 +190,29 @@ export class Kernel {
       .filter(({ parent }) => parent === pid);
   }
 
-  public kill(pid: PID) {
-    if (pid === 0) {
-      this.logger.alert('Trying to kill Tron, rebooting...');
-      this.reboot();
-      return;
+  public kill(pid: PID): boolean {
+    if (pid === 0 || !(pid in this.table || this.threads.has(pid))) {
+      return false;
     }
-
-    this.threads.delete(pid);
-    delete this.table[pid];
-    this.scheduler.remove(pid);
 
     // Orphans are killed
     this.findChildren(pid).forEach((child) => {
       this.kill(child.pid);
     });
+
+    this.threads.delete(pid);
+    delete this.table[pid];
+    this.scheduler.remove(pid);
+
+    return true;
   }
 
   private runThread(pid: PID): SchedulerThreadReturn {
     const thread = this.threads.get(pid);
     if (!thread) {
-      this.logger.error(`Attempting to run ${pid} with missing thread.`);
+      this.logger?.onKernelError?.(
+        `Attempting to run ${pid} with missing thread.`
+      );
       this.kill(pid);
       return undefined;
     }
@@ -211,11 +236,16 @@ export class Kernel {
           return sysCall.value;
         }
         case 'fork': {
-          const { args, processType } = sysCall.value;
+          const { args, processType, priority } = sysCall.value;
           const childPID = this.acquirePID();
-          this.createProcess(processType, args, childPID, pid);
+          this.createProcess(
+            processType,
+            args,
+            childPID,
+            pid,
+            priority as Priority
+          );
           nextArg = { type: 'fork', pid: childPID };
-          this.logger.info(`PID ${pid} forked ${processType}:${childPID}`);
           break;
         }
         case 'kill': {
@@ -235,9 +265,9 @@ export class Kernel {
           const children = this.findChildren(pid).reduce<
             Record<PID, ProcessInfo>
           >(
-            (acc, { pid, type, memory }) => ({
+            (acc, entry) => ({
               ...acc,
-              [pid]: { pid, type, args: memory[ArgsMemoryKey] },
+              [pid]: entryToInfo(entry),
             }),
             {}
           );
@@ -259,28 +289,19 @@ export class Kernel {
 
       const pid = next.value;
       const entry = this.getProcessDescriptor(pid);
-      this.logger.verbose(`Running thread ${entry.type}:${pid}`);
       const startCPU = Game.cpu.getUsed();
       try {
         nextArg = this.runThread(pid);
       } catch (err) {
         this.kill(pid);
         if (err instanceof OSExit) {
-          this.logger.debug(
-            `${entry.type}:${pid} exited with reason: ${err.message}`
-          );
+          this.logger?.onThreadExit?.(entryToInfo(entry), err.message);
           continue;
         }
-        // TODO: Better error handling
-        this.logger.error(
-          `Error while running ${entry.type}:${pid}\n${
-            /*ErrorMapper.sourceMappedStackTrace(err as Error)*/ ''
-          }`
-        );
+        this.logger?.onThreadError?.(entryToInfo(entry), err);
         continue;
       }
       const endCpu = Game.cpu.getUsed();
-      this.logger.verbose(`${entry.type}:${pid} ${nextArg?.type ?? 'yield'}`);
       // TODO
       // recordStats({
       //   threads: {
@@ -293,33 +314,9 @@ export class Kernel {
   }
 
   /* istanbul ignore next */
-  public ps(pid = 0 as PID) {
-    const tableByParent = _.groupBy(
-      Object.values(this.table)
-        .map(unpackEntry)
-        .filter(({ pid }) => pid !== 0),
-      'parent'
+  public ps(): Array<ProcessInfo> {
+    return Object.values(this.table).map((entry) =>
+      entryToInfo(unpackEntry(entry))
     );
-
-    const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
-      const entry = this.getProcessDescriptor(pid);
-      const { type } = entry;
-
-      const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;
-
-      const children = tableByParent[pid] ?? [];
-      children.sort((a, b) => a.pid - b.pid);
-      const childTree = children.map(({ pid }, i) =>
-        getSubTree(
-          prefix + (end ? '    ' : '|    '),
-          pid,
-          i === children.length - 1
-        )
-      );
-
-      return `${header}\n${childTree.join('')}`;
-    };
-
-    return getSubTree('', pid, true);
   }
 }

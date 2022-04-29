@@ -1,4 +1,4 @@
-import { PID, Scheduler, SchedulerThreadReturn } from 'os';
+import { PID, Priority, Scheduler, SchedulerThreadReturn } from 'os';
 import { RBTreeIndex } from 'scl';
 import { ResolveAction } from 'scl/lib/util';
 
@@ -29,6 +29,10 @@ export class CFS implements Scheduler {
     private readonly clock: () => number,
     private readonly quota: () => number
   ) {}
+  defaultPriority: Priority = 10;
+  clampPriority(requestedPriority: Priority): Priority {
+    return Math.max(Math.min(10, requestedPriority), 0);
+  }
 
   add(pid: PID) {
     if (this.timeline.has({ pid, startTick: 0 })) {

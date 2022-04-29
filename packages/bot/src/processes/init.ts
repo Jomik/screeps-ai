@@ -25,7 +25,7 @@ export const init = createProcess(function* () {
         ) &&
         room.find(FIND_MY_SPAWNS).length > 0
       ) {
-        yield* fork('roomPlanner', room.name);
+        yield* fork('roomPlanner', undefined, room.name);
       }
     }
 

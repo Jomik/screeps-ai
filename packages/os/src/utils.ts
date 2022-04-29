@@ -1,4 +1,4 @@
-import { allocate, JSONValue, Thread } from './system';
+import { allocate, MemoryValue, Thread } from './system';
 
 export const isProcessType =
   <Type extends keyof OSRegistry>(type: Type) =>
@@ -25,7 +25,7 @@ export const restartOnTickChange = <Args extends any[], R>(
   };
 };
 
-export const runOnce = <Args extends any[], R extends JSONValue>(
+export const runOnce = <Args extends any[], R extends MemoryValue>(
   process: (...args: Args) => Thread<R>
 ): ((...args: Args) => Thread<R>) => {
   return function* (...args) {

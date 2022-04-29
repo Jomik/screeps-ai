@@ -1,6 +1,6 @@
 import './polyfills';
 
-import { Kernel, PID, LogLevel, ScreepsLogger } from 'os';
+import { Kernel, MemoryValue, PID } from 'os';
 import { ErrorMapper } from './utils/ErrorMapper';
 import { RoundRobinScheduler } from './schedulers/RoundRobinScheduler';
 import { recordGlobals, resetStats } from './library';
@@ -11,17 +11,45 @@ declare const global: Record<string, any>;
 const kernel = new Kernel(
   registry,
   new RoundRobinScheduler(() => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()),
-  new ScreepsLogger('Kernel')
+  Memory['kernel'] as Record<string, MemoryValue>
 );
 
 // loggerFactory: (name) => new ScreepsLogger(name),
 
 // @ts-ignore: to use ps in console
-global.ps = (pid?: PID) => {
-  if (pid !== undefined && !kernel.pids.includes(pid)) {
-    return 'Invalid argument';
-  }
-  return kernel.ps(pid);
+global.ps = () => {
+  const processes = kernel.ps();
+  const processMap = new Map(processes.map((info) => [info.pid, info]));
+
+  const processesByParent = _.groupBy(
+    processes.filter(({ pid }) => pid !== 0),
+    'parent'
+  );
+
+  const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
+    const entry = processMap.get(pid);
+    if (!entry) {
+      return `${prefix}${end ? '`-- ' : '|-- '}MISSING:${pid}`;
+    }
+
+    const { type } = entry;
+
+    const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;
+
+    const children = processesByParent[pid] ?? [];
+    children.sort((a, b) => a.pid - b.pid);
+    const childTree = children.map(({ pid }, i) =>
+      getSubTree(
+        prefix + (end ? '    ' : '|    '),
+        pid,
+        i === children.length - 1
+      )
+    );
+
+    return `${header}\n${childTree.join('')}`;
+  };
+
+  return getSubTree('', 0 as PID, true);
 };
 // @ts-ignore: to use reboot in console
 global.reboot = () => {
@@ -29,21 +57,7 @@ global.reboot = () => {
 };
 // @ts-ignore: to use kill in console
 global.kill = (pid: PID) => {
-  if (!kernel.pids.includes(pid)) {
-    return 'Invalid argument';
-  }
   return kernel.kill(pid);
-};
-
-// @ts-ignore: to use setLogLevel in console
-global.LogLevel = LogLevel;
-// @ts-ignore: to use setLogLevel in console
-global.setLogLevel = (level: LogLevel) => {
-  return ScreepsLogger.setLogLevel(level);
-};
-// @ts-ignore: to use setLogFilter in console
-global.setLogFilter = (filter: string | undefined) => {
-  return ScreepsLogger.setLogFilter(filter);
 };
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
