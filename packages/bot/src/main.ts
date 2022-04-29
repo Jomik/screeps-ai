@@ -1,8 +1,7 @@
 import './polyfills';
 
-import { Kernel, MemoryValue, PID } from 'os';
+import { Kernel, MemoryValue, PID, PriorityScheduler } from 'os';
 import { ErrorMapper } from './utils/ErrorMapper';
-import { RoundRobinScheduler } from './schedulers/RoundRobinScheduler';
 import { recordGlobals, resetStats } from './library';
 import { registry } from './registry';
 
@@ -19,7 +18,10 @@ const memoryPointer = !Memory['kernel']
   : Memory['kernel'];
 const kernel = new Kernel(
   registry,
-  new RoundRobinScheduler(() => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()),
+  new PriorityScheduler(0, {
+    quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
+    clock: () => Game.time,
+  }),
   memoryPointer,
   {
     onKernelError(message) {
