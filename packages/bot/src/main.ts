@@ -7,11 +7,31 @@ import { recordGlobals, resetStats } from './library';
 import { registry } from './registry';
 
 declare const global: Record<string, any>;
+declare const console: { log(message: string): void };
 
+declare global {
+  interface Memory {
+    kernel?: Record<string, MemoryValue>;
+  }
+}
+const memoryPointer = !Memory['kernel']
+  ? (Memory['kernel'] = {})
+  : Memory['kernel'];
 const kernel = new Kernel(
   registry,
   new RoundRobinScheduler(() => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()),
-  Memory['kernel'] as Record<string, MemoryValue>
+  memoryPointer,
+  {
+    onKernelError(message) {
+      console.log(message);
+    },
+    onThreadExit(info, reason) {
+      console.log(`${info.type} exited: ${reason}`);
+    },
+    onThreadError(info, error: Error) {
+      console.log(`${info.type} exited: ${error.message}`);
+    },
+  }
 );
 
 // loggerFactory: (name) => new ScreepsLogger(name),
@@ -51,10 +71,12 @@ global.ps = () => {
 
   return getSubTree('', 0 as PID, true);
 };
+
 // @ts-ignore: to use reboot in console
 global.reboot = () => {
   return kernel.reboot();
 };
+
 // @ts-ignore: to use kill in console
 global.kill = (pid: PID) => {
   return kernel.kill(pid);

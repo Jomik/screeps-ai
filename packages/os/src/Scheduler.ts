@@ -1,4 +1,4 @@
-import type { PID } from '../system';
+import type { PID } from './system';
 
 export type SchedulerThreadReturn =
   | { type: 'sleep'; ticks: number }

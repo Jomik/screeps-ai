@@ -1,7 +1,5 @@
 import type { Priority, Scheduler, SchedulerThreadReturn } from './Scheduler';
 import {
-  createProcess,
-  hibernate,
   MemoryPointer,
   MemoryValue,
   OSExit,
@@ -10,7 +8,7 @@ import {
   ProcessInfo,
   SysCallResults,
   Thread,
-} from '../system';
+} from './system';
 
 const ArgsMemoryKey = '__args';
 
@@ -51,20 +49,14 @@ const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
   priority: entry[4],
 });
 
-const entryToInfo = (entry: ProcessDescriptor): ProcessInfo =>
-  ({
-    pid: entry.pid,
-    parent: entry.parent,
-    type: entry.type,
-    args: entry.memory[ArgsMemoryKey],
-  } as never);
+const entryToInfo = (entry: ProcessDescriptor): ProcessInfo => ({
+  pid: entry.pid,
+  parent: entry.parent,
+  type: entry.type as keyof OSRegistry,
+  args: entry.memory[ArgsMemoryKey] as never,
+});
 
 type ProcessTable = Record<PID, PackedProcessDescriptor>;
-
-const tron = createProcess(function* () {
-  // TODO: Log global reset
-  yield* hibernate();
-});
 
 export interface IKernel {
   run(): void;
@@ -93,7 +85,7 @@ export class Kernel implements IKernel {
     return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
   }
 
-  private readonly registry: Record<string, Process<never>>;
+  private readonly registry: Record<string, Process<MemoryValue[]>>;
   private readonly threads = new Map<PID, Thread>();
 
   constructor(
@@ -102,11 +94,16 @@ export class Kernel implements IKernel {
     memoryReference: Record<string, MemoryValue>,
     private readonly logger?: KernelLogger
   ) {
-    this.table = memoryReference['table'] as ProcessTable;
+    this.table = (
+      !memoryReference['table']
+        ? (memoryReference['table'] = {})
+        : memoryReference['table']
+    ) as ProcessTable;
+
     this.registry = registry as never;
     const root = this.table[0 as PID];
-    if (!root || unpackEntry(root).type !== 'tron') {
-      this.logger?.onKernelError?.('Root process, tron, is missing or corrupt');
+    if (!root || unpackEntry(root).type !== 'init') {
+      this.logger?.onKernelError?.('Root process, init, is missing or corrupt');
       this.reboot();
     } else {
       for (const pid of this.pids) {
@@ -123,8 +120,7 @@ export class Kernel implements IKernel {
     }
     this.threads.clear();
 
-    this.createProcess('tron' as never, [], 0 as PID, 0 as PID, undefined);
-    this.createProcess('init', [], 0 as PID, 1 as PID, undefined);
+    this.createProcess('init', [], 0 as PID, 0 as PID, undefined);
   }
 
   private PIDCount: PID;
@@ -145,7 +141,7 @@ export class Kernel implements IKernel {
     parent: PID,
     pid: PID = this.acquirePID(),
     priority: Priority = this.scheduler.defaultPriority
-  ) {
+  ): ProcessDescriptor {
     // istanbul ignore next
     if (pid in this.table) {
       throw new Error(`PID already occupied`);
@@ -169,8 +165,7 @@ export class Kernel implements IKernel {
 
   private initThread(pid: PID) {
     const { type, memory, priority } = this.getProcessDescriptor(pid);
-    const process =
-      type === 'tron' ? tron : this.registry[type as keyof OSRegistry];
+    const process = this.registry[type];
     if (!process) {
       this.kill(pid);
       this.logger?.onKernelError?.(
@@ -179,7 +174,7 @@ export class Kernel implements IKernel {
       return;
     }
 
-    const args = memory[ArgsMemoryKey] as [];
+    const args = memory[ArgsMemoryKey];
     this.threads.set(pid, process(...args));
     this.scheduler.add(pid, priority);
   }
@@ -237,15 +232,14 @@ export class Kernel implements IKernel {
         }
         case 'fork': {
           const { args, processType, priority } = sysCall.value;
-          const childPID = this.acquirePID();
-          this.createProcess(
+          const child = this.createProcess(
             processType,
             args,
-            childPID,
             pid,
+            undefined,
             priority as Priority
           );
-          nextArg = { type: 'fork', pid: childPID };
+          nextArg = { type: 'fork', pid: child.pid };
           break;
         }
         case 'kill': {
@@ -267,7 +261,7 @@ export class Kernel implements IKernel {
           >(
             (acc, entry) => ({
               ...acc,
-              [pid]: entryToInfo(entry),
+              [entry.pid]: entryToInfo(entry),
             }),
             {}
           );

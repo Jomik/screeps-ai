@@ -6,7 +6,9 @@ export type PID = number & {
 };
 
 declare global {
-  interface OSRegistry {}
+  interface OSRegistry {
+    init: Process<[]>;
+  }
 }
 
 export type MemoryValue =
@@ -32,7 +34,7 @@ export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 export type Process<Args extends MemoryValue[]> = (
   ...args: Args
 ) => Thread<void>;
-export type ArgsForProcess<Type extends Process<never>> = Type extends Process<
+export type ArgsForProcess<Type extends Process<any>> = Type extends Process<
   infer Args
 >
   ? Args
