@@ -1,4 +1,5 @@
 import { sleep, createProcess, restartOnTickChange } from 'os';
+import { isDefined } from '../utils';
 
 const runMiners = () => {
   const miners = Object.values(Game.creeps).filter(
@@ -6,6 +7,10 @@ const runMiners = () => {
   );
 
   for (const miner of miners) {
+    if (!isDefined(miner.memory.slot)) {
+      miner.suicide();
+      continue;
+    }
     const [x, y] = miner.memory.slot;
     if (miner.pos.x !== x || miner.pos.y !== y) {
       miner.moveTo(x, y, { visualizePathStyle: { lineStyle: 'dashed' } });

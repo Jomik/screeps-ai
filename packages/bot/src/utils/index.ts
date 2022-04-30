@@ -15,3 +15,6 @@ export const groupByKey = <T extends Record<Key, string>, Key extends string>(
       [cur[key]]: (acc[cur[key]] ?? ([] as T[])).concat(cur),
     };
   }, {} as GroupByKey<T, Key>);
+
+export const isDefined = <T>(value: T | undefined | null): value is T =>
+  value !== undefined && value !== null;

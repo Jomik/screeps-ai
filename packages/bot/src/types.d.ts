@@ -1,5 +1,5 @@
 interface CreepMemory {
-  slot: [number, number];
+  slot?: [number, number];
 }
 
 interface Memory extends Record<string, unknown> {}

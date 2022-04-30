@@ -1,5 +1,5 @@
 import { sleep, createProcess } from 'os';
-import { expandPosition } from '../utils';
+import { expandPosition, isDefined } from '../utils';
 
 export const spawnManager = createProcess(function* () {
   const getSpawn = (): StructureSpawn => {
@@ -85,7 +85,9 @@ export const spawnManager = createProcess(function* () {
     } else if (haulers.length === 0) {
       spawnHauler();
     } else if (miners.length < slots.length) {
-      const takenSlots = miners.map((creep) => creep.memory.slot);
+      const takenSlots = miners
+        .map((creep) => creep.memory.slot)
+        .filter(isDefined);
       const freeSlots = slots.filter(
         (pos) => !takenSlots.some(([x, y]) => pos.x === x && pos.y === y)
       );

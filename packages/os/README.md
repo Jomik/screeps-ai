@@ -27,21 +27,10 @@ export { registry };
 
 We can now instantiate our `Kernel` and run it in the loop.
 ```ts
-// We somehow have to get a reference that the kernel can use to store its data.
-declare global {
-  interface Memory {
-    kernel?: Record<string, MemoryValue>;
-  }
-}
-const memoryPointer = !Memory['kernel']
-  ? (Memory['kernel'] = {})
-  : Memory['kernel'];
-
-// Instantiate
 const kernel = new Kernel(
   registry,
   new RoundRobinScheduler(() => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed()),
-  memoryPointer
+  (key, value) => getMemoryRef(`kernel:${key}`, value),
 );
 
 export const loop = () => {

@@ -71,8 +71,20 @@ interface KernelLogger {
   onThreadError?(process: ProcessInfo, error: unknown): void;
 }
 
+interface PersistentDataHandle<T extends MemoryValue> {
+  get(): T;
+  set(value: MemoryValue): void;
+}
+
 export class Kernel implements IKernel {
-  private table: ProcessTable;
+  private tableRef = this.getDataHandle<ProcessTable>('table', {});
+  private get table(): ProcessTable {
+    return this.tableRef.get();
+  }
+  private set table(value: ProcessTable) {
+    this.tableRef.set(value);
+  }
+
   private getProcessDescriptor(pid: PID): ProcessDescriptor {
     const descriptor = this.table[pid];
     if (!descriptor) {
@@ -91,15 +103,12 @@ export class Kernel implements IKernel {
   constructor(
     registry: OSRegistry,
     private readonly scheduler: Scheduler,
-    memoryReference: Record<string, MemoryValue>,
+    private readonly getDataHandle: <T extends MemoryValue>(
+      key: string,
+      defaultValue: T
+    ) => PersistentDataHandle<T>,
     private readonly logger?: KernelLogger
   ) {
-    this.table = (
-      !memoryReference['table']
-        ? (memoryReference['table'] = {})
-        : memoryReference['table']
-    ) as ProcessTable;
-
     this.registry = registry as never;
     const root = this.table[0 as PID];
     if (!root || unpackEntry(root).type !== 'init') {
@@ -116,8 +125,8 @@ export class Kernel implements IKernel {
   reboot() {
     for (const pid of this.pids) {
       this.scheduler.remove(pid);
-      delete this.table[pid];
     }
+    this.table = {};
     this.threads.clear();
 
     this.createProcess('init', [], 0 as PID, 0 as PID, undefined);

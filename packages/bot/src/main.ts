@@ -2,44 +2,43 @@ import './polyfills';
 
 import { Kernel, MemoryValue, PID, PriorityScheduler } from 'os';
 import { ErrorMapper } from './utils/ErrorMapper';
-import { recordGlobals, resetStats } from './library';
+import {
+  getMemoryRef,
+  LogLevel,
+  recordGlobals,
+  resetStats,
+  createLogger,
+  setLogFilter,
+  setLogLevel,
+} from './library';
 import { registry } from './registry';
+import { wrapWithMemoryHack } from './utils/memory-hack';
 
 declare const global: Record<string, any>;
-declare const console: { log(message: string): void };
 
-declare global {
-  interface Memory {
-    kernel?: Record<string, MemoryValue>;
-  }
-}
-const memoryPointer = !Memory['kernel']
-  ? (Memory['kernel'] = {})
-  : Memory['kernel'];
+const kernelLogger = createLogger('kernel');
 const kernel = new Kernel(
   registry,
   new PriorityScheduler(0, {
     quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
     clock: () => Game.time,
   }),
-  memoryPointer,
+  (key, value) => getMemoryRef(`kernel:${key}`, value),
   {
     onKernelError(message) {
-      console.log(message);
+      kernelLogger.alert(message);
     },
-    onThreadExit(info, reason) {
-      console.log(`${info.type} exited: ${reason}`);
+    onThreadExit({ type, pid }, reason) {
+      kernelLogger.info(`${type}:${pid} exited: ${reason}`);
     },
-    onThreadError(info, error: Error) {
-      console.log(`${info.type} exited: ${error.message}`);
+    onThreadError({ type, pid }, error: Error) {
+      kernelLogger.error(`${type}:${pid} errored:`, error);
     },
   }
 );
 
-// loggerFactory: (name) => new ScreepsLogger(name),
-
 // @ts-ignore: to use ps in console
-global.ps = () => {
+global.ps = (root: PID = 0) => {
   const processes = kernel.ps();
   const processMap = new Map(processes.map((info) => [info.pid, info]));
 
@@ -54,9 +53,13 @@ global.ps = () => {
       return `${prefix}${end ? '`-- ' : '|-- '}MISSING:${pid}`;
     }
 
-    const { type } = entry;
+    const { type, args } = entry;
 
-    const header = `${prefix}${end ? '`-- ' : '|-- '}${type}:${pid}`;
+    const argSuffix = type === 'roomPlanner' ? `:${args[0]}` : '';
+
+    const header = `${prefix}${
+      end ? '`-- ' : '|-- '
+    }${type}:${pid}${argSuffix}`;
 
     const children = processesByParent[pid] ?? [];
     children.sort((a, b) => a.pid - b.pid);
@@ -71,7 +74,7 @@ global.ps = () => {
     return `${header}\n${childTree.join('')}`;
   };
 
-  return getSubTree('', 0 as PID, true);
+  return getSubTree('', root, true);
 };
 
 // @ts-ignore: to use reboot in console
@@ -84,19 +87,26 @@ global.kill = (pid: PID) => {
   return kernel.kill(pid);
 };
 
-// When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
-// This utility uses source maps to get the line numbers and file names of the original, TS source code
-export const loop = ErrorMapper.wrapLoop(() => {
-  resetStats();
+// @ts-ignore: to use setLogLevel in console
+global.LogLevel = LogLevel;
+// @ts-ignore: to use setLogLevel in console
+global.setLogLevel = setLogLevel;
+// @ts-ignore: to use setLogFilter in console
+global.setLogFilter = setLogFilter;
 
-  kernel.run();
+export const loop = ErrorMapper.wrapLoop(
+  wrapWithMemoryHack(() => {
+    resetStats();
 
-  // Automatically delete memory of missing creeps
-  for (const name in Memory.creeps) {
-    if (!(name in Game.creeps)) {
-      delete Memory.creeps[name];
+    kernel.run();
+
+    // Automatically delete memory of missing creeps
+    for (const name in Memory.creeps) {
+      if (!(name in Game.creeps)) {
+        delete Memory.creeps[name];
+      }
     }
-  }
 
-  recordGlobals();
-});
+    recordGlobals();
+  })
+);

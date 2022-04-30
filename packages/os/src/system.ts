@@ -31,9 +31,12 @@ export type SysCallResults =
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
-export type Process<Args extends MemoryValue[]> = (
+declare const ProcessSymbol: unique symbol;
+export type Process<Args extends MemoryValue[]> = ((
   ...args: Args
-) => Thread<void>;
+) => Thread<void>) & {
+  [ProcessSymbol]: 'Process';
+};
 export type ArgsForProcess<Type extends Process<any>> = Type extends Process<
   infer Args
 >
@@ -41,8 +44,12 @@ export type ArgsForProcess<Type extends Process<any>> = Type extends Process<
   : never;
 
 export const createProcess = <Args extends MemoryValue[]>(
-  process: Process<Args>
-): Process<Args> => process;
+  process: (...args: Args) => Thread<void>
+): Process<Args> =>
+  function* (...args) {
+    // yield;
+    yield* process(...args);
+  } as Process<Args>;
 
 function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   res: SysCallResults,

@@ -1,7 +1,11 @@
 import { getChildren, createProcess, fork, sleep } from 'os';
+import { createLogger } from '../library';
 import { groupByKey } from '../utils';
 
+const logger = createLogger('init');
+
 export const init = createProcess(function* () {
+  logger.info('Initializing');
   for (;;) {
     const childrenByPID = yield* getChildren();
     const childMap = groupByKey(Object.values(childrenByPID), 'type');
@@ -12,12 +16,14 @@ export const init = createProcess(function* () {
     ) {
       yield* fork('creepManager');
     }
+
     if (
       childMap.spawnManager === undefined ||
       childMap.spawnManager.length === 0
     ) {
       yield* fork('spawnManager');
     }
+
     for (const room of Object.values(Game.rooms)) {
       if (
         !childMap.roomPlanner?.some(
@@ -29,6 +35,6 @@ export const init = createProcess(function* () {
       }
     }
 
-    yield* sleep(50);
+    yield* sleep(10);
   }
 });
