@@ -14,6 +14,7 @@ declare global {
 export type MemoryValue =
   | string
   | number
+  | PID
   | boolean
   | undefined
   | void
@@ -97,7 +98,7 @@ export function* fork<Type extends keyof OSRegistry>(
 ): Thread<PID> {
   const res = yield {
     type: 'fork',
-    processType: type,
+    processType: type as string,
     args,
     priority,
   };

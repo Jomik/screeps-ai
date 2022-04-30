@@ -12,8 +12,5 @@
     "allowSyntheticDefaultImports": true,
     "noUnusedLocals": false,
     "allowUnreachableCode": true
-  },
-  "ts-node": {
-    "files": true
   }
 }

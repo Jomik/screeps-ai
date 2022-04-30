@@ -5,12 +5,13 @@
   "publishConfig": {
     "main": "dist/index.js"
   },
-  "dependencies": {
-    "source-map": "~0.6.1"
+  "scripts": {
+    "test": "jest"
   },
   "devDependencies": {
-    "@types/lodash": "3.10.2",
-    "@types/screeps": "^3.2.4",
+    "@types/jest": "^27.4.1",
+    "jest": "^27.5.1",
+    "ts-jest": "^27.1.4",
     "typescript": "^4.6.3"
   }
 }

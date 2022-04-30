@@ -52,7 +52,7 @@ const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
 const entryToInfo = (entry: ProcessDescriptor): ProcessInfo => ({
   pid: entry.pid,
   parent: entry.parent,
-  type: entry.type as keyof OSRegistry,
+  type: entry.type as never,
   args: entry.memory[ArgsMemoryKey] as never,
 });
 
@@ -65,13 +65,13 @@ export interface IKernel {
   ps(): Array<ProcessInfo>;
 }
 
-interface KernelLogger {
+export interface KernelLogger {
   onKernelError?(message: string): void;
   onThreadExit?(process: ProcessInfo, reason: string): void;
   onThreadError?(process: ProcessInfo, error: unknown): void;
 }
 
-interface PersistentDataHandle<T extends MemoryValue> {
+export interface PersistentDataHandle<T extends MemoryValue> {
   get(): T;
   set(value: MemoryValue): void;
 }
@@ -292,19 +292,25 @@ export class Kernel implements IKernel {
 
       const pid = next.value;
       const entry = this.getProcessDescriptor(pid);
-      const startCPU = Game.cpu.getUsed();
+      // const startCPU = Game.cpu.getUsed();
       try {
         nextArg = this.runThread(pid);
       } catch (err) {
         this.kill(pid);
+
         if (err instanceof OSExit) {
           this.logger?.onThreadExit?.(entryToInfo(entry), err.message);
-          continue;
+        } else {
+          this.logger?.onThreadError?.(entryToInfo(entry), err);
         }
-        this.logger?.onThreadError?.(entryToInfo(entry), err);
+
+        if (pid === 0) {
+          this.reboot();
+          return;
+        }
         continue;
       }
-      const endCpu = Game.cpu.getUsed();
+      // const endCpu = Game.cpu.getUsed();
       // TODO
       // recordStats({
       //   threads: {

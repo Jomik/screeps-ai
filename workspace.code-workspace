@@ -1,0 +1,66 @@
+{
+  "folders": [
+    {
+      "name": "Root",
+      "path": "."
+    },
+    {
+      "name": "Bot",
+      "path": "packages/bot"
+    },
+    {
+      "name": "OS",
+      "path": "packages/os"
+    }
+  ],
+  "settings": {
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true
+    },
+    "editor.formatOnSave": true,
+    "files.encoding": "utf8",
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "search.exclude": {
+      "_book/**": true,
+      ".rpt2_cache/**": true,
+      "dist/**": true,
+      "node_modules/**": true,
+      "typings/**": true,
+      "**/.yarn": true,
+      "**/.pnp.*": true
+    },
+    "files.exclude": {
+      "**/.git": true,
+      "**/.svn": true,
+      "**/.hg": true,
+      "**/CVS": true,
+      "**/.DS_Store": true,
+      "**/Thumbs.db": true,
+      "node_modules/": true,
+      "**/.yarn": true,
+      "**/.pnp.*": true
+    },
+    "eslint.enable": true,
+    "eslint.nodePath": ".yarn/sdks",
+    "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
+    "typescript.tsdk": ".yarn/sdks/typescript/lib",
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "jest.jestCommandLine": "yarn jest",
+    "jest.shell": "fish",
+    "jest.autoRun": {
+      "watch": false,
+      "onSave": "test-src-file",
+      "onStartup": ["all-tests"]
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "arcanis.vscode-zipfs",
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "Orta.vscode-jest",
+      "aaron-bond.better-comments"
+    ]
+  }
+}
