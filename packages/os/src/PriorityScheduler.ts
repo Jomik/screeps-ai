@@ -36,11 +36,11 @@ export class PriorityScheduler implements Scheduler {
       .map(([pid]) => pid);
 
     for (const pid of pidsToRun) {
-      if (!this.pids.has(pid) || this.sleeping.has(pid)) {
-        continue;
-      }
-
       while (this.config.quota() > 0) {
+        if (!this.pids.has(pid) || this.sleeping.has(pid)) {
+          break;
+        }
+
         const res = yield pid;
         if (!res) {
           continue;
