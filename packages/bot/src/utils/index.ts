@@ -1,3 +1,5 @@
+import { Thread } from 'os';
+
 export * from './position';
 export * from './guid';
 
@@ -18,3 +20,23 @@ export const groupByKey = <T extends Record<Key, string>, Key extends string>(
 
 export const isDefined = <T>(value: T | undefined | null): value is T =>
   value !== undefined && value !== null;
+
+export const restartOnTickChange = <Args extends any[], R>(
+  process: (...args: Args) => Thread<R>
+): ((...args: Args) => Thread<R>) => {
+  return function* (...args) {
+    for (;;) {
+      const tick = Game.time;
+      const thread = process(...args);
+      while (tick === Game.time) {
+        const { done, value } = thread.next();
+
+        if (done) {
+          return value;
+        }
+
+        yield value;
+      }
+    }
+  };
+};

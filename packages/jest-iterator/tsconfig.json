@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "lib": ["es2018"],
+    "target": "es2018",
+    "moduleResolution": "node",
+    "baseUrl": "src",
+    "outDir": "dist",
+    "sourceMap": true,
+    "strict": true
+  }
+}

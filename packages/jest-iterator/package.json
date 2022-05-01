@@ -1,18 +1,17 @@
 {
-  "name": "os",
-  "version": "0.0.1",
+  "name": "jest-iterator",
   "main": "src/index.ts",
+  "types": "src/types.d.ts",
   "publishConfig": {
     "main": "dist/index.js"
-  },
-  "scripts": {
-    "test": "jest"
   },
   "devDependencies": {
     "@types/jest": "^27.4.1",
     "jest": "^27.5.1",
-    "jest-iterator": "workspace:*",
     "ts-jest": "^27.1.4",
-    "typescript": "^4.6.3"
+    "typescript": "^4.6.4"
+  },
+  "peerDependencies": {
+    "jest": ">=27.2.5"
   }
 }

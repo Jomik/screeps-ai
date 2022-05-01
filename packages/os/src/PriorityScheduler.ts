@@ -20,7 +20,7 @@ export class PriorityScheduler implements Scheduler {
 
   *run(quota: () => number): ScheduleGenerator {
     const pidsToRun = [...this.pids]
-      .sort((a, b) => a[1] - b[1])
+      .sort((a, b) => b[1] - a[1])
       .map(([pid]) => pid);
 
     for (const pid of pidsToRun) {
