@@ -3,12 +3,8 @@ import { Scheduler, Priority, ScheduleGenerator } from './Scheduler';
 
 export class PriorityScheduler implements Scheduler {
   private pids = new Map<PID, Priority>();
-  private sleeping = new Map<PID, number>();
 
-  constructor(
-    readonly defaultPriority: Priority,
-    private readonly config: { quota(): number; clock(): number }
-  ) {}
+  constructor(readonly defaultPriority: Priority) {}
 
   clampPriority(requestedPriority: Priority): Priority {
     return requestedPriority;
@@ -20,36 +16,21 @@ export class PriorityScheduler implements Scheduler {
 
   remove(pid: PID): void {
     this.pids.delete(pid);
-    this.sleeping.delete(pid);
   }
 
-  *run(): ScheduleGenerator {
-    const tick = this.config.clock();
-    for (const [pid, wakeTime] of this.sleeping) {
-      if (tick >= wakeTime) {
-        this.sleeping.delete(pid);
-      }
-    }
-
+  *run(quota: () => number): ScheduleGenerator {
     const pidsToRun = [...this.pids]
       .sort((a, b) => a[1] - b[1])
       .map(([pid]) => pid);
 
     for (const pid of pidsToRun) {
-      while (this.config.quota() > 0) {
-        if (!this.pids.has(pid) || this.sleeping.has(pid)) {
+      while (quota() > 0) {
+        if (!this.pids.has(pid)) {
           break;
         }
 
-        const res = yield pid;
-        if (!res) {
-          continue;
-        }
-
-        if (res.type === 'sleep') {
-          if (res.ticks > 1) {
-            this.sleeping.set(pid, tick + res.ticks);
-          }
+        const runAgain = yield pid;
+        if (!runAgain) {
           break;
         }
       }

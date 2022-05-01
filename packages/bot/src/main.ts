@@ -17,14 +17,13 @@ import { wrapWithMemoryHack } from './utils/memory-hack';
 declare const global: Record<string, any>;
 
 const kernelLogger = createLogger('kernel');
-const kernel = new Kernel(
+const kernel = new Kernel({
   registry,
-  new PriorityScheduler(0, {
-    quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
-    clock: () => Game.time,
-  }),
-  (key, value) => getMemoryRef(`kernel:${key}`, value),
-  {
+  scheduler: new PriorityScheduler(0),
+  getDataHandle: (key, value) => getMemoryRef(`kernel:${key}`, value),
+  quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
+  clock: () => Game.time,
+  logger: {
     onKernelError(message) {
       kernelLogger.alert(message);
     },
@@ -34,8 +33,8 @@ const kernel = new Kernel(
     onThreadError({ type, pid }, error: Error) {
       kernelLogger.error(`${type}:${pid} errored:`, error);
     },
-  }
-);
+  },
+});
 
 // @ts-ignore: to use ps in console
 global.ps = (root: PID = 0) => {

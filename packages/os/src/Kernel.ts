@@ -1,4 +1,4 @@
-import type { Priority, Scheduler, SchedulerThreadReturn } from './Scheduler';
+import type { Priority, Scheduler } from './Scheduler';
 import {
   MemoryPointer,
   MemoryValue,
@@ -77,7 +77,7 @@ export interface PersistentDataHandle<T extends MemoryValue> {
 }
 
 export class Kernel implements IKernel {
-  private tableRef = this.getDataHandle<ProcessTable>('table', {});
+  private tableRef: PersistentDataHandle<ProcessTable>;
   private get table(): ProcessTable {
     return this.tableRef.get();
   }
@@ -99,17 +99,32 @@ export class Kernel implements IKernel {
 
   private readonly registry: Record<string, Process<MemoryValue[]>>;
   private readonly threads = new Map<PID, Thread>();
+  private readonly sleepingThreads = new Map<PID, number>();
 
-  constructor(
-    registry: OSRegistry,
-    private readonly scheduler: Scheduler,
-    private readonly getDataHandle: <T extends MemoryValue>(
+  private readonly scheduler: Scheduler;
+  private readonly logger?: KernelLogger;
+  private readonly clock: () => number;
+  private readonly quota: () => number;
+
+  constructor(config: {
+    registry: OSRegistry;
+    scheduler: Scheduler;
+    getDataHandle: <T extends MemoryValue>(
       key: string,
       defaultValue: T
-    ) => PersistentDataHandle<T>,
-    private readonly logger?: KernelLogger
-  ) {
+    ) => PersistentDataHandle<T>;
+    logger?: KernelLogger;
+    clock(): number;
+    quota(): number;
+  }) {
+    const { registry, scheduler, getDataHandle, logger, clock, quota } = config;
     this.registry = registry as never;
+    this.logger = logger;
+    this.scheduler = scheduler;
+    this.clock = clock;
+    this.quota = quota;
+    this.tableRef = getDataHandle<ProcessTable>('table', {});
+
     const root = this.table[0 as PID];
     if (!root || unpackEntry(root).type !== 'init') {
       this.logger?.onKernelError?.('Root process, init, is missing or corrupt');
@@ -211,14 +226,18 @@ export class Kernel implements IKernel {
     return true;
   }
 
-  private runThread(pid: PID): SchedulerThreadReturn {
+  private runThread(pid: PID): boolean {
     const thread = this.threads.get(pid);
     if (!thread) {
       this.logger?.onKernelError?.(
         `Attempting to run ${pid} with missing thread.`
       );
       this.kill(pid);
-      return undefined;
+      return false;
+    }
+
+    if (this.sleepingThreads.has(pid)) {
+      return false;
     }
 
     let nextArg: SysCallResults = undefined;
@@ -228,16 +247,17 @@ export class Kernel implements IKernel {
 
       if (sysCall.done) {
         this.kill(pid);
-        return undefined;
+        return false;
       }
 
       if (!sysCall.value) {
-        return undefined;
+        return true;
       }
 
       switch (sysCall.value.type) {
         case 'sleep': {
-          return sysCall.value;
+          this.sleepingThreads.set(pid, this.clock() + sysCall.value.ticks);
+          return false;
         }
         case 'fork': {
           const { args, processType, priority } = sysCall.value;
@@ -282,8 +302,15 @@ export class Kernel implements IKernel {
   }
 
   public run(): void {
-    const schedule = this.scheduler.run();
-    let nextArg: SchedulerThreadReturn = undefined;
+    const tick = this.clock();
+    for (const [pid, wakeTime] of this.sleepingThreads) {
+      if (tick >= wakeTime) {
+        this.sleepingThreads.delete(pid);
+      }
+    }
+
+    const schedule = this.scheduler.run(this.quota);
+    let nextArg: boolean = true;
     for (;;) {
       const next = schedule.next(nextArg);
       if (next.done) {

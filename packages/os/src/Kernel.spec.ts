@@ -28,13 +28,12 @@ const createKernel = <
     onThreadExit: jest.fn(),
   };
 
-  const kernel = new Kernel(
-    registry as never,
-    new PriorityScheduler(0, {
-      quota: jest.fn().mockReturnValue(1),
-      clock,
-    }),
-    <T extends MemoryValue>(key: string, value: T) => {
+  const kernel = new Kernel({
+    registry: registry as never,
+    scheduler: new PriorityScheduler(0),
+    clock,
+    quota: jest.fn().mockReturnValue(1),
+    getDataHandle: <T extends MemoryValue>(key: string, value: T) => {
       if (!(key in data)) {
         data[key] = value;
       }
@@ -47,8 +46,9 @@ const createKernel = <
         },
       };
     },
-    logger
-  );
+    logger,
+  });
+
   return {
     run: () => {
       kernel.run();

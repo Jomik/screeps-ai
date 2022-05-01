@@ -1,10 +1,6 @@
-import { PID, sleep } from './system';
+import { PID } from './system';
 
-export type SchedulerThreadReturn =
-  | { type: 'sleep'; ticks: number }
-  | undefined;
-
-export type ScheduleGenerator = Generator<PID, void, SchedulerThreadReturn>;
+export type ScheduleGenerator = Generator<PID, void, boolean>;
 export type Priority = number;
 
 export interface Scheduler {
@@ -16,5 +12,6 @@ export interface Scheduler {
    */
   add(pid: PID, priority: Priority): void;
   remove(pid: PID): void;
-  run(): ScheduleGenerator;
+  // Receives `true` if the thread wants to run again, false otherwise
+  run(quota: () => number): ScheduleGenerator;
 }
