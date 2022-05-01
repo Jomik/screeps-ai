@@ -1,3 +1,7 @@
+declare global {
+  interface Memory extends Record<string, unknown> {}
+}
+
 export const getMemoryRef = <T>(
   key: string,
   defaultValue: T
