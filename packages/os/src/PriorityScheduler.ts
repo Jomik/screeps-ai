@@ -1,5 +1,5 @@
-import { PID } from './system';
-import { Scheduler, Priority, ScheduleGenerator } from './Scheduler';
+import type { PID } from './system';
+import type { Scheduler, Priority, ScheduleGenerator } from './Scheduler';
 
 export class PriorityScheduler implements Scheduler {
   private pids = new Map<PID, Priority>();

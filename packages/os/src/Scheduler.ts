@@ -1,4 +1,4 @@
-import { PID } from './system';
+import type { PID } from './system';
 
 export type ScheduleGenerator = Generator<PID, void, boolean>;
 export type Priority = number;

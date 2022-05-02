@@ -1,3 +1,5 @@
+import type { Priority } from './Scheduler';
+
 export class OSExit extends Error {}
 
 declare const PIDSymbol: unique symbol;
@@ -85,7 +87,7 @@ type Fork = {
   type: 'fork';
   processType: string;
   args: MemoryValue[];
-  priority?: number;
+  priority?: Priority;
 };
 type ForkResult = {
   type: 'fork';
@@ -93,7 +95,7 @@ type ForkResult = {
 };
 export function* fork<Type extends keyof OSRegistry>(
   type: Type,
-  priority?: number,
+  priority?: Priority,
   ...args: ArgsForProcess<OSRegistry[Type]>
 ): Thread<PID> {
   const res = yield {
