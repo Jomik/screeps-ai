@@ -1,4 +1,4 @@
-import { Scheduler } from './Scheduler';
+import { Priority, Scheduler } from './Scheduler';
 import { PID } from './system';
 
 export const schedulerSpec = (factory: () => Scheduler) => {
@@ -37,8 +37,8 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     it('yields till all done', () => {
       const first = 1 as PID;
       const second = 2 as PID;
-      scheduler.add(first, 0);
-      scheduler.add(second, 0);
+      scheduler.add(first, 0 as Priority);
+      scheduler.add(second, 0 as Priority);
 
       expect(scheduler.run(quota)).toMatchYieldsExactly([
         [expect.any(Number), true],

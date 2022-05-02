@@ -1,5 +1,6 @@
 import { Kernel, KernelLogger } from './Kernel';
 import { PriorityScheduler } from './PriorityScheduler';
+import { Priority } from './Scheduler';
 import {
   createProcess,
   fork,
@@ -8,6 +9,7 @@ import {
   MemoryValue,
   PID,
   Process,
+  requestPriority,
   sleep,
 } from './system';
 
@@ -30,7 +32,7 @@ const createKernel = <
 
   const kernel = new Kernel({
     registry: registry as never,
-    scheduler: new PriorityScheduler(0),
+    scheduler: new PriorityScheduler(0 as Priority),
     clock,
     quota: jest.fn().mockReturnValue(1),
     getDataHandle: <T extends MemoryValue>(key: string, value: T) => {
@@ -56,6 +58,7 @@ const createKernel = <
     },
     logger,
     data,
+    kernel,
   };
 };
 
@@ -173,6 +176,29 @@ describe('Kernel', () => {
       run();
 
       expect(thread).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('priority', () => {
+    it('allows changing priority', () => {
+      const registry = {
+        init: createProcess(function* () {
+          yield* fork('child');
+          yield* hibernate();
+        }),
+        child: createProcess(function* () {
+          yield* requestPriority(100 as Priority);
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      run();
+
+      const childInfo = kernel.ps().find(({ type }) => type === 'child');
+      expect(childInfo?.priority).toBe(100);
     });
   });
 

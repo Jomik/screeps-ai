@@ -23,3 +23,6 @@ export const runOnce = <Args extends any[], R extends MemoryValue>(
     return memory.result as R;
   };
 };
+
+export const isDefined = <T>(value: T | undefined | null): value is T =>
+  value !== undefined && value !== null;

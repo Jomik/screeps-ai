@@ -9,6 +9,7 @@ import {
   SysCallResults,
   Thread,
 } from './system';
+import { isDefined } from './utils';
 
 const ArgsMemoryKey = '__args';
 
@@ -22,7 +23,7 @@ type ProcessDescriptor = {
   pid: PID;
   memory: ProcessMemory;
   parent: PID;
-  priority: Priority;
+  priority?: Priority;
 };
 
 type PackedProcessDescriptor = [
@@ -30,7 +31,7 @@ type PackedProcessDescriptor = [
   pid: PID,
   memory: ProcessMemory,
   parent: PID,
-  priority: Priority
+  priority?: Priority
 ];
 
 const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
@@ -52,6 +53,7 @@ const unpackEntry = (entry: PackedProcessDescriptor): ProcessDescriptor => ({
 const entryToInfo = (entry: ProcessDescriptor): ProcessInfo => ({
   pid: entry.pid,
   parent: entry.parent,
+  priority: entry.priority,
   type: entry.type as never,
   args: entry.memory[ArgsMemoryKey] as never,
 });
@@ -144,7 +146,7 @@ export class Kernel implements IKernel {
     this.table = {};
     this.threads.clear();
 
-    this.createProcess('init', [], 0 as PID, 0 as PID, undefined);
+    this.createProcess('init', [], 0 as PID, 0 as PID);
   }
 
   private PIDCount: PID;
@@ -164,7 +166,7 @@ export class Kernel implements IKernel {
     args: MemoryValue[],
     parent: PID,
     pid: PID = this.acquirePID(),
-    priority: Priority = this.scheduler.defaultPriority
+    priority?: Priority
   ): ProcessDescriptor {
     // istanbul ignore next
     if (pid in this.table) {
@@ -178,7 +180,7 @@ export class Kernel implements IKernel {
       memory: {
         [ArgsMemoryKey]: args,
       },
-      priority: this.scheduler.clampPriority(priority),
+      priority,
     };
 
     this.table[pid] = packEntry(descriptor);
@@ -266,7 +268,7 @@ export class Kernel implements IKernel {
             args,
             pid,
             undefined,
-            priority as Priority
+            priority
           );
           nextArg = { type: 'fork', pid: child.pid };
           break;
@@ -295,6 +297,17 @@ export class Kernel implements IKernel {
             {}
           );
           nextArg = { type: 'children', children };
+          break;
+        }
+        case 'request_priority': {
+          const priority = isDefined(sysCall.value.priority)
+            ? this.scheduler.clampPriority(sysCall.value.priority)
+            : undefined;
+          this.table[pid] = packEntry({
+            ...this.getProcessDescriptor(pid),
+            priority,
+          });
+          this.scheduler.add(pid, priority);
           break;
         }
       }

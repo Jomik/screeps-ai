@@ -1,16 +1,21 @@
 import type { PID } from './system';
 import type { Scheduler, Priority, ScheduleGenerator } from './Scheduler';
 
+/**
+ * Priority based scheduler
+ * Will yield highest priority thread first, untill done.
+ * Lower number means higher priority, modelled after Linux system priorities.
+ */
 export class PriorityScheduler implements Scheduler {
   private pids = new Map<PID, Priority>();
 
   constructor(readonly defaultPriority: Priority) {}
 
   clampPriority(requestedPriority: Priority): Priority {
-    return requestedPriority;
+    return Math.min(139, Math.max(requestedPriority, 0)) as Priority;
   }
 
-  add(pid: PID, priority: Priority): void {
+  add(pid: PID, priority: Priority = this.defaultPriority): void {
     this.pids.set(pid, priority);
   }
 
@@ -20,7 +25,7 @@ export class PriorityScheduler implements Scheduler {
 
   *run(quota: () => number): ScheduleGenerator {
     const pidsToRun = [...this.pids]
-      .sort((a, b) => b[1] - a[1])
+      .sort((a, b) => a[1] - b[1])
       .map(([pid]) => pid);
 
     for (const pid of pidsToRun) {

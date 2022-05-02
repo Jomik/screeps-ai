@@ -25,7 +25,14 @@ export type MemoryValue =
   | Array<MemoryValue>;
 
 export type MemoryPointer = Record<string, MemoryValue> | Array<MemoryValue>;
-export type SysCall = Sleep | Fork | Kill | Allocate | Children;
+
+export type SysCall =
+  | Sleep
+  | Fork
+  | Kill
+  | Allocate
+  | Children
+  | RequestPriority;
 export type SysCallResults =
   | void
   | ForkResult
@@ -45,6 +52,15 @@ export type ArgsForProcess<Type extends Process<any>> = Type extends Process<
 >
   ? Args
   : never;
+export type ProcessInfo = {
+  [Type in keyof OSRegistry]: {
+    pid: PID;
+    parent: PID;
+    priority?: Priority;
+    type: Type;
+    args: ArgsForProcess<OSRegistry[Type]>;
+  };
+}[keyof OSRegistry];
 
 export const createProcess = <Args extends MemoryValue[]>(
   process: (...args: Args) => Thread<void>
@@ -145,15 +161,6 @@ export function* allocate<M extends MemoryPointer>(
   return res.pointer[address] as NonNullable<M>;
 }
 
-export type ProcessInfo = {
-  [Type in keyof OSRegistry]: {
-    pid: PID;
-    parent: PID;
-    type: Type;
-    args: ArgsForProcess<OSRegistry[Type]>;
-  };
-}[keyof OSRegistry];
-
 type Children = {
   type: 'children';
 };
@@ -161,11 +168,21 @@ type ChildrenResult = {
   type: 'children';
   children: Record<PID, ProcessInfo>;
 };
-
 export function* getChildren(): Thread<Record<PID, ProcessInfo>> {
   const res = yield {
     type: 'children',
   };
   assertResultType(res, 'children');
   return res.children;
+}
+
+type RequestPriority = {
+  type: 'request_priority';
+  priority: Priority | undefined;
+};
+export function* requestPriority(priority: Priority | undefined): Thread {
+  yield {
+    type: 'request_priority',
+    priority,
+  };
 }

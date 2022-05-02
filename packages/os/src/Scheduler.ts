@@ -1,7 +1,8 @@
 import type { PID } from './system';
 
 export type ScheduleGenerator = Generator<PID, void, boolean>;
-export type Priority = number;
+declare const PrioritySymbol: unique symbol;
+export type Priority = number & { [PrioritySymbol]: 'Priority' };
 
 export interface Scheduler {
   readonly defaultPriority: Priority;
@@ -10,7 +11,7 @@ export interface Scheduler {
   /**
    * Adds or updates a process to the scheduler
    */
-  add(pid: PID, priority: Priority): void;
+  add(pid: PID, priority?: Priority): void;
   remove(pid: PID): void;
   // Receives `true` if the thread wants to run again, false otherwise
   run(quota: () => number): ScheduleGenerator;
