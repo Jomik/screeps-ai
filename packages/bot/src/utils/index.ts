@@ -1,8 +1,5 @@
 import { Thread } from 'os';
 
-export * from './position';
-export * from './guid';
-
 type GroupByKey<T extends Record<Key, string>, Key extends string> = {
   [Type in T[Key]]?: Array<Extract<T, Record<Key, Type>>>;
 };
@@ -40,3 +37,23 @@ export const restartOnTickChange = <Args extends any[], R>(
     }
   };
 };
+
+let counter = 0;
+let time = 0;
+export const getGuid = (): string => {
+  if (time !== Game.time) {
+    time = Game.time;
+    counter = 0;
+  }
+  return `${time.toString(36)}:${(++counter).toString(36)}`;
+};
+
+// prettier-ignore
+const outline = [
+  [1,1], [0,1], [-1,1],
+  [1,0], /*[0,0],*/ [-1,0],
+  [1,-1], [0,-1], [-1,-1],
+] as const;
+
+export const expandPosition = (pos: RoomPosition): RoomPosition[] =>
+  outline.map(([x, y]) => new RoomPosition(x + pos.x, y + pos.y, pos.roomName));
