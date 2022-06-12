@@ -11,7 +11,7 @@ export interface Scheduler {
   /**
    * Adds or updates a process to the scheduler
    */
-  add(pid: PID, priority?: Priority): void;
+  add(pid: PID, priority: Priority | null): void;
   remove(pid: PID): void;
   // Receives `true` if the thread wants to run again, false otherwise
   run(quota: () => number): ScheduleGenerator;

@@ -15,8 +15,8 @@ export class PriorityScheduler implements Scheduler {
     return Math.min(139, Math.max(requestedPriority, 0)) as Priority;
   }
 
-  add(pid: PID, priority: Priority = this.defaultPriority): void {
-    this.pids.set(pid, priority);
+  add(pid: PID, priority: Priority | null): void {
+    this.pids.set(pid, priority ?? this.defaultPriority);
   }
 
   remove(pid: PID): void {

@@ -18,13 +18,13 @@ export type MemoryValue =
   | number
   | PID
   | boolean
-  | undefined
-  | void
   | null
-  | { [x: string]: MemoryValue }
+  | { [x: string]: MemoryValue | undefined }
   | Array<MemoryValue>;
 
-export type MemoryPointer = Record<string, MemoryValue> | Array<MemoryValue>;
+export type MemoryPointer =
+  | Record<string, MemoryValue | undefined>
+  | Array<MemoryValue>;
 
 export type SysCall =
   | Sleep
@@ -56,7 +56,7 @@ export type ProcessInfo = {
   [Type in keyof OSRegistry]: {
     pid: PID;
     parent: PID;
-    priority?: Priority;
+    priority: Priority | null;
     type: Type;
     args: ArgsForProcess<OSRegistry[Type]>;
   };

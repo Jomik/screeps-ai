@@ -23,7 +23,7 @@ type ProcessDescriptor = {
   pid: PID;
   memory: ProcessMemory;
   parent: PID;
-  priority?: Priority;
+  priority: Priority | null;
 };
 
 type PackedProcessDescriptor = [
@@ -31,7 +31,7 @@ type PackedProcessDescriptor = [
   pid: PID,
   memory: ProcessMemory,
   parent: PID,
-  priority?: Priority
+  priority: Priority | null
 ];
 
 const packEntry = (entry: ProcessDescriptor): PackedProcessDescriptor => [
@@ -180,7 +180,7 @@ export class Kernel implements IKernel {
       memory: {
         [ArgsMemoryKey]: args,
       },
-      priority,
+      priority: priority ?? null,
     };
 
     this.table[pid] = packEntry(descriptor);
@@ -305,9 +305,9 @@ export class Kernel implements IKernel {
             : undefined;
           this.table[pid] = packEntry({
             ...this.getProcessDescriptor(pid),
-            priority,
+            priority: priority ?? null,
           });
-          this.scheduler.add(pid, priority);
+          this.scheduler.add(pid, priority ?? null);
           break;
         }
       }
