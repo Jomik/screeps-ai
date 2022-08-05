@@ -1,6 +1,6 @@
 import './polyfills';
 
-import { Kernel, MemoryValue, PID, PriorityScheduler } from 'os';
+import { Kernel, MemoryValue, PID, Priority, PriorityScheduler } from 'os';
 import { ErrorMapper } from './utils/ErrorMapper';
 import {
   getMemoryRef,
@@ -19,7 +19,7 @@ declare const global: Record<string, any>;
 const kernelLogger = createLogger('kernel');
 const kernel = new Kernel({
   registry,
-  scheduler: new PriorityScheduler(0),
+  scheduler: new PriorityScheduler(0 as Priority),
   getDataHandle: (key, value) => getMemoryRef(`kernel:${key}`, value),
   quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
   clock: () => Game.time,
@@ -49,16 +49,19 @@ global.ps = (root: PID = 0) => {
   const getSubTree = (prefix: string, pid: PID, end: boolean): string => {
     const entry = processMap.get(pid);
     if (!entry) {
-      return `${prefix}${end ? '`-- ' : '|-- '}MISSING:${pid}`;
+      return `${prefix}${pid}:${end ? '`-- ' : '|-- '}MISSING`;
     }
 
     const { type, args } = entry;
 
-    const argSuffix = type === 'roomPlanner' ? `:${args[0]}` : '';
+    const argSuffix =
+      args.length > 0
+        ? `:${args.map((arg) => JSON.stringify(arg)).join(',')}`
+        : '';
 
     const header = `${prefix}${
       end ? '`-- ' : '|-- '
-    }${type}:${pid}${argSuffix}`;
+    }${pid}:${type}${argSuffix}`;
 
     const children = processesByParent[pid] ?? [];
     children.sort((a, b) => a.pid - b.pid);

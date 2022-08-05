@@ -144,13 +144,13 @@ type Allocate = {
 };
 type AllocateResult = {
   type: 'allocate';
-  pointer: Record<string, MemoryPointer>;
+  pointer: Record<string, MemoryValue>;
 };
 
-export function* allocate<M extends MemoryPointer>(
+export function* allocate<M extends MemoryValue>(
   address: string,
   defaultValue: M
-): Thread<NonNullable<M>> {
+): Thread<{ value: M }> {
   const res = yield {
     type: 'allocate',
   };
@@ -158,7 +158,14 @@ export function* allocate<M extends MemoryPointer>(
   if (!(address in res.pointer)) {
     res.pointer[address] = defaultValue;
   }
-  return res.pointer[address] as NonNullable<M>;
+  return {
+    get value() {
+      return res.pointer[address] as M;
+    },
+    set value(v: M) {
+      res.pointer[address] = v;
+    },
+  };
 }
 
 type Children = {
