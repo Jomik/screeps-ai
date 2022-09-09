@@ -1,5 +1,5 @@
 {
-  "main": {
+  "mmo": {
     "token": "YOUR_TOKEN",
     "protocol": "https",
     "hostname": "screeps.com",
