@@ -9,8 +9,8 @@
       "path": "packages/bot"
     },
     {
-      "name": "OS",
-      "path": "packages/os"
+      "name": "Kernel",
+      "path": "packages/kernel"
     }
   ],
   "settings": {

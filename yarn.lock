@@ -1429,7 +1429,7 @@ __metadata:
     "@rollup/plugin-node-resolve": "npm:^13.2.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
-    os: "workspace:*"
+    kernel: "workspace:*"
     rollup: "npm:^2.71.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
@@ -3555,6 +3555,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"kernel@workspace:*, kernel@workspace:packages/kernel":
+  version: 0.0.0-use.local
+  resolution: "kernel@workspace:packages/kernel"
+  dependencies:
+    "@types/jest": "npm:^27.4.1"
+    jest: "npm:^27.5.1"
+    jest-iterator: "workspace:*"
+    ts-jest: "npm:^27.1.4"
+    typescript: "npm:^4.6.3"
+  languageName: unknown
+  linkType: soft
+
 "kleur@npm:^3.0.3":
   version: 3.0.3
   resolution: "kleur@npm:3.0.3"
@@ -4017,18 +4029,6 @@ __metadata:
   checksum: bb7b06099c688d6d4bfc193f66b7aac15bfa84190f076f3f8c57821bdd0be761cbbf8972f0a904e7181aa2ca89441ca51c20f87b631690ca8d3f5bad90b7e0f1
   languageName: node
   linkType: hard
-
-"os@workspace:*, os@workspace:packages/os":
-  version: 0.0.0-use.local
-  resolution: "os@workspace:packages/os"
-  dependencies:
-    "@types/jest": "npm:^27.4.1"
-    jest: "npm:^27.5.1"
-    jest-iterator: "workspace:*"
-    ts-jest: "npm:^27.1.4"
-    typescript: "npm:^4.6.3"
-  languageName: unknown
-  linkType: soft
 
 "p-limit@npm:^2.2.0":
   version: 2.3.0

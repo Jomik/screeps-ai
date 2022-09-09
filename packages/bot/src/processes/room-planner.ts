@@ -1,4 +1,4 @@
-import { Thread, sleep, createProcess } from 'os';
+import { Thread, sleep, createProcess } from 'kernel';
 import { expandPosition } from '../utils';
 
 export const roomPlanner = createProcess(function* (roomName: string) {

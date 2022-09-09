@@ -1,4 +1,4 @@
-import { createProcess, sleep } from 'os';
+import { createProcess, sleep } from 'kernel';
 import { createLogger } from '../library';
 import { ensureChild } from '../library';
 

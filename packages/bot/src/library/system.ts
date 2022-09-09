@@ -8,7 +8,7 @@ import {
   PID,
   Priority,
   Thread,
-} from 'os';
+} from 'kernel';
 
 const NotCalculated = Symbol.for('NotCalculated');
 export const memoizeForTick = <T>(fn: () => Thread<T>): (() => Thread<T>) => {

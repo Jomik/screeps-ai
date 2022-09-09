@@ -7,7 +7,7 @@
     "deploy:private": "yarn build --environment DEST:private"
   },
   "dependencies": {
-    "os": "workspace:*",
+    "kernel": "workspace:*",
     "scl": "^4.1.1",
     "source-map": "~0.6.1",
     "ts-polyfill": "^3.8.2"

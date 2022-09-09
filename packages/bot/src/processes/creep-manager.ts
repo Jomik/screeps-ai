@@ -1,4 +1,4 @@
-import { sleep, createProcess } from 'os';
+import { sleep, createProcess } from 'kernel';
 import { isDefined, restartOnTickChange } from '../utils';
 
 const runMiners = () => {

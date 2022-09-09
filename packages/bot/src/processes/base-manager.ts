@@ -1,4 +1,4 @@
-import { createProcess, exit, sleep } from 'os';
+import { createProcess, exit, sleep } from 'kernel';
 import { createLogger, ensureChild } from '../library';
 
 const getRoom = (roomName: string): Room => {

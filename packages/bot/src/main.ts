@@ -1,6 +1,6 @@
 import './polyfills';
 
-import { Kernel, MemoryValue, PID, Priority, PriorityScheduler } from 'os';
+import { Kernel, MemoryValue, PID, Priority, PriorityScheduler } from 'kernel';
 import { ErrorMapper } from './utils/ErrorMapper';
 import {
   getMemoryRef,

@@ -1,4 +1,4 @@
-import { sleep, createProcess } from 'os';
+import { sleep, createProcess } from 'kernel';
 import { expandPosition, isDefined } from '../utils';
 
 export const spawnManager = createProcess(function* () {
