@@ -23,7 +23,7 @@ const createKernel = <
   registry: R,
   data: Record<string, MemoryValue> = {}
 ) => {
-  const clock = jest.fn().mockReturnValue(1);
+  const clock = jest.fn<number, []>().mockReturnValue(1);
   const logger: Required<KernelLogger> = {
     onKernelError: jest.fn(),
     onThreadError: jest.fn(),

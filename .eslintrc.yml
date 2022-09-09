@@ -19,6 +19,8 @@ overrides:
       sourceType: script
   - files: ./**/*.ts
     parser: '@typescript-eslint/parser'
+    parserOptions:
+      project: ['./packages/*/tsconfig.json']
     plugins:
       - '@typescript-eslint'
     extends:

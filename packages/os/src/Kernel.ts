@@ -119,13 +119,13 @@ export class Kernel implements IKernel {
     clock(): number;
     quota(): number;
   }) {
-    const { registry, scheduler, getDataHandle, logger, clock, quota } = config;
+    const { registry, scheduler, logger } = config;
     this.registry = registry as never;
     this.logger = logger;
     this.scheduler = scheduler;
-    this.clock = clock;
-    this.quota = quota;
-    this.tableRef = getDataHandle<ProcessTable>('table', {});
+    this.clock = () => config.clock();
+    this.quota = () => config.quota();
+    this.tableRef = config.getDataHandle<ProcessTable>('table', {});
 
     const root = this.table[0 as PID];
     if (!root || unpackEntry(root).type !== 'init') {
@@ -323,7 +323,7 @@ export class Kernel implements IKernel {
     }
 
     const schedule = this.scheduler.run(this.quota);
-    let nextArg: boolean = true;
+    let nextArg = true;
     for (;;) {
       const next = schedule.next(nextArg);
       if (next.done) {
