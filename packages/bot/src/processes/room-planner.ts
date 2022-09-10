@@ -113,14 +113,19 @@ export const roomPlanner = createProcess(function* (roomName: string) {
   const nodes = sources.concat(
     nodeRoom.controller ? { pos: nodeRoom.controller?.pos, range: 3 } : []
   );
-  const paths = yield* runPathsPlan(nodes);
+  const prelimPaths = yield* runPathsPlan(nodes);
 
   const containers = findSourceContainers(
     sources.map(({ pos }) => pos),
-    paths
+    prelimPaths
   )
-    .concat(getControllerContainer(paths))
+    .concat(getControllerContainer(prelimPaths))
     .filter(<T>(v: T | null): v is T => !!v);
+  yield;
+
+  const paths = yield* runPathsPlan(
+    containers.map((cont) => ({ pos: cont, range: 1 }))
+  );
   yield;
 
   for (;;) {
