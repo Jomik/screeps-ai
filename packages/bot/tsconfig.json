@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["es2018", "es2019.Array"],
-    "target": "es2018",
+    "lib": ["es2017", "es2019.Array"],
+    "target": "es2017",
     "moduleResolution": "node",
     "outDir": "dist",
     "sourceMap": true,
