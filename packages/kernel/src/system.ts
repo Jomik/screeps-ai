@@ -30,14 +30,10 @@ export type SysCall =
   | Sleep
   | Spawn
   | Kill
-  | Allocate
+  | MAlloc
   | Children
   | RequestPriority;
-export type SysCallResults =
-  | void
-  | SpawnResult
-  | AllocateResult
-  | ChildrenResult;
+export type SysCallResults = void | SpawnResult | MAllocResult | ChildrenResult;
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
@@ -139,22 +135,22 @@ export const exit = (reason: string): never => {
   throw new OSExit(reason);
 };
 
-type Allocate = {
-  type: 'allocate';
+type MAlloc = {
+  type: 'malloc';
 };
-type AllocateResult = {
-  type: 'allocate';
+type MAllocResult = {
+  type: 'malloc';
   pointer: Record<string, MemoryValue>;
 };
 
-export function* allocate<M extends MemoryValue>(
+export function* malloc<M extends MemoryValue>(
   address: string,
   defaultValue: M
 ): Thread<{ value: M }> {
   const res = yield {
-    type: 'allocate',
+    type: 'malloc',
   };
-  assertResultType(res, 'allocate');
+  assertResultType(res, 'malloc');
   if (!(address in res.pointer)) {
     res.pointer[address] = defaultValue;
   }

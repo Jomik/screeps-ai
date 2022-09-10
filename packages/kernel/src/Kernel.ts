@@ -281,9 +281,9 @@ export class Kernel implements IKernel {
           this.kill(childPID);
           break;
         }
-        case 'allocate': {
+        case 'malloc': {
           const descriptor = this.getProcessDescriptor(pid);
-          nextArg = { type: 'allocate', pointer: descriptor.memory };
+          nextArg = { type: 'malloc', pointer: descriptor.memory };
           break;
         }
         case 'children': {

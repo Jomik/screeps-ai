@@ -1,4 +1,4 @@
-import { allocate, MemoryValue, Thread } from './system';
+import { malloc, MemoryValue, Thread } from './system';
 
 export const isProcessType =
   <Type extends keyof OSRegistry>(type: Type) =>
@@ -8,7 +8,7 @@ export const isProcessType =
 export function* runOnce<T extends MemoryValue>(
   fn: (() => Thread<T>) & { name: string }
 ): Thread<T> {
-  const ref = yield* allocate<{ ran: false } | { ran: true; result: T }>(
+  const ref = yield* malloc<{ ran: false } | { ran: true; result: T }>(
     fn.name,
     { ran: false }
   );
