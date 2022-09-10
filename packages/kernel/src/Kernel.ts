@@ -261,7 +261,7 @@ export class Kernel implements IKernel {
           this.sleepingThreads.set(pid, this.clock() + sysCall.value.ticks);
           return false;
         }
-        case 'fork': {
+        case 'spawn': {
           const { args, processType, priority } = sysCall.value;
           const child = this.createProcess(
             processType,
@@ -270,7 +270,7 @@ export class Kernel implements IKernel {
             undefined,
             priority
           );
-          nextArg = { type: 'fork', pid: child.pid };
+          nextArg = { type: 'spawn', pid: child.pid };
           break;
         }
         case 'kill': {

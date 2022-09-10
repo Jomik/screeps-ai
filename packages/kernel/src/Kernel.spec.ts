@@ -3,7 +3,7 @@ import { PriorityScheduler } from './PriorityScheduler';
 import { Priority } from './Scheduler';
 import {
   createProcess,
-  fork,
+  spawn,
   hibernate,
   kill,
   MemoryValue,
@@ -156,12 +156,12 @@ describe('Kernel', () => {
     });
   });
 
-  describe('fork', () => {
+  describe('spawn', () => {
     it('forks a child', () => {
       const thread = jest.fn();
       const registry = {
         init: createProcess(function* () {
-          yield* fork('child');
+          yield* spawn('child');
           yield* hibernate();
         }),
         child: createProcess(function* () {
@@ -183,7 +183,7 @@ describe('Kernel', () => {
     it('allows changing priority', () => {
       const registry = {
         init: createProcess(function* () {
-          yield* fork('child');
+          yield* spawn('child');
           yield* hibernate();
         }),
         child: createProcess(function* () {
@@ -207,11 +207,11 @@ describe('Kernel', () => {
       const thread = jest.fn();
       const registry = {
         init: createProcess(function* () {
-          yield* fork('child');
+          yield* spawn('child');
           yield* hibernate();
         }),
         child: createProcess(function* () {
-          yield* fork('grandChild');
+          yield* spawn('grandChild');
           yield* sleep();
         }),
         grandChild: createProcess(function* () {
@@ -235,7 +235,7 @@ describe('Kernel', () => {
       const thread = jest.fn();
       const registry = {
         init: createProcess(function* () {
-          const pid = yield* fork('child');
+          const pid = yield* spawn('child');
           yield* sleep(2);
           yield* kill(pid);
           yield* hibernate();
@@ -260,8 +260,8 @@ describe('Kernel', () => {
       const thread = jest.fn();
       const registry = {
         init: createProcess(function* () {
-          yield* fork('child1');
-          yield* fork('child2');
+          yield* spawn('child1');
+          yield* spawn('child2');
           yield* hibernate();
         }),
         child1: createProcess(function* () {

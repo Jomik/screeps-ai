@@ -28,14 +28,14 @@ export type MemoryPointer =
 
 export type SysCall =
   | Sleep
-  | Fork
+  | Spawn
   | Kill
   | Allocate
   | Children
   | RequestPriority;
 export type SysCallResults =
   | void
-  | ForkResult
+  | SpawnResult
   | AllocateResult
   | ChildrenResult;
 
@@ -99,28 +99,28 @@ export function* hibernate() {
   }
 }
 
-type Fork = {
-  type: 'fork';
+type Spawn = {
+  type: 'spawn';
   processType: string;
   args: MemoryValue[];
   priority?: Priority;
 };
-type ForkResult = {
-  type: 'fork';
+type SpawnResult = {
+  type: 'spawn';
   pid: PID;
 };
-export function* fork<Type extends keyof OSRegistry>(
+export function* spawn<Type extends keyof OSRegistry>(
   type: Type,
   priority?: Priority,
   ...args: ArgsForProcess<OSRegistry[Type]>
 ): Thread<PID> {
   const res = yield {
-    type: 'fork',
+    type: 'spawn',
     processType: type as string,
     args,
     priority,
   };
-  assertResultType(res, 'fork');
+  assertResultType(res, 'spawn');
   return res.pid;
 }
 

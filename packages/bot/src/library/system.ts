@@ -1,10 +1,7 @@
 import {
-  allocate,
   ArgsForProcess,
-  fork,
+  spawn,
   getChildren,
-  MemoryPointer,
-  MemoryValue,
   PID,
   Priority,
   Thread,
@@ -39,5 +36,5 @@ export function* ensureChild<Type extends keyof OSRegistry>(
     return child.pid;
   }
 
-  return yield* fork(type, priority, ...args);
+  return yield* spawn(type, priority, ...args);
 }
