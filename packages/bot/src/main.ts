@@ -89,6 +89,16 @@ global.kill = (pid: PID) => {
   return kernel.kill(pid);
 };
 
+// @ts-ignore: to use inspect in console
+global.inspect = (pid: PID) => {
+  const process = kernel.ps().find((p) => p.pid === pid);
+  if (!process) {
+    return `Process not found`;
+  }
+
+  return JSON.stringify(process);
+};
+
 // @ts-ignore: to use setLogLevel in console
 global.LogLevel = LogLevel;
 // @ts-ignore: to use setLogLevel in console
