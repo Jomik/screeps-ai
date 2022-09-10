@@ -27,10 +27,10 @@ const kernel = new Kernel({
     onKernelError(message) {
       kernelLogger.alert(message);
     },
-    onThreadExit({ type, pid }, reason) {
+    onProcessExit({ type, pid }, reason) {
       kernelLogger.info(`${type}:${pid} exited: ${reason}`);
     },
-    onThreadError({ type, pid }, error: Error) {
+    onProcessError({ type, pid }, error: Error) {
       kernelLogger.error(`${type}:${pid} errored:`, error);
     },
   },

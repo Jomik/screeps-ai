@@ -69,8 +69,8 @@ export interface IKernel {
 
 export interface KernelLogger {
   onKernelError?(message: string): void;
-  onThreadExit?(process: ProcessInfo, reason: string): void;
-  onThreadError?(process: ProcessInfo, error: unknown): void;
+  onProcessExit?(process: ProcessInfo, reason: string): void;
+  onProcessError?(process: ProcessInfo, error: unknown): void;
 }
 
 export interface PersistentDataHandle<T extends MemoryValue> {
@@ -339,9 +339,9 @@ export class Kernel implements IKernel {
         this.kill(pid);
 
         if (err instanceof OSExit) {
-          this.logger?.onThreadExit?.(entryToInfo(entry), err.message);
+          this.logger?.onProcessExit?.(entryToInfo(entry), err.message);
         } else {
-          this.logger?.onThreadError?.(entryToInfo(entry), err);
+          this.logger?.onProcessError?.(entryToInfo(entry), err);
         }
 
         if (pid === 0) {

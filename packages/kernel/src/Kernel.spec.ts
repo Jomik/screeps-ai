@@ -26,8 +26,8 @@ const createKernel = <
   const clock = jest.fn<number, []>().mockReturnValue(1);
   const logger: Required<KernelLogger> = {
     onKernelError: jest.fn(),
-    onThreadError: jest.fn(),
-    onThreadExit: jest.fn(),
+    onProcessError: jest.fn(),
+    onProcessExit: jest.fn(),
   };
 
   const kernel = new Kernel({
@@ -92,7 +92,7 @@ describe('Kernel', () => {
 
       run();
 
-      expect(logger.onThreadError).toHaveBeenCalledWith(
+      expect(logger.onProcessError).toHaveBeenCalledWith(
         expect.anything(),
         expect.any(Error)
       );
