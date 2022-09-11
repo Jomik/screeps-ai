@@ -1,5 +1,25 @@
 import { Thread, sleep, createProcess } from 'kernel';
+import { distanceTransform } from '../library';
 import { expandPosition } from '../utils';
+
+// prettier-ignore
+function* wallDistances(room: Room): Thread<CostMatrix> {
+  const costMatrix = new PathFinder.CostMatrix();
+
+  // Initialize terrain
+  const terrain = room.getTerrain();
+  for (let x = 0; x <= 49; ++x) {
+    for (let y = 0; y <= 49; ++y) {
+      costMatrix.set(
+        x,
+        y,
+        terrain.get(x, y) & TERRAIN_MASK_WALL ? 0 : Infinity
+      );
+    }
+  }
+
+  return yield* distanceTransform({ x: [0, 49], y: [0, 49] }, costMatrix);
+}
 
 export const roomPlanner = createProcess(function* (roomName: string) {
   const costMatrix = new PathFinder.CostMatrix();
@@ -8,6 +28,7 @@ export const roomPlanner = createProcess(function* (roomName: string) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Game.rooms[roomName]!;
   };
+
   // TODO
   const center: RoomPosition =
     room().find(FIND_MY_SPAWNS)[0]?.pos ?? new RoomPosition(25, 25, roomName);
@@ -90,16 +111,32 @@ export const roomPlanner = createProcess(function* (roomName: string) {
 
   const drawRoomVisuals = (
     paths: RoomPosition[][],
-    containers: RoomPosition[]
+    containers: RoomPosition[],
+    dt: CostMatrix
   ) => {
     for (const { x, y } of paths.flat()) {
-      room().visual.structure(x, y, STRUCTURE_ROAD, { opacity: 0.3 });
+      if (room().lookForAt(LOOK_STRUCTURES, x, y).length === 0) {
+        room().visual.structure(x, y, STRUCTURE_ROAD, { opacity: 0.3 });
+      }
     }
     room().visual.connectRoads({ opacity: 0.5 });
 
     for (const { x, y } of containers) {
-      room().visual.structure(x, y, STRUCTURE_CONTAINER, { opacity: 0.5 });
+      if (room().lookForAt(LOOK_STRUCTURES, x, y).length === 0) {
+        room().visual.structure(x, y, STRUCTURE_CONTAINER, { opacity: 0.5 });
+      }
     }
+
+    // DT visuals
+    // for (let x = 0; x <= 49; ++x) {
+    //   for (let y = 0; y <= 49; ++y) {
+    //     room().visual.text(dt.get(x, y).toString(), x, y);
+    //     room().visual.rect(x - 0.5, y - 0.5, 1, 1, {
+    //       fill: `hsl(${200 + dt.get(x, y) * 10}, 100%, 60%)`,
+    //       opacity: 0.4,
+    //     });
+    //   }
+    // }
   };
 
   const sources = room()
@@ -128,9 +165,11 @@ export const roomPlanner = createProcess(function* (roomName: string) {
   );
   yield;
 
+  const dt = yield* wallDistances(room());
+
   for (;;) {
     yield* sleep();
-    drawRoomVisuals(paths, containers);
+    drawRoomVisuals(paths, containers, dt);
 
     const containerSites = containers.filter(
       (pos) => room().lookForAt(LOOK_STRUCTURES, pos).length === 0
@@ -142,13 +181,13 @@ export const roomPlanner = createProcess(function* (roomName: string) {
       continue;
     }
 
-    if (room().find(FIND_CONSTRUCTION_SITES).length > 0) {
+    if (room().find(FIND_CONSTRUCTION_SITES).length > 5) {
       continue;
     }
 
-    const path = containers.find(
-      (pos) => room().lookForAt(LOOK_STRUCTURES, pos).length === 0
-    );
+    const path = paths
+      .flatMap((p) => p)
+      .find((pos) => room().lookForAt(LOOK_STRUCTURES, pos).length === 0);
     if (path) {
       room().createConstructionSite(path.x, path.y, STRUCTURE_ROAD);
       continue;

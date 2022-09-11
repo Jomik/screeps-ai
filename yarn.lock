@@ -1427,12 +1427,15 @@ __metadata:
   dependencies:
     "@rollup/plugin-commonjs": "npm:^22.0.0"
     "@rollup/plugin-node-resolve": "npm:^13.2.1"
+    "@types/jest": "npm:^27.4.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
     "@typescript-eslint/eslint-plugin": "npm:^5.36.2"
     "@typescript-eslint/parser": "npm:^5.36.2"
     eslint: "npm:^8.23.0"
     eslint-config-prettier: "npm:^8.5.0"
+    jest: "npm:^27.5.1"
+    jest-iterator: "workspace:*"
     kernel: "workspace:*"
     prettier: "npm:^2.7.1"
     rollup: "npm:^2.71.1"
@@ -1441,6 +1444,7 @@ __metadata:
     rollup-plugin-typescript2: "npm:^0.31.2"
     scl: "npm:^4.1.1"
     source-map: "npm:~0.6.1"
+    ts-jest: "npm:^27.1.4"
     ts-polyfill: "npm:^3.8.2"
     typescript: "npm:^4.6.3"
   languageName: unknown
