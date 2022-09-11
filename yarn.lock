@@ -1429,7 +1429,12 @@ __metadata:
     "@rollup/plugin-node-resolve": "npm:^13.2.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
+    "@typescript-eslint/eslint-plugin": "npm:^5.36.2"
+    "@typescript-eslint/parser": "npm:^5.36.2"
+    eslint: "npm:^8.23.0"
+    eslint-config-prettier: "npm:^8.5.0"
     kernel: "workspace:*"
+    prettier: "npm:^2.7.1"
     rollup: "npm:^2.71.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
@@ -3560,8 +3565,13 @@ __metadata:
   resolution: "kernel@workspace:packages/kernel"
   dependencies:
     "@types/jest": "npm:^27.4.1"
+    "@typescript-eslint/eslint-plugin": "npm:^5.36.2"
+    "@typescript-eslint/parser": "npm:^5.36.2"
+    eslint: "npm:^8.23.0"
+    eslint-config-prettier: "npm:^8.5.0"
     jest: "npm:^27.5.1"
     jest-iterator: "workspace:*"
+    prettier: "npm:^2.7.1"
     ts-jest: "npm:^27.1.4"
     typescript: "npm:^4.6.3"
   languageName: unknown
@@ -4471,10 +4481,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@typescript-eslint/eslint-plugin": "npm:^5.36.2"
-    "@typescript-eslint/parser": "npm:^5.36.2"
     eslint: "npm:^8.23.0"
-    eslint-config-prettier: "npm:^8.5.0"
     prettier: "npm:^2.7.1"
     typescript: "npm:^4.6.3"
   languageName: unknown
