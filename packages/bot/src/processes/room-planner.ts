@@ -56,9 +56,6 @@ export const roomPlanner = createProcess(function* (roomName: string) {
 
     const finalPaths: RoomPosition[][] = [];
     for (const node of nodes) {
-      if (!node.pos) {
-        continue;
-      }
       const res = search(node.pos, node.range, costMatrix);
       const flatPaths = finalPaths.flat();
       const path = res.path.filter(
@@ -69,6 +66,7 @@ export const roomPlanner = createProcess(function* (roomName: string) {
 
       yield;
     }
+
     return finalPaths;
   };
 
