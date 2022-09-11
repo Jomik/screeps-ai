@@ -30,6 +30,8 @@ class CostMatrix {
   }
 }
 
-global.PathFinder = {
-  CostMatrix: CostMatrix,
+export const setupMocks = () => {
+  global.PathFinder = {
+    CostMatrix: CostMatrix,
+  };
 };

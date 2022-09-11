@@ -1,2 +1,3 @@
 import 'jest-iterator';
-import './global';
+import { setupMocks } from './mocks';
+setupMocks();
