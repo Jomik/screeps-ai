@@ -57,3 +57,7 @@ const outline = [
 
 export const expandPosition = (pos: RoomPosition): RoomPosition[] =>
   outline.map(([x, y]) => new RoomPosition(x + pos.x, y + pos.y, pos.roomName));
+
+export const objectEntries = <T extends string, V>(
+  obj: Partial<Record<T, V>>
+): [T, V][] => Object.entries(obj).filter(isDefined) as [T, V][];

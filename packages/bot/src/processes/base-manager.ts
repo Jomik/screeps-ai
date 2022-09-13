@@ -1,5 +1,6 @@
 import { createProcess, exit, sleep } from 'kernel';
 import { createLogger, ensureChild } from '../library';
+import { getRoomPlan } from '../library/room';
 
 const getRoom = (roomName: string): Room => {
   const room = Game.rooms[roomName];
@@ -22,7 +23,9 @@ export const baseManager = createProcess(function* (roomName: string) {
   }
 
   for (;;) {
-    yield* ensureChild('roomPlanner', undefined, roomName);
+    if (getRoomPlan(roomName).state !== 'done') {
+      yield* ensureChild('roomPlanner', undefined, roomName);
+    }
     yield* sleep(500);
   }
 });

@@ -31,15 +31,12 @@ const updateCM = (
 
 export function* distanceTransform(
   bounds: { x: [number, number]; y: [number, number] },
-  base: CostMatrix
-): Thread<CostMatrix> {
+  costMatrix: CostMatrix
+): Thread {
   const {
     x: [xMin, xMax],
     y: [yMin, yMax],
   } = bounds;
-
-  const costMatrix = base.clone();
-  yield;
 
   for (let x = xMin; x <= xMax; ++x) {
     for (let y = yMin; y <= yMax; ++y) {
@@ -53,6 +50,4 @@ export function* distanceTransform(
       updateCM(x, y, costMatrix, backwardMask);
     }
   }
-
-  return costMatrix;
 }
