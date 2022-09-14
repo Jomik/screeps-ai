@@ -145,6 +145,7 @@ export class Kernel implements IKernel {
     }
     this.table = {};
     this.threads.clear();
+    this.sleepingThreads.clear();
 
     this.createProcess('init', [], 0 as PID, 0 as PID);
   }

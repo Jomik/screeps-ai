@@ -285,4 +285,23 @@ describe('Kernel', () => {
       expect(thread).toHaveBeenCalledTimes(1);
     });
   });
+  describe('reboot', () => {
+    it('runs after reboot init', () => {
+      const thread = jest.fn();
+      const registry = {
+        init: createProcess(function* () {
+          thread();
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      kernel.reboot();
+      run();
+
+      expect(thread).toHaveBeenCalledTimes(2);
+    });
+  });
 });
