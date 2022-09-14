@@ -1,7 +1,9 @@
+export type Coordinates = [x: number, y: number];
+
 export type RoomPlan = {
   roomName: string;
   state: 'initial' | 'invalid' | 'done';
-  structures: Partial<Record<StructureConstant, RoomPosition[]>>;
+  structures: Partial<Record<StructureConstant, Coordinates[]>>;
   base: CostMatrix;
   distanceTransform: CostMatrix;
   lastChange: number;

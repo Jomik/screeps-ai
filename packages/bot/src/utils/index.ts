@@ -55,8 +55,10 @@ const outline = [
   [1,-1], [0,-1], [-1,-1],
 ] as const;
 
-export const expandPosition = (pos: RoomPosition): RoomPosition[] =>
-  outline.map(([x, y]) => new RoomPosition(x + pos.x, y + pos.y, pos.roomName));
+export const expandPosition = (
+  pos: [x: number, y: number]
+): [x: number, y: number][] =>
+  outline.map(([x, y]) => [x + pos[0], y + pos[1]]);
 
 export const objectEntries = <T extends string, V>(
   obj: Partial<Record<T, V>>

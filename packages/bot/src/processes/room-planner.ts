@@ -1,12 +1,17 @@
-import { Thread, createProcess, exit, sleep } from 'kernel';
+import { Thread, createProcess, exit } from 'kernel';
 import { createLogger, distanceTransform } from '../library';
-import { getRoomPlan, RoomPlan, saveRoomPlan } from '../library/room';
+import {
+  Coordinates,
+  getRoomPlan,
+  RoomPlan,
+  saveRoomPlan,
+} from '../library/room';
 import { expandPosition } from '../utils';
 
 const logger = createLogger('room-planner');
 
 function* planStorage(plan: RoomPlan): Thread<void> {
-  let candidates: [number, number][] = [];
+  let candidates: Coordinates[] = [];
   let bestDistance = 0;
   for (let x = 0; x <= 49; ++x) {
     for (let y = 0; y <= 49; ++y) {
@@ -27,7 +32,7 @@ function* planStorage(plan: RoomPlan): Thread<void> {
   const sources = room.find(FIND_SOURCES);
 
   let sourceCost = Infinity;
-  let bestPos: [number, number] = [0, 0];
+  let bestPos: Coordinates = [0, 0];
   for (const [x, y] of candidates) {
     const cost = sources.reduce(
       (acc, cur) =>
@@ -49,9 +54,7 @@ function* planStorage(plan: RoomPlan): Thread<void> {
     yield;
   }
 
-  plan.structures.storage = [
-    new RoomPosition(bestPos[0], bestPos[1], room.name),
-  ];
+  plan.structures.storage = [bestPos];
   plan.base.set(bestPos[0], bestPos[1], Infinity);
 }
 function* planRoadsToPOI(plan: RoomPlan): Thread<void> {
@@ -63,6 +66,8 @@ function* planRoadsToPOI(plan: RoomPlan): Thread<void> {
   if (!room) {
     return exit(`No vision in room ${plan.roomName}`);
   }
+  const [centerX, centerY] = center;
+  const centerPos = new RoomPosition(centerX, centerY, plan.roomName);
   const { controller } = room;
   if (!controller) {
     return exit(`No controller in room ${plan.roomName}`);
@@ -74,14 +79,14 @@ function* planRoadsToPOI(plan: RoomPlan): Thread<void> {
     { pos: controller.pos, range: 3 },
   ];
 
-  const roads: RoomPosition[] = expandPosition(center).filter(
-    (pos) => plan.base.get(pos.x, pos.y) === 0
+  const roads: Coordinates[] = expandPosition([centerX, centerY]).filter(
+    ([x, y]) => plan.base.get(x, y) === 0
   );
-  roads.forEach((pos) => {
-    plan.base.set(pos.x, pos.y, 1);
+  roads.forEach(([x, y]) => {
+    plan.base.set(x, y, 1);
   });
   for (const target of poi) {
-    const res = PathFinder.search(center, target, {
+    const res = PathFinder.search(centerPos, target, {
       roomCallback: () => plan.base,
       maxRooms: 1,
       plainCost: 2,
@@ -91,7 +96,7 @@ function* planRoadsToPOI(plan: RoomPlan): Thread<void> {
       logger.warn(`No path to ${JSON.stringify(target.pos)}`);
       continue;
     }
-    roads.push(...res.path);
+    roads.push(...res.path.map<Coordinates>(({ x, y }) => [x, y]));
     res.path.forEach((pos) => {
       plan.base.set(pos.x, pos.y, 1);
     });
@@ -106,6 +111,7 @@ function* planExtensions(plan: RoomPlan): Thread<void> {
   if (!center) {
     return exit(`No storage planned for ${plan.roomName}`);
   }
+  const [centerX, centerY] = center;
   const room = Game.rooms[plan.roomName];
   if (!room) {
     return exit(`No vision in room ${plan.roomName}`);
@@ -115,12 +121,12 @@ function* planExtensions(plan: RoomPlan): Thread<void> {
   const dirX = 1;
   const dirY = -1;
 
-  const seed: [number, number] = [center.x + dirX, center.y + dirY];
+  const seed: Coordinates = [centerX + dirX, centerY + dirY];
 
-  const roads: [number, number][] = [];
-  const extensions: [number, number][] = [];
+  const roads: Coordinates[] = [];
+  const extensions: Coordinates[] = [];
 
-  const planExtension = ([x, y]: [number, number]) => {
+  const planExtension = ([x, y]: Coordinates) => {
     if (plan.base.get(x, y) !== 0) {
       return;
     }
@@ -139,6 +145,7 @@ function* planExtensions(plan: RoomPlan): Thread<void> {
     }
 
     roads.push(point);
+
     planExtension([x + dirX, y]);
     planExtension([x, y + dirY]);
     planExtension([x + dirX, y - dirY]);
@@ -146,12 +153,8 @@ function* planExtensions(plan: RoomPlan): Thread<void> {
   }
 
   plan.structures[STRUCTURE_ROAD] ??= [];
-  plan.structures[STRUCTURE_ROAD]?.push(
-    ...roads.map(([x, y]) => new RoomPosition(x, y, plan.roomName))
-  );
-  plan.structures[STRUCTURE_EXTENSION] = extensions.map(
-    ([x, y]) => new RoomPosition(x, y, plan.roomName)
-  );
+  plan.structures[STRUCTURE_ROAD]?.push(...roads);
+  plan.structures[STRUCTURE_EXTENSION] = extensions;
   saveRoomPlan(plan, 'done');
 }
 
@@ -163,7 +166,7 @@ export const roomPlanner = createProcess(function* (roomName: string) {
 
   const plan = getRoomPlan(roomName);
   const spawns = room.find(FIND_MY_SPAWNS);
-  plan.structures[STRUCTURE_SPAWN] = spawns.map(({ pos }) => pos);
+  plan.structures[STRUCTURE_SPAWN] = spawns.map(({ pos }) => [pos.x, pos.y]);
   spawns.forEach(({ pos }) => plan.base.set(pos.x, pos.y, 255));
   saveRoomPlan(plan, 'initial');
 

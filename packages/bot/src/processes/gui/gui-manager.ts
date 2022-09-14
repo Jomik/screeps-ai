@@ -26,7 +26,7 @@ export const roomVisuals = createProcess(function* (roomName: string) {
     }
 
     for (const [type, positions] of objectEntries(plan.structures)) {
-      positions.forEach(({ x, y }, index) => {
+      positions.forEach(([x, y]) => {
         room.visual.structure(x, y, type, { opacity: 0.5 });
       });
     }

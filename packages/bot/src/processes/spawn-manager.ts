@@ -1,4 +1,5 @@
 import { sleep, createProcess } from 'kernel';
+import { Coordinates } from '../library/room';
 import { expandPosition, isDefined } from '../utils';
 
 export const spawnManager = createProcess(function* () {
@@ -14,7 +15,7 @@ export const spawnManager = createProcess(function* () {
     );
   };
 
-  const spawnMiner = (slot: [number, number]) => {
+  const spawnMiner = (slot: Coordinates) => {
     getSpawn().spawnCreep([WORK, WORK, CARRY, MOVE], `miner-${Game.time}`, {
       memory: { slot },
     });
@@ -50,7 +51,8 @@ export const spawnManager = createProcess(function* () {
 
     const slots = sources
       .map((source) =>
-        expandPosition(source.pos)
+        expandPosition([source.pos.x, source.pos.y])
+          .map(([x, y]) => new RoomPosition(x, y, spawn.room.name))
           .filter(({ x, y }) => !(terrain.get(x, y) & TERRAIN_MASK_WALL))
           .sort((a, b) => {
             const adistx = Math.abs(goal.x - a.x);
