@@ -127,27 +127,41 @@ export class Kernel implements IKernel {
     this.quota = () => config.quota();
     this.tableRef = config.getDataHandle<ProcessTable>('table', {});
 
-    const root = this.table[0 as PID];
-    if (!root || unpackEntry(root).type !== 'init') {
+    this.reboot();
+    this.PIDCount = Math.max(0, ...this.pids) as PID;
+  }
+
+  /**
+   * Wipes memory and starts init.
+   */
+  reset() {
+    for (const pid of this.pids) {
+      this.scheduler.remove(pid);
+    }
+    this.table = {};
+    this.reboot();
+  }
+
+  /**
+   * Restarts all processes. Keeps memory.
+   */
+  reboot() {
+    for (const pid of this.pids) {
+      this.scheduler.remove(pid);
+    }
+    this.threads.clear();
+    this.sleepingThreads.clear();
+
+    const init = this.table[0 as PID];
+    if (!init || unpackEntry(init).type !== 'init') {
+      this.table = {};
       this.logger?.onKernelError?.('Root process, init, is missing or corrupt');
-      this.reboot();
+      this.createProcess('init', [], 0 as PID, 0 as PID);
     } else {
       for (const pid of this.pids) {
         this.initThread(pid);
       }
     }
-    this.PIDCount = Math.max(0, ...this.pids) as PID;
-  }
-
-  reboot() {
-    for (const pid of this.pids) {
-      this.scheduler.remove(pid);
-    }
-    this.table = {};
-    this.threads.clear();
-    this.sleepingThreads.clear();
-
-    this.createProcess('init', [], 0 as PID, 0 as PID);
   }
 
   private PIDCount: PID;

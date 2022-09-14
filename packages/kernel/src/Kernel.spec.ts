@@ -11,6 +11,7 @@ import {
   Process,
   requestPriority,
   sleep,
+  malloc,
 } from './system';
 
 declare global {
@@ -286,7 +287,7 @@ describe('Kernel', () => {
     });
   });
   describe('reboot', () => {
-    it('runs after reboot init', () => {
+    it('runs init', () => {
       const thread = jest.fn();
       const registry = {
         init: createProcess(function* () {
@@ -302,6 +303,109 @@ describe('Kernel', () => {
       run();
 
       expect(thread).toHaveBeenCalledTimes(2);
+    });
+    it('keeps memory', () => {
+      const thread = jest.fn<void, [number]>();
+      const registry = {
+        init: createProcess(function* () {
+          const ref = yield* malloc('i', 0);
+          thread(ref.value);
+          ++ref.value;
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      kernel.reboot();
+      run();
+
+      expect(thread).toHaveBeenCalledWith(1);
+    });
+    it('keeps processes', () => {
+      const thread = jest.fn();
+      const registry = {
+        init: createProcess(function* () {
+          yield* spawn('child1');
+          yield* hibernate();
+        }),
+        child1: createProcess(function* () {
+          thread();
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      run();
+      kernel.reboot();
+      run();
+
+      expect(thread).toHaveBeenCalledTimes(2);
+    });
+  });
+  describe('reset', () => {
+    it('runs init', () => {
+      const thread = jest.fn();
+      const registry = {
+        init: createProcess(function* () {
+          thread();
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      kernel.reset();
+      run();
+
+      expect(thread).toHaveBeenCalledTimes(2);
+    });
+    it('wipes memory', () => {
+      const thread = jest.fn<void, [number]>();
+      const registry = {
+        init: createProcess(function* () {
+          const ref = yield* malloc('i', 0);
+          thread(ref.value);
+          ++ref.value;
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      kernel.reset();
+      run();
+
+      expect(thread).toHaveBeenCalledWith(0);
+    });
+    it('wipes processes', () => {
+      let expected = 1;
+      const thread = jest.fn<void, [number]>();
+      const registry = {
+        init: createProcess(function* () {
+          yield* spawn('child1', undefined, expected);
+          yield* hibernate();
+        }),
+        child1: createProcess(function* (arg: number) {
+          thread(arg);
+          yield* hibernate();
+        }),
+      };
+
+      const { run, kernel } = createKernel(registry);
+
+      run();
+      kernel.reset();
+      expected = 2;
+      run();
+      run();
+
+      expect(thread).toHaveBeenCalledWith(expected);
     });
   });
 });
