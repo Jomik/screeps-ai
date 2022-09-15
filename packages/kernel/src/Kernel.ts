@@ -131,27 +131,28 @@ export class Kernel implements IKernel {
     this.PIDCount = Math.max(0, ...this.pids) as PID;
   }
 
+  private clear() {
+    for (const pid of this.pids) {
+      this.scheduler.remove(pid);
+    }
+    this.threads.clear();
+    this.sleepingThreads.clear();
+  }
+
   /**
    * Wipes memory and starts init.
    */
   reset() {
-    for (const pid of this.pids) {
-      this.scheduler.remove(pid);
-    }
+    this.clear();
     this.table = {};
-    this.reboot();
+    this.createProcess('init', [], 0 as PID, 0 as PID);
   }
 
   /**
    * Restarts all processes. Keeps memory.
    */
   reboot() {
-    for (const pid of this.pids) {
-      this.scheduler.remove(pid);
-    }
-    this.threads.clear();
-    this.sleepingThreads.clear();
-
+    this.clear();
     const init = this.table[0 as PID];
     if (!init || unpackEntry(init).type !== 'init') {
       this.table = {};
