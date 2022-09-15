@@ -50,6 +50,10 @@ global.reboot = () => {
   return kernel.reboot();
 };
 
+global.reset = () => {
+  return kernel.reset();
+};
+
 global.kill = (pid: PID) => {
   return kernel.kill(pid);
 };
