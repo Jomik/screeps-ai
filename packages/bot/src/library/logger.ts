@@ -1,4 +1,5 @@
 import { ErrorMapper } from '../utils/ErrorMapper';
+import { InvalidArgumentsError, registerCommand } from './console';
 import { getMemoryRef } from './memory';
 
 declare const console: { log(message: string): void };
@@ -16,12 +17,12 @@ type LocationArg =
   | string;
 
 export enum LogLevel {
-  Alert = 1,
-  Error = 2,
-  Warn = 3,
-  Info = 4,
-  Debug = 5,
-  Verbose = 6,
+  alert = 1,
+  error = 2,
+  warn = 3,
+  info = 4,
+  debug = 5,
+  verbose = 6,
 }
 
 export interface Logger {
@@ -36,27 +37,35 @@ export interface Logger {
 export const createLogger = (name: string): Logger => new ConsoleLogger(name);
 
 const settingsRef = getMemoryRef('logger', {
-  level: LogLevel.Warn,
+  level: LogLevel.warn,
   filter: undefined as string | undefined,
 }).get();
 
-export const setLogLevel = (level: LogLevel): string | undefined => {
-  if (!(level in LogLevel)) {
-    return 'Invalid log level';
+registerCommand('setLogLevel', (level) => {
+  if (typeof level === 'number') {
+    settingsRef.level = level;
   }
-  settingsRef.level = level;
-  return;
-};
 
-export const setLogFilter = (
-  filter: string | undefined
-): string | undefined => {
+  if (typeof level !== 'string' || !(level.toLowerCase() in LogLevel)) {
+    throw new InvalidArgumentsError('LogLevel', level);
+  }
+
+  settingsRef.level = LogLevel[level.toLowerCase() as keyof typeof LogLevel];
+  return undefined;
+});
+
+registerCommand('setLogFilter', (filter) => {
+  if (typeof filter !== 'string') {
+    throw new InvalidArgumentsError('string', filter);
+  }
+
   if (filter !== undefined && filter.length < 0) {
     return 'Invalid log filter';
   }
+
   settingsRef.filter = filter;
-  return;
-};
+  return undefined;
+});
 
 const Separator = '<span style="color:#6e6770"> &rsaquo; </span>';
 
@@ -114,7 +123,7 @@ class ConsoleLogger implements Logger {
   }
 
   public alert(message: MessageThunk, location?: LocationArg) {
-    this.log(message, location, LogLevel.Alert, '#ff00d0');
+    this.log(message, location, LogLevel.alert, '#ff00d0');
   }
 
   public error(message: MessageThunk, error: Error, location?: LocationArg) {
@@ -126,24 +135,24 @@ class ConsoleLogger implements Logger {
         '\n' +
         ErrorMapper.sourceMappedStackTrace(error),
       location,
-      LogLevel.Error,
+      LogLevel.error,
       '#e50000'
     );
   }
 
   public warn(message: MessageThunk, location?: LocationArg) {
-    this.log(message, location, LogLevel.Warn, '#f4c542');
+    this.log(message, location, LogLevel.warn, '#f4c542');
   }
 
   public info(message: MessageThunk, location?: LocationArg) {
-    this.log(message, location, LogLevel.Info, '#efefef');
+    this.log(message, location, LogLevel.info, '#efefef');
   }
 
   public debug(message: MessageThunk, location?: LocationArg) {
-    this.log(message, location, LogLevel.Debug, '#a6a4a6');
+    this.log(message, location, LogLevel.debug, '#a6a4a6');
   }
 
   public verbose(message: MessageThunk, location?: LocationArg) {
-    this.log(message, location, LogLevel.Verbose, '#6e6770');
+    this.log(message, location, LogLevel.verbose, '#6e6770');
   }
 }
