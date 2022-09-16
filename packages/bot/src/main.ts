@@ -4,7 +4,9 @@ import { ErrorMapper } from './utils/ErrorMapper';
 import { recordGlobals, resetStats } from './library';
 import { wrapWithMemoryHack } from './utils/memory-hack';
 import { kernel } from './kernel';
-import './cli';
+import { initConsole } from './library/console';
+
+initConsole();
 
 export const loop = ErrorMapper.wrapLoop(
   wrapWithMemoryHack(() => {

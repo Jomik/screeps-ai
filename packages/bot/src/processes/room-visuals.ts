@@ -1,9 +1,19 @@
 import { createProcess, exit, sleep, spawn } from 'kernel';
-import { getRoomPlan } from '../../library/room';
-import { objectEntries } from '../../utils';
+import { registerCommand } from '../library/console';
+import { getRoomPlan } from '../library/room';
+import { objectEntries } from '../utils';
 
 export const roomVisuals = createProcess(function* (roomName: string) {
+  let enabled = false;
+  registerCommand('toggleVisuals', () => {
+    enabled = !enabled;
+    return `${enabled ? 'Enabled' : 'Disabled'} room visuals for ${roomName}`;
+  });
+
   for (;;) {
+    while (!enabled) {
+      yield* sleep();
+    }
     const plan = getRoomPlan(roomName);
     const room = Game.rooms[roomName];
     if (!room) {
@@ -34,25 +44,10 @@ export const roomVisuals = createProcess(function* (roomName: string) {
     const visuals = room.visual.export();
 
     yield* sleep();
-    while (getRoomPlan(roomName).lastChange === plan.lastChange) {
+    while (getRoomPlan(roomName).lastChange === plan.lastChange && enabled) {
       room.visual.import(visuals);
 
       yield* sleep();
     }
-  }
-});
-
-export const guiManager = createProcess(function* () {
-  for (;;) {
-    for (const flag of Object.values(Game.flags)) {
-      if (flag.name !== 'visuals') {
-        continue;
-      }
-      if (flag.room) {
-        yield* spawn('roomVisuals', undefined, flag.room.name);
-      }
-      flag.remove();
-    }
-    yield* sleep();
   }
 });
