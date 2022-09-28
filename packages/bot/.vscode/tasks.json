@@ -20,7 +20,7 @@
         "background": {
           "activeOnStart": true,
           "beginsPattern": "bundles src/main.ts → dist/main.js...",
-          "endsPattern": "created dist/main.js in.*"
+          "endsPattern": ".*waiting for changes..."
         }
       },
       "group": {
