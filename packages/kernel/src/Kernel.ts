@@ -384,4 +384,13 @@ export class Kernel implements IKernel {
       entryToInfo(unpackEntry(entry))
     );
   }
+
+  public inspect(pid: PID): ProcessMemory | null {
+    const entry = this.table[pid];
+    if (!entry) {
+      return null;
+    }
+
+    return unpackEntry(entry).memory;
+  }
 }

@@ -105,5 +105,7 @@ registerCommand('inspect', (pid) => {
     return `Process ${pid} not found`;
   }
 
-  return JSON.stringify(process);
+  const memory = kernel.inspect(pid as PID);
+
+  return JSON.stringify({ ...process, args: undefined, memory }, null, 2);
 });
