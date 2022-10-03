@@ -1,0 +1,40 @@
+image: node:16
+
+variables:
+  YARN_CACHE_FOLDER: $CI_PROJECT_DIR/.yarn/cache
+
+cache:
+  key: install-cache
+  paths:
+    - .yarn/cache
+
+before_script:
+  - yarn install --immutable
+
+stages:
+  - typecheck
+  - test
+
+typecheck-job:
+  stage: typecheck
+  parallel:
+    matrix:
+      - WORKSPACE: [bot, kernel]
+  script:
+    - yarn workspace $WORKSPACE run tsc --noEmit --skipLibCheck --strict
+
+unit-test-job:
+  stage: test
+  parallel:
+    matrix:
+      - WORKSPACE: [bot, kernel]
+  script:
+    - yarn workspace $WORKSPACE run test
+
+lint-test-job:
+  stage: test
+  parallel:
+    matrix:
+      - WORKSPACE: [bot, kernel]
+  script:
+    - yarn workspace $WORKSPACE run test
