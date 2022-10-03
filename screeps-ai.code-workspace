@@ -18,6 +18,7 @@
       "source.fixAll.eslint": true
     },
     "editor.formatOnSave": true,
+    "js/ts.implicitProjectConfig.checkJs": true,
     "files.encoding": "utf8",
     "files.insertFinalNewline": true,
     "files.trimTrailingWhitespace": true,

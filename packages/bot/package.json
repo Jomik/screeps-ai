@@ -5,7 +5,6 @@
     "build": "rollup -c",
     "deploy:mmo": "yarn build --environment DEST:mmo",
     "deploy:private": "yarn build --environment DEST:private",
-    "lint": "eslint .",
     "test": "jest"
   },
   "dependencies": {
@@ -20,10 +19,6 @@
     "@types/jest": "^29.1.1",
     "@types/lodash": "3.10.2",
     "@types/screeps": "^3.3.0",
-    "@typescript-eslint/eslint-plugin": "^5.38.1",
-    "@typescript-eslint/parser": "^5.38.1",
-    "eslint": "^8.24.0",
-    "eslint-config-prettier": "^8.5.0",
     "jest": "^29.1.2",
     "jest-iterator": "workspace:*",
     "prettier": "^2.7.1",

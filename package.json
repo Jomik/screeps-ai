@@ -13,8 +13,14 @@
     "url": "https://github.com/Jomik/screeps-ai/issues"
   },
   "homepage": "https://github.com/Jomik/screeps-ai#readme",
+  "scripts": {
+    "lint": "eslint --max-warnings 0 ."
+  },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^5.38.1",
+    "@typescript-eslint/parser": "^5.38.1",
     "eslint": "^8.24.0",
+    "eslint-config-prettier": "^8.5.0",
     "prettier": "^2.7.1",
     "typescript": "^4.8.4"
   },

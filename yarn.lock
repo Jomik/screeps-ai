@@ -1669,10 +1669,6 @@ __metadata:
     "@types/jest": "npm:^29.1.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
-    "@typescript-eslint/eslint-plugin": "npm:^5.38.1"
-    "@typescript-eslint/parser": "npm:^5.38.1"
-    eslint: "npm:^8.24.0"
-    eslint-config-prettier: "npm:^8.5.0"
     jest: "npm:^29.1.2"
     jest-iterator: "workspace:*"
     kernel: "workspace:*"
@@ -3613,10 +3609,6 @@ __metadata:
   resolution: "kernel@workspace:packages/kernel"
   dependencies:
     "@types/jest": "npm:^29.1.1"
-    "@typescript-eslint/eslint-plugin": "npm:^5.38.1"
-    "@typescript-eslint/parser": "npm:^5.38.1"
-    eslint: "npm:^8.24.0"
-    eslint-config-prettier: "npm:^8.5.0"
     jest: "npm:^29.1.2"
     jest-iterator: "workspace:*"
     prettier: "npm:^2.7.1"
@@ -4432,7 +4424,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
+    "@typescript-eslint/eslint-plugin": "npm:^5.38.1"
+    "@typescript-eslint/parser": "npm:^5.38.1"
     eslint: "npm:^8.24.0"
+    eslint-config-prettier: "npm:^8.5.0"
     prettier: "npm:^2.7.1"
     typescript: "npm:^4.8.4"
   languageName: unknown

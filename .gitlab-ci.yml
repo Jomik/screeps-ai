@@ -35,8 +35,5 @@ unit-test-job:
 lint-test-job:
   stage: test
   needs: []
-  parallel:
-    matrix:
-      - WORKSPACE: [bot, kernel]
   script:
-    - yarn workspace $WORKSPACE run test
+    - yarn lint
