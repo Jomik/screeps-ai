@@ -12,11 +12,11 @@ before_script:
   - yarn install --immutable
 
 stages:
-  - typecheck
+  - build
   - test
 
-typecheck-job:
-  stage: typecheck
+build-job:
+  stage: build
   parallel:
     matrix:
       - WORKSPACE: [bot, kernel]
@@ -25,6 +25,7 @@ typecheck-job:
 
 unit-test-job:
   stage: test
+  needs: [build-job]
   parallel:
     matrix:
       - WORKSPACE: [bot, kernel]
@@ -33,6 +34,7 @@ unit-test-job:
 
 lint-test-job:
   stage: test
+  needs: []
   parallel:
     matrix:
       - WORKSPACE: [bot, kernel]
