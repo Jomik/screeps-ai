@@ -19,6 +19,6 @@ jobs:
       - name: Typecheck
         run: yarn workspaces foreach --no-private run tsc --noEmit --skipLibCheck
       - name: Lint
-        run: yarn workspaces foreach --no-private run eslint
+        run: yarn workspaces foreach --no-private run lint
       - name: Test
         run: yarn workspaces foreach --no-private run test
