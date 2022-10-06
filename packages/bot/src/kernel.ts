@@ -2,7 +2,7 @@ import { Kernel, PID, Priority, PriorityScheduler } from 'kernel';
 import {
   getMemoryRef,
   createLogger,
-  InvalidArgumentsError,
+  InvalidArgumentError,
   registerCommand,
 } from './library';
 import { registry } from './registry';
@@ -12,7 +12,7 @@ export const kernel = new Kernel({
   registry,
   scheduler: new PriorityScheduler(0 as Priority),
   getDataHandle: (key, value) => getMemoryRef(`kernel:${key}`, value),
-  quota: () => Game.cpu.tickLimit * 1.8 - Game.cpu.getUsed(),
+  quota: () => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed(),
   clock: () => Game.time,
   logger: {
     onKernelError(message) {
@@ -29,7 +29,7 @@ export const kernel = new Kernel({
 
 registerCommand('ps', (root: unknown = 0) => {
   if (typeof root !== 'number') {
-    throw new InvalidArgumentsError('number', root);
+    throw new InvalidArgumentError('number', root);
   }
 
   const processes = kernel.ps();
@@ -85,7 +85,7 @@ registerCommand('reset', () => {
 
 registerCommand('kill', (pid) => {
   if (typeof pid !== 'number') {
-    throw new InvalidArgumentsError('number', pid);
+    throw new InvalidArgumentError('number', pid);
   }
 
   if (!kernel.kill(pid as PID)) {
@@ -97,7 +97,7 @@ registerCommand('kill', (pid) => {
 
 registerCommand('inspect', (pid) => {
   if (typeof pid !== 'number') {
-    throw new InvalidArgumentsError('number', pid);
+    throw new InvalidArgumentError('number', pid);
   }
 
   const process = kernel.ps().find((p) => p.pid === pid);

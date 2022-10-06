@@ -1,5 +1,5 @@
 import { sleep, createProcess } from 'kernel';
-import { Coordinates } from '../library/room';
+import { Coordinates } from '../library/room-planning';
 import { expandPosition, isDefined } from '../utils';
 
 export const spawnManager = createProcess(function* () {

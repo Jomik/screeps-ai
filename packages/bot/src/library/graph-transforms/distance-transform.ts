@@ -1,16 +1,16 @@
-import { Thread } from 'kernel';
+import type { Thread } from 'kernel';
 
 // prettier-ignore
 const forwardMask = [
-    [-1,-1], [0,-1], [1,-1],
+    /*[-1,-1],*/ [0,-1], /*[1,-1],*/
     [-1,0], /*[0,0],*/ /*[1,0],*/
-    [-1,1], /*[0,1],*/ /*[1,1],*/
+    /*[-1,1],*/ /*[0,1],*/ /*[1,1],*/
   ] as const;
 // prettier-ignore
 const backwardMask = [
-    /*[-1,-1],*/ /*[0,-1],*/ [1,-1],
+    /*[-1,-1],*/ /*[0,-1],*/ /*[1,-1],*/
     /*[-1,0],*/ /*[0,0],*/ [1,0],
-    [-1,1], [0,1], [1,1],
+    /*[-1,1],*/ [0,1], /*[1,1],*/
   ] as const;
 
 const updateCM = (
@@ -50,4 +50,5 @@ export function* distanceTransform(
       updateCM(x, y, costMatrix, backwardMask);
     }
   }
+  yield;
 }

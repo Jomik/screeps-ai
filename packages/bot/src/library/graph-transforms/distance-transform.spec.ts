@@ -1,4 +1,3 @@
-import { SysCall } from 'kernel';
 import { distanceTransform } from './distance-transform';
 
 const mapToDT = (map: number[][]): number[][] => {
@@ -65,7 +64,7 @@ describe('distance-transform', () => {
     expect(result).toEqual([
       [1, 1, 1, 1, 1],
       [1, 0, 1, 2, 1],
-      [1, 1, 1, 2, 1],
+      [1, 1, 2, 2, 1],
       [1, 2, 2, 2, 1],
       [1, 1, 1, 1, 1],
     ]);

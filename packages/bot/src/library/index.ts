@@ -3,4 +3,4 @@ export * from './logger';
 export * from './console';
 export * from './memory';
 export * from './system';
-export * from './distance-transform';
+export * from './graph-transforms';

@@ -1,6 +1,6 @@
 declare const global: Record<string, any>;
 
-export class InvalidArgumentsError extends Error {
+export class InvalidArgumentError extends Error {
   constructor(
     public readonly expected: string,
     public readonly actual: unknown
@@ -13,10 +13,6 @@ export const registerCommand = (
   command: string,
   fn: (...args: unknown[]) => string | undefined
 ) => {
-  if (command in global) {
-    throw new Error(`Command ${command} has already been registered`);
-  }
-
   global[command] = (...args: unknown[]) => {
     try {
       return fn(...args) ?? 'OK';

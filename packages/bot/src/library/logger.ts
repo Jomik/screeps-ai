@@ -1,5 +1,5 @@
 import { ErrorMapper } from '../utils/ErrorMapper';
-import { InvalidArgumentsError, registerCommand } from './console';
+import { InvalidArgumentError, registerCommand } from './console';
 import { getMemoryRef } from './memory';
 
 declare const console: { log(message: string): void };
@@ -47,7 +47,7 @@ registerCommand('setLogLevel', (level) => {
   }
 
   if (typeof level !== 'string' || !(level.toLowerCase() in LogLevel)) {
-    throw new InvalidArgumentsError('LogLevel', level);
+    throw new InvalidArgumentError('LogLevel', level);
   }
 
   settingsRef.level = LogLevel[level.toLowerCase() as keyof typeof LogLevel];
@@ -55,8 +55,8 @@ registerCommand('setLogLevel', (level) => {
 });
 
 registerCommand('setLogFilter', (filter) => {
-  if (typeof filter !== 'string') {
-    throw new InvalidArgumentsError('string', filter);
+  if (filter !== undefined && typeof filter !== 'string') {
+    throw new InvalidArgumentError('string', filter);
   }
 
   if (filter !== undefined && filter.length < 0) {
