@@ -1,17 +1,14 @@
 {
   "mmo": {
-    "token": "YOUR_TOKEN",
     "protocol": "https",
     "hostname": "screeps.com",
     "port": 443,
     "path": "/",
     "branch": "main"
   },
-  "private": {
-    "email": "username",
-    "password": "Password",
+  "development": {
     "protocol": "http",
-    "hostname": "1.2.3.4",
+    "hostname": "localhost",
     "port": 21025,
     "path": "/",
     "branch": "main"

@@ -1669,6 +1669,7 @@ __metadata:
     "@types/jest": "npm:^29.1.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
+    dotenv: "npm:16.0.3"
     jest: "npm:^29.1.2"
     jest-iterator: "workspace:*"
     kernel: "workspace:*"
@@ -2098,6 +2099,13 @@ __metadata:
   dependencies:
     esutils: "npm:^2.0.2"
   checksum: 6b38a63fa66847d80e130bb85c83c173b1050037fffac3d5f740c8c691243d5b6fadc5ec502ae8297c474680d879eb24ad8ec7f901673704fe40c8dedc1bee62
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:16.0.3":
+  version: 16.0.3
+  resolution: "dotenv@npm:16.0.3"
+  checksum: abce82d99b45e2ebbd42625a78cadbfafe03072c15e6538b6a3a7ed204b6e091c0de929dd09231edc61f78afbdcd5b8a2f21b9e933e8ab27d75bee865a0e58c9
   languageName: node
   linkType: hard
 

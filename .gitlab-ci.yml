@@ -14,6 +14,7 @@ before_script:
 stages:
   - build
   - test
+  - deploy
 
 build-job:
   stage: build
@@ -37,3 +38,14 @@ lint-test-job:
   needs: []
   script:
     - yarn lint
+
+deploy_mmo:
+  stage: deploy
+  script:
+    - yarn deploy:mmo
+  environment:
+    name: MMO
+    url: https://screeps.com/a/#!/profile/Jomik
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+      when: manual

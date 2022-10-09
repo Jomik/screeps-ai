@@ -1,5 +1,8 @@
 'use strict';
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import clear from 'rollup-plugin-clear';
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
@@ -12,8 +15,18 @@ if (!dest) {
   console.log(
     'No destination specified - code will be compiled but not uploaded'
   );
-} else if ((cfg = require('../../screeps.json')[dest]) == null) {
+} else if ((cfg = require('./screeps.json')[dest]) == null) {
   throw new Error('Invalid upload destination');
+}
+
+if (cfg && dest) {
+  const Prefix = `SCREEPS_${dest.toUpperCase()}_`;
+  for (const [key, value] of Object.entries(process.env)) {
+    if (!key.startsWith(Prefix)) {
+      continue;
+    }
+    cfg[key.slice(Prefix.length).toLowerCase()] = value;
+  }
 }
 
 export default {

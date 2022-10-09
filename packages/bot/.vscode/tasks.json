@@ -4,7 +4,7 @@
     {
       "label": "deploy:watch",
       "command": "yarn",
-      "args": ["deploy:private", "--watch"],
+      "args": ["deploy:development", "--watch"],
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",
