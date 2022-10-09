@@ -1,20 +1,18 @@
-import { createProcess, exit, Thread } from 'kernel';
-import { createLogger, distanceTransform } from '../library';
+import { createProcess, exit, sleep, Thread } from 'kernel';
 import {
-  chooseBaseOrigin,
+  calculateDistanceTransform,
   Coordinates,
   coordinatesToNumber,
-  getRoomPlan,
-  isNextToRoad,
+  createLogger,
+  expandPosition,
   numberToCoordinates,
-  RoomPlan,
-  saveRoomPlan,
-  structureCosts,
-} from '../library/room-planning';
-import { expandCorners, expandOrtogonally, expandPosition } from '../utils';
+} from '../library';
+import { chooseBaseOrigin } from '../library/base-origin';
 
-const TARGET_CONTROLLER_LEVEL = 8;
 const logger = createLogger('room-planner');
+
+const RoadCost = 1;
+const ContainerCost = 2;
 
 function* getRoadTo(
   origin: Coordinates,
@@ -46,163 +44,303 @@ function* getRoadTo(
   return res.path.map(({ x, y }) => [x, y]);
 }
 
-export const roomPlanner = createProcess(function* (roomName: string) {
-  const room = Game.rooms[roomName];
-  if (!room) {
-    return exit(`No vision in room ${roomName}`);
-  }
+type Stamp = Array<BuildableStructureConstant | 'empty' | 'blocked'>[];
+type StructurePlacement = [
+  BuildableStructureConstant | 'empty' | 'blocked',
+  ...Coordinates
+];
 
-  const plan = getRoomPlan(roomName);
-  saveRoomPlan(plan, 'initial');
+// prettier-ignore
+const HubStamp: Stamp = [
+  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,'empty']        ,
+  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_SPAWN     ,'blocked'           ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_SPAWN     ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_CONTAINER ,STRUCTURE_EXTENSION ,STRUCTURE_LINK      ,STRUCTURE_EXTENSION ,STRUCTURE_CONTAINER ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_SPAWN     ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
+  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,'empty']
+];
 
-  // Set up distance transform
+// prettier-ignore
+const Lab1Stamp: Stamp = [
+  [STRUCTURE_ROAD , STRUCTURE_LAB  , STRUCTURE_LAB  , 'empty']       ,
+  [STRUCTURE_LAB  , STRUCTURE_ROAD , STRUCTURE_LAB  , STRUCTURE_LAB] ,
+  [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_ROAD , STRUCTURE_LAB] ,
+  ['empty'        , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_ROAD] ,
+];
+
+// prettier-ignore
+const Lab2Stamp: Stamp = [
+  ['blocked'      , STRUCTURE_LAB  , STRUCTURE_LAB  , 'blocked']      ,
+  [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB]  ,
+  [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB]  ,
+];
+
+// prettier-ignore
+const ExtensionPlusStamp: Stamp = [
+  ['empty'        ,'empty'             ,STRUCTURE_ROAD      ,'empty'             ,'empty']        ,
+  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,'empty']        ,
+  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
+  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,'empty']        ,
+  ['empty'        ,'empty'             ,STRUCTURE_ROAD      ,'empty'             ,'empty']
+];
+
+// prettier-ignore
+const StorageStamp: Stamp = [
+  ['empty'        , STRUCTURE_ROAD    , STRUCTURE_ROAD     , 'empty']        ,
+  [STRUCTURE_ROAD , STRUCTURE_STORAGE , STRUCTURE_TERMINAL , STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD , STRUCTURE_FACTORY , STRUCTURE_ROAD     , 'empty']        ,
+  ['empty'        , STRUCTURE_ROAD    , 'empty'            , 'empty']        ,
+];
+
+const Stamps: Array<[count: number, stamps: Stamp[]]> = [
+  [1, [HubStamp]],
+  [1, [Lab1Stamp, Lab2Stamp]],
+  [1, [StorageStamp]],
+  [9, [ExtensionPlusStamp]],
+  [1, [[[STRUCTURE_POWER_SPAWN]]]],
+  [1, [[[STRUCTURE_NUKER]]]],
+  [1, [[[STRUCTURE_OBSERVER]]]],
+];
+
+const getBuildingSpace = (room: Room): CostMatrix => {
   const terrain = room.getTerrain();
+  const cm = new PathFinder.CostMatrix();
 
+  // Set walls to 0 and rest to Infinity.
   for (let x = 0; x <= 49; ++x) {
     for (let y = 0; y <= 49; ++y) {
-      plan.buildingSpace.set(
-        x,
-        y,
-        terrain.get(x, y) & TERRAIN_MASK_WALL ? 0 : Infinity
-      );
+      cm.set(x, y, terrain.get(x, y) & TERRAIN_MASK_WALL ? Infinity : 0);
     }
   }
-  room
-    .find(FIND_EXIT)
-    .forEach(({ x, y }) =>
-      [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-        plan.buildingSpace.set(x, y, 0)
-      )
+
+  // Block off tiles around exit tiles.
+  for (const { x, y } of room.find(FIND_EXIT)) {
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
+      cm.set(x, y, 1)
     );
+  }
+  return cm;
+};
 
-  yield* distanceTransform(
-    {
-      x: [1, 48],
-      y: [1, 48],
-    },
-    plan.buildingSpace
+const placeStamp = (
+  stamp: Stamp,
+  center: Coordinates
+): StructurePlacement[] => {
+  const [centerX, centerY] = center;
+  const width = stamp[0]?.length ?? 0;
+  const height = stamp.length ?? 0;
+
+  const leftX = centerX - Math.floor(width / 2);
+  const topY = centerY - Math.floor(height / 2);
+
+  return stamp.flatMap((row, yOffset) =>
+    row.map<StructurePlacement>((structure, xOffset) => [
+      structure,
+      leftX + xOffset,
+      topY + yOffset,
+    ])
   );
-  saveRoomPlan(plan, 'done');
+};
 
-  const origin = yield* chooseBaseOrigin(plan);
-  const originPos = new RoomPosition(origin[0], origin[1], plan.roomName);
-  yield;
-
-  // TODO: Do something about existing structures?
-  const structures = room.find(FIND_STRUCTURES);
-  for (const { pos, structureType } of structures) {
-    if (
-      structureType === STRUCTURE_CONTROLLER ||
-      structureType === STRUCTURE_INVADER_CORE ||
-      structureType === STRUCTURE_PORTAL ||
-      structureType === STRUCTURE_POWER_BANK ||
-      structureType === STRUCTURE_KEEPER_LAIR
-    ) {
+const updateCMWithPlacement = (
+  placement: StructurePlacement[],
+  buildingSpace: CostMatrix
+) => {
+  for (const [structureType, x, y] of placement) {
+    if (structureType === 'empty') {
       continue;
     }
-    plan.structures.push([structureType, pos.x, pos.y]);
-    plan.base.set(pos.x, pos.y, 255);
-    const road = yield* getRoadTo(
-      origin,
-      [pos.x, pos.y],
-      plan.roomName,
-      plan.base
-    );
-    plan.structures.push(
-      ...road.map(
-        ([x, y]) => [STRUCTURE_ROAD, x, y] as RoomPlan['structures'][number]
-      )
+    buildingSpace.set(
+      x,
+      y,
+      structureType === 'blocked'
+        ? 254
+        : structureType === STRUCTURE_CONTAINER
+        ? ContainerCost
+        : structureType === STRUCTURE_ROAD
+        ? RoadCost
+        : Infinity
     );
   }
-  yield;
+};
 
-  plan.structures.push(
-    ...expandCorners(origin)
-      .filter(([x, y]) => plan.base.get(x, y) === 0)
-      .map(([x, y]) => [STRUCTURE_ROAD, x, y] as RoomPlan['structures'][number])
-  );
-  plan.structures
-    .filter(([type]) => type === STRUCTURE_ROAD)
-    .forEach(([_, x, y]) => plan.base.set(x, y, 1));
-  saveRoomPlan(plan, 'done');
-  yield;
+function* canPlaceStamp(
+  room: Room,
+  stamp: Stamp,
+  center: Coordinates,
+  buildingSpace: CostMatrix,
+  origin: Coordinates,
+  pointsToReach: Coordinates[]
+): Thread<boolean> {
+  const placement = placeStamp(stamp, center);
 
-  const typeToCount = Object.entries(CONTROLLER_STRUCTURES).map<
-    [BuildableStructureConstant, number]
-  >(([type, { [TARGET_CONTROLLER_LEVEL]: count = 0 }]) =>
-    type === STRUCTURE_STORAGE
-      ? [type, Math.max(1, count)]
-      : [type as BuildableStructureConstant, count]
-  );
+  for (const [structureType, x, y] of placement) {
+    if (structureType === 'empty') {
+      continue;
+    }
+    const cost = buildingSpace.get(x, y);
+    if (structureType === STRUCTURE_ROAD && cost === RoadCost) {
+      continue;
+    }
+    if (cost > 0) {
+      return false;
+    }
+  }
 
-  let bestType: BuildableStructureConstant | undefined = undefined;
-  let bestCost = Infinity;
+  const navigation = buildingSpace.clone();
+  updateCMWithPlacement(placement, navigation);
 
-  const queue = new Set<number>();
-  queue.add(coordinatesToNumber(origin));
-  for (const coord of queue) {
+  const originPos = new RoomPosition(...origin, room.name);
+  for (const [x, y] of pointsToReach) {
     yield;
-    const coordinates = numberToCoordinates(coord);
-    expandOrtogonally(coordinates).forEach((c) =>
-      queue.add(coordinatesToNumber(c))
+    const path = PathFinder.search(
+      originPos,
+      {
+        range: 1,
+        pos: new RoomPosition(x, y, room.name),
+      },
+      {
+        maxRooms: 1,
+        roomCallback: (roomName) =>
+          roomName === room.name ? navigation : false,
+      }
     );
-    const [x, y] = coordinates;
-    if (
-      plan.base.get(x, y) > 0 ||
-      plan.buildingSpace.get(x, y) <= 0 ||
-      terrain.get(x, y) & TERRAIN_MASK_WALL
-    ) {
-      continue;
+    if (path.incomplete) {
+      return false;
     }
+  }
 
-    bestCost = Infinity;
-    bestType = undefined;
+  return true;
+}
 
-    for (const [structureType, count] of typeToCount) {
+function* placeNumberOfStamp(
+  room: Room,
+  count: number,
+  stamps: Stamp[],
+  origin: Coordinates,
+  distanceTransform: CostMatrix,
+  buildingSpace: CostMatrix,
+  pointsToReach: Coordinates[]
+): Thread<StructurePlacement[]> {
+  let placed = 0;
+  const structures: StructurePlacement[] = [];
+  for (const stamp of stamps) {
+    const candidates = new Set<number>([coordinatesToNumber(origin)]);
+    for (const packedCoordinates of candidates) {
+      yield;
+      const candidate = numberToCoordinates(packedCoordinates);
+      expandPosition(candidate)
+        .filter(([x, y]) => distanceTransform.get(x, y) > 0)
+        .forEach((neighbour) => candidates.add(coordinatesToNumber(neighbour)));
+
       if (
-        (plan.structures.filter(([type]) => type === structureType).length ??
-          0) >= count
+        yield* canPlaceStamp(
+          room,
+          stamp,
+          candidate,
+          buildingSpace,
+          origin,
+          pointsToReach
+        )
       ) {
+        const placement = placeStamp(stamp, candidate).filter(
+          // remove duplicate roads
+          ([structureType, x, y]) =>
+            structureType !== STRUCTURE_ROAD ||
+            buildingSpace.get(x, y) !== RoadCost
+        );
+        updateCMWithPlacement(placement, buildingSpace);
+
+        structures.push(...placement);
+
+        ++placed;
+        if (placed >= count) {
+          return structures;
+        }
+      }
+    }
+  }
+
+  return structures;
+}
+
+const invertBuildingSpaceForDT = (buildingSpace: CostMatrix): CostMatrix => {
+  const cm = buildingSpace.clone();
+  for (let x = 0; x <= 49; ++x) {
+    for (let y = 0; y <= 49; ++y) {
+      cm.set(x, y, cm.get(x, y) > 0 ? 0 : Infinity);
+    }
+  }
+
+  return cm;
+};
+
+export const roomPlanner = createProcess(function* (roomName: string) {
+  for (;;) {
+    const room = Game.rooms[roomName];
+    if (!room) {
+      return exit(`No vision in room ${roomName}`);
+    }
+    const buildingSpace = getBuildingSpace(room);
+
+    const distanceTransform = yield* calculateDistanceTransform(
+      { x: [1, 48], y: [1, 48] },
+      invertBuildingSpaceForDT(buildingSpace)
+    );
+
+    const origin = yield* chooseBaseOrigin(room, distanceTransform);
+
+    yield;
+
+    const pointsToReach: Coordinates[] = room
+      .find(FIND_SOURCES)
+      .map(({ pos }) => pos)
+      .concat(room.find(FIND_MINERALS).map(({ pos }) => pos))
+      .concat(room.find(FIND_EXIT))
+      .concat(room.controller ? [room.controller.pos] : [])
+      .map(({ x, y }) => [x, y]);
+
+    const placedStructures: StructurePlacement[] = [];
+    for (const [count, stamps] of Stamps) {
+      const structures = yield* placeNumberOfStamp(
+        room,
+        count,
+        stamps,
+        origin,
+        distanceTransform,
+        buildingSpace,
+        pointsToReach
+      );
+      placedStructures.push(...structures);
+    }
+    yield;
+
+    for (const [structureType, x, y] of placedStructures) {
+      if (structureType === 'empty' || structureType === 'blocked') {
         continue;
       }
-      yield;
-
-      const cost = yield* structureCosts[structureType](
-        coordinates,
-        plan,
-        bestCost
-      );
-
-      if (cost < bestCost) {
-        bestCost = cost;
-        bestType = structureType;
-      }
+      room.visual.structure(x, y, structureType, {
+        opacity: 0.2,
+      });
     }
+    room.visual.connectRoads({
+      opacity: 0.2,
+    });
 
-    if (bestType !== undefined) {
-      plan.structures.push([bestType, ...coordinates]);
-      plan.base.set(x, y, 255);
+    const buildingVisuals = room.visual.export();
+    room.visual.clear();
 
-      if (!isNextToRoad(coordinates, plan)) {
-        const result = PathFinder.search(
-          new RoomPosition(x, y, plan.roomName),
-          { pos: originPos, range: 1 },
-          {
-            maxRooms: 1,
-            plainCost: 2,
-            swampCost: 10,
-            roomCallback: () => plan.base,
-          }
-        );
-        result.path.forEach((p) => {
-          plan.structures.push([STRUCTURE_ROAD, p.x, p.y]);
-          plan.base.set(p.x, p.y, 1);
-        });
-      }
-      saveRoomPlan(plan, 'done');
+    for (;;) {
+      // room.visual.import(
+      //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)
+      // );
+      room.visual.import(buildingVisuals);
+      room.visual.circle(...origin, {
+        fill: 'red',
+        radius: 0.25,
+      });
+      yield* sleep();
     }
   }
-
-  saveRoomPlan(plan, 'done');
-  return;
 });

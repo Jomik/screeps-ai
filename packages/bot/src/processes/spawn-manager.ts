@@ -1,6 +1,6 @@
 import { sleep, createProcess } from 'kernel';
-import { Coordinates } from '../library/room-planning';
-import { expandPosition, isDefined } from '../utils';
+import { Coordinates, expandPosition } from '../library';
+import { isDefined } from '../utils';
 
 export const spawnManager = createProcess(function* () {
   const getSpawn = (): StructureSpawn => {

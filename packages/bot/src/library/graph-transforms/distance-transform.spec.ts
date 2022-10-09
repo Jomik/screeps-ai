@@ -1,4 +1,13 @@
-import { distanceTransform } from './distance-transform';
+import { calculateDistanceTransform } from './distance-transform';
+
+const getResultOfGenerator = <T>(gen: Generator<unknown, T, unknown>): T => {
+  for (;;) {
+    const { value, done } = gen.next();
+    if (done) {
+      return value;
+    }
+  }
+};
 
 const mapToDT = (map: number[][]): number[][] => {
   // Assume square
@@ -11,17 +20,20 @@ const mapToDT = (map: number[][]): number[][] => {
     });
   });
 
-  const uut = distanceTransform({ x: [0, size - 1], y: [0, size - 1] }, cm);
+  const uut = calculateDistanceTransform(
+    { x: [0, size - 1], y: [0, size - 1] },
+    cm
+  );
 
   // Unwind the generator
-  Array.from(uut);
+  const result = getResultOfGenerator(uut);
 
   // Populate a map with result
   const arr = Array.from(Array(size), () => [] as number[]);
   for (let x = 0; x <= size - 1; ++x) {
     for (let y = 0; y <= size - 1; ++y) {
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      arr[x]![y] = cm.get(x, y);
+      arr[x]![y] = result.get(x, y);
     }
   }
 

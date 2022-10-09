@@ -1,10 +1,10 @@
 import { sleep, Thread } from 'kernel';
-import { expandOrtogonally } from '../../utils';
 import {
+  Coordinates,
+  expandOrtogonally,
   coordinatesToNumber,
   numberToCoordinates,
-} from '../room-planning/utils';
-import { Coordinates } from '../room-planning/plan';
+} from '../coordinates';
 
 export function* findLocalMaxima(
   distanceTransform: CostMatrix
