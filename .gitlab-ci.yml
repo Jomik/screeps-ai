@@ -1,8 +1,5 @@
 image: node:16
 
-variables:
-  YARN_CACHE_FOLDER: $CI_PROJECT_DIR/.yarn/cache
-
 cache:
   key: install-cache
   paths:
