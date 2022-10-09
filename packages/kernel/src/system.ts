@@ -32,8 +32,14 @@ export type SysCall =
   | Kill
   | MAlloc
   | Children
-  | RequestPriority;
-export type SysCallResults = void | SpawnResult | MAllocResult | ChildrenResult;
+  | RequestPriority
+  | Info;
+export type SysCallResults =
+  | void
+  | SpawnResult
+  | MAllocResult
+  | ChildrenResult
+  | InfoResult;
 
 export type Thread<R = void> = Generator<SysCall | void, R, SysCallResults>;
 
@@ -188,4 +194,19 @@ export function* requestPriority(priority: Priority | undefined): Thread {
     type: 'request_priority',
     priority,
   };
+}
+
+type Info = {
+  type: 'info';
+};
+type InfoResult = {
+  type: 'info';
+  info: ProcessInfo;
+};
+export function* processInfo(): Thread<ProcessInfo> {
+  const res = yield {
+    type: 'info',
+  };
+  assertResultType(res, 'info');
+  return res.info;
 }

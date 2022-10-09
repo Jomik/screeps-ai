@@ -326,6 +326,11 @@ export class Kernel implements IKernel {
           this.scheduler.add(pid, priority ?? null);
           break;
         }
+        case 'info': {
+          const info = entryToInfo(this.getProcessDescriptor(pid));
+          nextArg = { type: 'info', info };
+          break;
+        }
       }
     }
   }

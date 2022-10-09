@@ -12,6 +12,8 @@ import {
   requestPriority,
   sleep,
   malloc,
+  processInfo,
+  ProcessInfo,
 } from './system';
 
 declare global {
@@ -230,7 +232,59 @@ describe('Kernel', () => {
       expect(thread).toHaveBeenCalledTimes(0);
     });
   });
+  describe('info', () => {
+    it('gets current info', () => {
+      let info: Partial<ProcessInfo> = {};
+      const registry = {
+        init: createProcess(function* () {
+          info = yield* processInfo();
+          yield* hibernate();
+        }),
+      };
 
+      const { run } = createKernel(registry);
+
+      run();
+
+      expect(info).toMatchInlineSnapshot(`
+        {
+          "args": [],
+          "parent": 0,
+          "pid": 0,
+          "priority": null,
+          "type": "init",
+        }
+      `);
+    });
+    it('gets info from child', () => {
+      let info: Partial<ProcessInfo> = {};
+      const registry = {
+        init: createProcess(function* () {
+          yield* spawn('child');
+          yield* hibernate();
+        }),
+        child: createProcess(function* () {
+          info = yield* processInfo();
+          yield* hibernate();
+        }),
+      };
+
+      const { run } = createKernel(registry);
+
+      run();
+      run();
+
+      expect(info).toMatchInlineSnapshot(`
+        {
+          "args": [],
+          "parent": 0,
+          "pid": 1,
+          "priority": null,
+          "type": "child",
+        }
+      `);
+    });
+  });
   describe('kill', () => {
     it('can kill its child', () => {
       const thread = jest.fn();
