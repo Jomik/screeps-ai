@@ -1,7 +1,7 @@
 import { Kernel, PID, Priority, PriorityScheduler } from 'kernel';
 import {
-  getMemoryRef,
   createLogger,
+  getMemoryRef,
   InvalidArgumentError,
   registerCommand,
 } from './library';
@@ -14,17 +14,10 @@ export const kernel = new Kernel({
   getDataHandle: (key, value) => getMemoryRef(`kernel:${key}`, value),
   quota: () => Game.cpu.tickLimit * 0.8 - Game.cpu.getUsed(),
   clock: () => Game.time,
-  logger: {
-    onKernelError(message) {
-      kernelLogger.alert(message);
-    },
-    onProcessExit({ type, pid }, reason) {
-      kernelLogger.info(`${type}:${pid} exited: ${reason}`);
-    },
-    onProcessError({ type, pid }, error: Error) {
-      kernelLogger.error(`${type}:${pid} errored:`, error);
-    },
-  },
+  onError: (error) =>
+    kernelLogger.error(
+      error instanceof Error ? error : () => JSON.stringify(error)
+    ),
 });
 
 registerCommand('ps', (root: unknown = 0) => {
@@ -70,7 +63,7 @@ registerCommand('ps', (root: unknown = 0) => {
     return `${header}\n${childTree.join('')}`;
   };
 
-  return getSubTree('', root as PID, true);
+  return getSubTree('', root, true);
 });
 
 registerCommand('reboot', () => {
@@ -88,7 +81,7 @@ registerCommand('kill', (pid) => {
     throw new InvalidArgumentError('number', pid);
   }
 
-  if (!kernel.kill(pid as PID)) {
+  if (!kernel.kill(pid)) {
     return `Could not kill ${pid}`;
   }
 
@@ -105,7 +98,7 @@ registerCommand('inspect', (pid) => {
     return `Process ${pid} not found`;
   }
 
-  const memory = kernel.inspect(pid as PID);
+  const memory = kernel.inspect(pid);
 
   return JSON.stringify({ ...process, args: undefined, memory }, null, 2);
 });

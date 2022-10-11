@@ -38,3 +38,9 @@ export function* ensureChild<Type extends keyof OSRegistry>(
 
   return yield* spawn(type, priority, ...args);
 }
+
+export class OSExit extends Error {}
+
+export const exit = (reason: string): never => {
+  throw new OSExit(reason);
+};

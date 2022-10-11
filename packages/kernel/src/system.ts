@@ -1,10 +1,8 @@
 import type { Priority } from './Scheduler';
 
-export class OSExit extends Error {}
-
 declare const PIDSymbol: unique symbol;
 export type PID = number & {
-  [PIDSymbol]: 'PID';
+  [PIDSymbol]?: 'PID';
 };
 
 declare global {
@@ -66,11 +64,7 @@ export type ProcessInfo = {
 
 export const createProcess = <Args extends MemoryValue[]>(
   process: (...args: Args) => Thread<void>
-): Process<Args> =>
-  function* (...args) {
-    // yield;
-    yield* process(...args);
-  } as Process<Args>;
+): Process<Args> => process as Process<Args>;
 
 function assertResultType<T extends Exclude<SysCallResults, void>['type']>(
   res: SysCallResults,
@@ -136,10 +130,6 @@ export function* kill(pid: PID): Thread {
     pid,
   };
 }
-
-export const exit = (reason: string): never => {
-  throw new OSExit(reason);
-};
 
 type MAlloc = {
   type: 'malloc';

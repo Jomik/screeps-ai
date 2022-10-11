@@ -1,4 +1,4 @@
-import { createProcess, exit, sleep, Thread } from 'kernel';
+import { createProcess, sleep, Thread } from 'kernel';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -6,6 +6,7 @@ import {
   createLogger,
   expandPosition,
   numberToCoordinates,
+  exit,
 } from '../library';
 import { chooseBaseOrigin } from '../library/base-origin';
 

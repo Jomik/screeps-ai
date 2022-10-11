@@ -1,4 +1,4 @@
-import { Kernel, KernelLogger } from './Kernel';
+import { Kernel } from './Kernel';
 import { PriorityScheduler } from './PriorityScheduler';
 import { Priority } from './Scheduler';
 import {
@@ -27,11 +27,7 @@ const createKernel = <
   data: Record<string, MemoryValue> = {}
 ) => {
   const clock = jest.fn<number, []>().mockReturnValue(1);
-  const logger: Required<KernelLogger> = {
-    onKernelError: jest.fn(),
-    onProcessError: jest.fn(),
-    onProcessExit: jest.fn(),
-  };
+  const onError = jest.fn<void, [Error]>();
 
   const kernel = new Kernel({
     registry: registry as never,
@@ -51,7 +47,7 @@ const createKernel = <
         },
       };
     },
-    logger,
+    onError,
   });
 
   return {
@@ -59,7 +55,7 @@ const createKernel = <
       kernel.run();
       clock.mockReturnValue(clock() + 1);
     },
-    logger,
+    onError,
     data,
     kernel,
   };
@@ -91,14 +87,11 @@ describe('Kernel', () => {
         }),
       };
 
-      const { run, logger } = createKernel(registry);
+      const { run, onError } = createKernel(registry);
 
       run();
 
-      expect(logger.onProcessError).toHaveBeenCalledWith(
-        expect.anything(),
-        expect.any(Error)
-      );
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 

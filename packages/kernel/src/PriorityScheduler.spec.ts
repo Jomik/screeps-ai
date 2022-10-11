@@ -14,8 +14,8 @@ describe('PriorityScheduler', () => {
       quota = jest.fn(() => 1);
     });
     it('yields highest priority', () => {
-      const low = 1 as PID;
-      const high = 2 as PID;
+      const low = 1;
+      const high = 2;
       scheduler.add(high, 0 as Priority);
       scheduler.add(low, 10 as Priority);
 

@@ -27,7 +27,7 @@ export enum LogLevel {
 
 export interface Logger {
   alert(message: MessageThunk, location?: LocationArg): void;
-  error(message: MessageThunk, error: Error, location?: LocationArg): void;
+  error(error: Error | MessageThunk, location?: LocationArg): void;
   warn(message: MessageThunk, location?: LocationArg): void;
   info(message: MessageThunk, location?: LocationArg): void;
   debug(message: MessageThunk, location?: LocationArg): void;
@@ -126,14 +126,11 @@ class ConsoleLogger implements Logger {
     this.log(message, location, LogLevel.alert, '#ff00d0');
   }
 
-  public error(message: MessageThunk, error: Error, location?: LocationArg) {
+  public error(error: Error | MessageThunk, location?: LocationArg) {
     this.log(
-      () =>
-        (typeof message === 'function' ? message() : message) +
-        '\n' +
-        error.message +
-        '\n' +
-        ErrorMapper.sourceMappedStackTrace(error),
+      error instanceof Error
+        ? () => error.message + '\n' + ErrorMapper.sourceMappedStackTrace(error)
+        : error,
       location,
       LogLevel.error,
       '#e50000'

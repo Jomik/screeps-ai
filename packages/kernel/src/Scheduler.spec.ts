@@ -16,7 +16,7 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     });
 
     it('yields added pid', () => {
-      const expected = 1 as PID;
+      const expected = 1;
       scheduler.add(expected, scheduler.defaultPriority);
 
       const res = scheduler.run(quota).next(true);
@@ -25,7 +25,7 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     });
 
     it('yields till thread done', () => {
-      const expected = 1 as PID;
+      const expected = 1;
       const scheduler = factory();
       scheduler.add(expected, scheduler.defaultPriority);
       expect(scheduler.run(quota)).toMatchYieldsExactly([
@@ -35,8 +35,8 @@ export const schedulerSpec = (factory: () => Scheduler) => {
       ]);
     });
     it('yields till all done', () => {
-      const first = 1 as PID;
-      const second = 2 as PID;
+      const first = 1;
+      const second = 2;
       scheduler.add(first, 0 as Priority);
       scheduler.add(second, 0 as Priority);
 
@@ -49,7 +49,7 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     });
 
     it('yields till quota used', () => {
-      const expected = 1 as PID;
+      const expected = 1;
       const scheduler = factory();
       scheduler.add(expected, scheduler.defaultPriority);
       expect(scheduler.run(quota)).toMatchYieldsExactly([
@@ -66,7 +66,7 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     });
 
     it('handles removing while running', () => {
-      const expected = 1 as PID;
+      const expected = 1;
       const scheduler = factory();
       scheduler.add(expected, scheduler.defaultPriority);
       expect(scheduler.run(quota)).toMatchYieldsExactly([
@@ -82,8 +82,8 @@ export const schedulerSpec = (factory: () => Scheduler) => {
     });
 
     it('does not include added process', () => {
-      const expected = 1 as PID;
-      const added = 2 as PID;
+      const expected = 1;
+      const added = 2;
       const scheduler = factory();
       scheduler.add(expected, scheduler.defaultPriority);
       expect(scheduler.run(quota)).toMatchYieldsExactly([

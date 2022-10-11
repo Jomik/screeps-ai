@@ -2,7 +2,6 @@ import type { Priority, Scheduler } from './Scheduler';
 import {
   MemoryPointer,
   MemoryValue,
-  OSExit,
   PID,
   Process,
   ProcessInfo,
@@ -67,12 +66,6 @@ export interface IKernel {
   ps(): Array<ProcessInfo>;
 }
 
-export interface KernelLogger {
-  onKernelError?(message: string): void;
-  onProcessExit?(process: ProcessInfo, reason: string): void;
-  onProcessError?(process: ProcessInfo, error: unknown): void;
-}
-
 export interface PersistentDataHandle<T extends MemoryValue> {
   get(): T;
   set(value: MemoryValue): void;
@@ -96,7 +89,7 @@ export class Kernel implements IKernel {
     return unpackEntry(descriptor);
   }
   private get pids(): PID[] {
-    return Object.keys(this.table).map((k) => Number.parseInt(k) as PID);
+    return Object.keys(this.table).map((k) => Number.parseInt(k));
   }
 
   private readonly registry: Record<string, Process<MemoryValue[]>>;
@@ -104,9 +97,9 @@ export class Kernel implements IKernel {
   private readonly sleepingThreads = new Map<PID, number>();
 
   private readonly scheduler: Scheduler;
-  private readonly logger?: KernelLogger;
   private readonly clock: () => number;
   private readonly quota: () => number;
+  private readonly onError: (error: unknown) => void;
 
   constructor(config: {
     registry: OSRegistry;
@@ -115,20 +108,20 @@ export class Kernel implements IKernel {
       key: string,
       defaultValue: T
     ) => PersistentDataHandle<T>;
-    logger?: KernelLogger;
+    onError(error: unknown): void;
     clock(): number;
     quota(): number;
   }) {
-    const { registry, scheduler, logger } = config;
+    const { registry, scheduler } = config;
     this.registry = registry as never;
-    this.logger = logger;
     this.scheduler = scheduler;
     this.clock = () => config.clock();
     this.quota = () => config.quota();
+    this.onError = (err) => config.onError(err);
     this.tableRef = config.getDataHandle<ProcessTable>('table', {});
 
     this.reboot();
-    this.PIDCount = Math.max(0, ...this.pids) as PID;
+    this.PIDCount = Math.max(0, ...this.pids);
   }
 
   private clear() {
@@ -145,7 +138,7 @@ export class Kernel implements IKernel {
   reset() {
     this.clear();
     this.table = {};
-    this.createProcess('init', [], 0 as PID, 0 as PID);
+    this.createProcess('init', [], 0, 0);
   }
 
   /**
@@ -153,14 +146,15 @@ export class Kernel implements IKernel {
    */
   reboot() {
     this.clear();
-    const init = this.table[0 as PID];
+    const init = this.table[0];
     if (!init || unpackEntry(init).type !== 'init') {
       this.table = {};
-      this.logger?.onKernelError?.('Root process, init, is missing or corrupt');
-      this.createProcess('init', [], 0 as PID, 0 as PID);
+      this.createProcess('init', [], 0, 0);
     } else {
       for (const pid of this.pids) {
-        this.initThread(pid);
+        if (pid in this.table) {
+          this.initThread(pid);
+        }
       }
     }
   }
@@ -168,7 +162,7 @@ export class Kernel implements IKernel {
   private PIDCount: PID;
   private acquirePID(): PID {
     if (this.PIDCount >= 50000) {
-      this.PIDCount = 0 as PID;
+      this.PIDCount = 0;
     }
     ++this.PIDCount;
     if (this.table[this.PIDCount]) {
@@ -210,8 +204,10 @@ export class Kernel implements IKernel {
     const process = this.registry[type];
     if (!process) {
       this.kill(pid);
-      this.logger?.onKernelError?.(
-        `Error trying to initialise pid ${pid} with unknown type ${type}`
+      this.onError(
+        new Error(
+          `Error trying to initialise pid ${pid} with unknown type ${type}`
+        )
       );
       return;
     }
@@ -247,10 +243,7 @@ export class Kernel implements IKernel {
   private runThread(pid: PID): boolean {
     const thread = this.threads.get(pid);
     if (!thread) {
-      this.logger?.onKernelError?.(
-        `Attempting to run ${pid} with missing thread.`
-      );
-      this.kill(pid);
+      this.initThread(pid);
       return false;
     }
 
@@ -352,34 +345,18 @@ export class Kernel implements IKernel {
       }
 
       const pid = next.value;
-      const entry = this.getProcessDescriptor(pid);
-      // const startCPU = Game.cpu.getUsed();
       try {
         nextArg = this.runThread(pid);
       } catch (err) {
         this.kill(pid);
-
-        if (err instanceof OSExit) {
-          this.logger?.onProcessExit?.(entryToInfo(entry), err.message);
-        } else {
-          this.logger?.onProcessError?.(entryToInfo(entry), err);
-        }
+        this.onError(err);
 
         if (pid === 0) {
-          this.reboot();
+          this.reset();
           return;
         }
         continue;
       }
-      // const endCpu = Game.cpu.getUsed();
-      // TODO
-      // recordStats({
-      //   threads: {
-      //     [entry.type]: {
-      //       [pid]: endCpu - startCPU,
-      //     },
-      //   },
-      // });
     }
   }
 

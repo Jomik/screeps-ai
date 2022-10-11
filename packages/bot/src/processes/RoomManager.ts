@@ -1,5 +1,5 @@
-import { createProcess, exit, sleep } from 'kernel';
-import { ensureChild } from '../library';
+import { createProcess, sleep } from 'kernel';
+import { ensureChild, exit } from '../library';
 
 const getRoom = (roomName: string): Room => {
   const room = Game.rooms[roomName];
