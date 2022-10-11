@@ -2,7 +2,7 @@ import { sleep, createProcess } from 'kernel';
 import { Coordinates, expandPosition } from '../library';
 import { isDefined } from '../utils';
 
-export const spawnManager = createProcess(function* () {
+export const SpawnManager = createProcess(function* () {
   const getSpawn = (): StructureSpawn => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Game.spawns['Spawn1']!;

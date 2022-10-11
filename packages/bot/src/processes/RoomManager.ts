@@ -11,7 +11,7 @@ const getRoom = (roomName: string): Room => {
   return room;
 };
 
-export const baseManager = createProcess(function* (roomName: string) {
+export const RoomManager = createProcess(function* (roomName: string) {
   const spawns = getRoom(roomName).find(FIND_MY_SPAWNS);
 
   if (spawns.length === 0) {
@@ -20,7 +20,7 @@ export const baseManager = createProcess(function* (roomName: string) {
   }
 
   for (;;) {
-    yield* ensureChild('roomPlanner', undefined, roomName);
+    yield* ensureChild('RoomPlanner', undefined, roomName);
     yield* sleep(500);
   }
 });

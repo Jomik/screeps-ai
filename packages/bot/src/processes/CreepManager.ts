@@ -175,7 +175,7 @@ const runHaulers = () => {
   }
 };
 
-export const creepManager = createProcess(
+export const CreepManager = createProcess(
   restartOnTickChange(function* () {
     for (;;) {
       runAttackers();

@@ -276,7 +276,7 @@ const invertBuildingSpaceForDT = (buildingSpace: CostMatrix): CostMatrix => {
   return cm;
 };
 
-export const roomPlanner = createProcess(function* (roomName: string) {
+export const RoomPlanner = createProcess(function* (roomName: string) {
   for (;;) {
     const room = Game.rooms[roomName];
     if (!room) {
