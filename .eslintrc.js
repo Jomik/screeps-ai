@@ -9,18 +9,14 @@ const config = {
   extends: ['eslint:recommended', 'prettier'],
   overrides: [
     {
+      // Handle js files, these runs on our local machine in node.
       files: '*.js',
       env: {
         node: true,
       },
     },
     {
-      files: 'jest.config.js',
-      parserOptions: {
-        sourceType: 'script',
-      },
-    },
-    {
+      // Handle typescript files
       files: '*.ts',
       parser: '@typescript-eslint/parser',
       parserOptions: {
