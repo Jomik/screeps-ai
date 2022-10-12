@@ -1,4 +1,4 @@
-declare const global: Record<string, any>;
+declare const global: Record<string, unknown>;
 
 export class InvalidArgumentError extends Error {
   constructor(

@@ -47,7 +47,7 @@ export type Process<Args extends MemoryValue[]> = ((
 ) => Thread<void>) & {
   [ProcessSymbol]: 'Process';
 };
-export type ArgsForProcess<Type extends Process<any>> = Type extends Process<
+export type ArgsForProcess<Type extends Process<never>> = Type extends Process<
   infer Args
 >
   ? Args

@@ -1,4 +1,4 @@
-declare const global: Record<string, any>;
+declare const global: Record<string, unknown>;
 
 class CostMatrix {
   constructor(public _bits = new Uint8Array(2500)) {}

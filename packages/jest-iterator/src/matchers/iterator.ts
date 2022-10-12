@@ -54,7 +54,7 @@ function matchYields<Y, N>(
 
 export function toMatchYields<Y, N>(
   this: jest.MatcherContext,
-  iterator: Iterator<Y, any, N>,
+  iterator: Iterator<Y, unknown, N>,
   yieldValues: Array<[Y] | [Y, N | (() => N)]>
 ): jest.CustomMatcherResult {
   const { pass, received, expected } = matchYields.bind(this)(
@@ -75,7 +75,7 @@ export function toMatchYields<Y, N>(
 
 export function toMatchYieldsExactly<Y, N>(
   this: jest.MatcherContext,
-  iterator: Iterator<Y, any, N>,
+  iterator: Iterator<Y, unknown, N>,
   yieldValues: Array<[Y] | [Y, N | (() => N)]>
 ): jest.CustomMatcherResult {
   const { pass, received, expected, done, itemsYielded } = matchYields.bind(
