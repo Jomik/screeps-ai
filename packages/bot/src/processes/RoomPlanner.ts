@@ -121,6 +121,33 @@ const getBuildingSpace = (room: Room): CostMatrix => {
       cm.set(x, y, 1)
     );
   }
+
+  // Block off tiles around sources.
+  for (const {
+    pos: { x, y },
+  } of room.find(FIND_SOURCES)) {
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
+      cm.set(x, y, 255)
+    );
+  }
+
+  // Block off tiles around minerals.
+  for (const {
+    pos: { x, y },
+  } of room.find(FIND_MINERALS)) {
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
+      cm.set(x, y, 255)
+    );
+  }
+
+  // Block off tiles around controller.
+  if (room.controller) {
+    const { x, y } = room.controller.pos;
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
+      cm.set(x, y, 255)
+    );
+  }
+
   return cm;
 };
 
