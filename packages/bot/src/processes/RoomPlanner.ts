@@ -127,7 +127,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     pos: { x, y },
   } of room.find(FIND_SOURCES)) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 255)
+      cm.set(x, y, 254)
     );
   }
 
@@ -136,7 +136,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     pos: { x, y },
   } of room.find(FIND_MINERALS)) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 255)
+      cm.set(x, y, 254)
     );
   }
 
@@ -144,7 +144,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   if (room.controller) {
     const { x, y } = room.controller.pos;
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 255)
+      cm.set(x, y, 254)
     );
   }
 
