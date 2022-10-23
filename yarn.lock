@@ -4449,6 +4449,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"runner@workspace:packages/runner":
+  version: 0.0.0-use.local
+  resolution: "runner@workspace:packages/runner"
+  dependencies:
+    "@types/jest": "npm:^29.1.1"
+    jest: "npm:^29.1.2"
+    prettier: "npm:^2.7.1"
+    ts-jest: "npm:^29.0.3"
+    typescript: "npm:^4.8.4"
+  languageName: unknown
+  linkType: soft
+
 "safe-buffer@npm:~5.1.1":
   version: 5.1.2
   resolution: "safe-buffer@npm:5.1.2"
