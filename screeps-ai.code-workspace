@@ -9,10 +9,6 @@
       "path": "packages/bot"
     },
     {
-      "name": "Kernel",
-      "path": "packages/kernel"
-    },
-    {
       "name": "Runner",
       "path": "packages/runner"
     }

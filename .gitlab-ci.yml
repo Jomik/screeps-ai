@@ -17,7 +17,7 @@ build-job:
   stage: build
   parallel:
     matrix:
-      - WORKSPACE: [bot, kernel, runner]
+      - WORKSPACE: [bot, runner]
   script:
     - yarn workspace $WORKSPACE run tsc --noEmit --skipLibCheck --strict
 
@@ -26,7 +26,7 @@ unit-test-job:
   needs: [build-job]
   parallel:
     matrix:
-      - WORKSPACE: [bot, kernel, runner]
+      - WORKSPACE: [bot, runner]
   script:
     - yarn workspace $WORKSPACE run test
 
