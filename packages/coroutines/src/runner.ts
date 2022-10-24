@@ -10,17 +10,19 @@ const IsReady = Symbol('IsReady');
 type InternalRoutine = Routine & {
   [Result]?: unknown;
   [IsReady]: boolean;
+  name: string;
 };
 
 export const createRunner = (onError?: (error: unknown) => void) => {
   const coroutines: InternalRoutine[] = [];
 
   const go = <Args extends unknown[]>(
-    fn: (...args: Args) => Routine,
+    fn: ((...args: Args) => Routine) & { name: string },
     ...args: Args
   ): void => {
     const task = fn(...args) as InternalRoutine;
     task[IsReady] = true;
+    task.name = fn.name;
     coroutines.push(task);
   };
 
@@ -39,21 +41,21 @@ export const createRunner = (onError?: (error: unknown) => void) => {
 
   const canRun = (): boolean => coroutines.some((routine) => routine[IsReady]);
 
-  const run = (): boolean => {
+  const run = (): { state: 'done' | 'ready' | 'waiting'; name: string } => {
     const routine = coroutines.pop();
     if (!routine) {
-      return false;
+      throw new Error('No routine to run');
     }
 
     if (!routine[IsReady]) {
       coroutines.unshift(routine);
-      return canRun();
+      return { state: 'waiting', name: routine.name };
     }
 
     const execution = runRoutine(routine);
 
     if (execution.done) {
-      return canRun();
+      return { state: 'done', name: routine.name };
     }
 
     if (execution.value instanceof Future) {
@@ -65,8 +67,11 @@ export const createRunner = (onError?: (error: unknown) => void) => {
     }
     coroutines.unshift(routine);
 
-    return canRun();
+    return {
+      state: routine[IsReady] ? 'ready' : 'waiting',
+      name: routine.name,
+    };
   };
 
-  return { go, run };
+  return { go, run, canRun };
 };

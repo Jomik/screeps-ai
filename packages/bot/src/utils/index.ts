@@ -21,7 +21,7 @@ export const isDefined = <T>(value: T | undefined | null): value is T =>
 export const restartOnTickChange = <Args extends unknown[]>(
   routine: (...args: Args) => Routine
 ): ((...args: Args) => Routine) => {
-  return function* (...args) {
+  const fn = function* (...args: Args) {
     for (;;) {
       const tick = Game.time;
       const thread = routine(...args);
@@ -36,6 +36,8 @@ export const restartOnTickChange = <Args extends unknown[]>(
       }
     }
   };
+  Object.defineProperty(fn, 'name', { value: routine.name });
+  return fn;
 };
 
 let counter = 0;

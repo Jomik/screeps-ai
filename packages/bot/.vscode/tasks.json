@@ -6,24 +6,6 @@
       "command": "yarn",
       "args": ["deploy:development", "--watch"],
       "isBackground": true,
-      "problemMatcher": {
-        "owner": "typescript",
-        "fileLocation": "relative",
-        "pattern": {
-          "regexp": "^\\[!\\]\\s*\\(.*?\\)\\s*Error:\\s*([^\\s].*):(\\d+):(\\d+)\\s*-\\s*(error|warning|info)\\s*(TS\\d+)\\s*:\\s*(.*)",
-          "file": 1,
-          "line": 2,
-          "column": 3,
-          "severity": 4,
-          "code": 5,
-          "message": 6
-        },
-        "background": {
-          "activeOnStart": true,
-          "beginsPattern": "bundles src/main.ts → dist/main.js...",
-          "endsPattern": ".*waiting for changes..."
-        }
-      },
       "group": {
         "kind": "build",
         "isDefault": true

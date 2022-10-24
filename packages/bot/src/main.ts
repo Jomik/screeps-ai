@@ -5,7 +5,7 @@ import { recordGlobals, resetStats } from './library';
 import { wrapWithMemoryHack } from './utils/memory-hack';
 import { resolveSleep } from './library/sleep';
 import { main } from './routines/main';
-import { go, run } from './runner';
+import { canRun, go, run } from './runner';
 
 go(main);
 
@@ -14,11 +14,26 @@ export const loop = ErrorMapper.wrapLoop(
     resetStats();
     resolveSleep();
 
-    while (Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed()) {
-      if (!run()) {
-        break;
-      }
+    const cpuUsage: Record<string, number> = {};
+    while (Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() && canRun()) {
+      const start = Game.cpu.getUsed();
+      const task = run();
+      const end = Game.cpu.getUsed();
+      cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
     }
+
+    const visuals = new RoomVisual();
+    Object.entries(cpuUsage).forEach(([name, usage], index) => {
+      visuals.text(
+        `${name} > ${usage.toFixed(2).toString()}`,
+        49,
+        index + 0.2,
+        {
+          font: 0.7,
+          align: 'right',
+        }
+      );
+    });
 
     // Automatically delete memory of missing creeps
     for (const name in Memory.creeps) {

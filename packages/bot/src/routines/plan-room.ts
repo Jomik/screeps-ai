@@ -363,7 +363,7 @@ export function* planRoom(roomName: string): Routine {
   const buildingVisuals = room.visual.export();
   room.visual.clear();
 
-  go(function* () {
+  go(function* roomPlanVisuals() {
     for (;;) {
       // room.visual.import(
       //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)

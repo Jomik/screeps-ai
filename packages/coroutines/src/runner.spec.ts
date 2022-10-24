@@ -3,12 +3,17 @@ import { Future } from './Future';
 import { createRunner } from './runner';
 
 describe('runner', () => {
-  let { go, run } = createRunner();
+  let go: ReturnType<typeof createRunner>['go'];
+  let execute: () => void;
 
   beforeEach(() => {
     const runner = createRunner();
     go = runner.go;
-    run = runner.run;
+    execute = () => {
+      while (runner.canRun()) {
+        runner.run();
+      }
+    };
   });
 
   it('executes routines till done', () => {
@@ -20,9 +25,7 @@ describe('runner', () => {
       }
     });
 
-    while (run()) {
-      // Execute
-    }
+    execute();
 
     expect(uut).toBe('AAA');
   });
@@ -36,9 +39,7 @@ describe('runner', () => {
       }
     }, 'A');
 
-    while (run()) {
-      // Execute
-    }
+    execute();
 
     expect(uut).toBe('AAA');
   });
@@ -53,9 +54,7 @@ describe('runner', () => {
         uut += 'B';
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(uut).toBe('BA');
     });
@@ -75,9 +74,7 @@ describe('runner', () => {
         }
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(uut).toBe('BABABA');
     });
@@ -95,9 +92,7 @@ describe('runner', () => {
         res();
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(res).toBeCalledTimes(0);
     });
@@ -112,15 +107,11 @@ describe('runner', () => {
         res();
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       resolver();
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(res).toBeCalledTimes(1);
     });
@@ -142,15 +133,11 @@ describe('runner', () => {
         }
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       resolver();
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(res).toBe('BABBA');
     });
@@ -166,15 +153,11 @@ describe('runner', () => {
         res += yield* fut;
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       resolver('F');
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(res).toBe('F');
     });
@@ -201,21 +184,13 @@ describe('runner', () => {
         }
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
       resolveSleep();
-      while (run()) {
-        // Execute
-      }
+      execute();
       resolveSleep();
-      while (run()) {
-        // Execute
-      }
+      execute();
       resolveSleep();
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(res).toBe('AAA');
     });
@@ -240,9 +215,7 @@ describe('runner', () => {
         }
       }, expectedMessages.slice(0));
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(receivedMessages).toEqual(expectedMessages);
     });
@@ -256,9 +229,7 @@ describe('runner', () => {
         fn();
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(fn).toBeCalledTimes(0);
     });
@@ -272,9 +243,7 @@ describe('runner', () => {
         fn();
       });
 
-      while (run()) {
-        // Execute
-      }
+      execute();
 
       expect(fn).toBeCalledTimes(0);
     });
