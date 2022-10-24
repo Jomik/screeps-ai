@@ -1,10 +1,11 @@
+import { Routine } from 'coroutines';
 import { Coordinates, createLogger, expandPosition } from '../library';
 import { sleep } from '../library/sleep';
 import { isDefined } from '../utils';
 
 const logger = createLogger('spawn-manager');
 
-export function* spawnManager() {
+export function* spawnManager(): Routine {
   const getSpawn = (): StructureSpawn => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Game.spawns['Spawn1']!;
@@ -43,7 +44,7 @@ export function* spawnManager() {
 
   for (;;) {
     while (getSpawn().spawning) {
-      yield* sleep();
+      yield sleep();
     }
     const spawn = getSpawn();
 
@@ -106,6 +107,6 @@ export function* spawnManager() {
     } else if (workers.length < 2) {
       spawnWorker();
     }
-    yield* sleep();
+    yield sleep();
   }
 }

@@ -1,3 +1,4 @@
+import { Routine } from 'coroutines';
 import { sleep } from '../library/sleep';
 import { isDefined, restartOnTickChange } from '../utils';
 
@@ -175,17 +176,19 @@ const runHaulers = () => {
   }
 };
 
-export const creepManager = restartOnTickChange(function* creepManager() {
-  for (;;) {
-    runAttackers();
-    yield;
-    runMiners();
-    yield;
-    runHaulers();
-    yield;
-    runUpgraders();
-    yield;
-    runWorkers();
-    yield* sleep();
+export const creepManager = restartOnTickChange(
+  function* creepManager(): Routine {
+    for (;;) {
+      runAttackers();
+      yield;
+      runMiners();
+      yield;
+      runHaulers();
+      yield;
+      runUpgraders();
+      yield;
+      runWorkers();
+      yield sleep();
+    }
   }
-});
+);

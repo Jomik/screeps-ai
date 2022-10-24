@@ -1,8 +1,16 @@
 import { make } from './channel';
 import { Future } from './Future';
-import { go, run } from './runner';
+import { createRunner } from './runner';
 
 describe('runner', () => {
+  let { go, run } = createRunner();
+
+  beforeEach(() => {
+    const runner = createRunner();
+    go = runner.go;
+    run = runner.run;
+  });
+
   it('executes routines till done', () => {
     let uut = '';
     go(function* () {

@@ -1,17 +1,11 @@
 import './polyfills';
 
-import { go, run } from 'coroutines';
-
 import { ErrorMapper } from './utils/ErrorMapper';
-import { createLogger, recordGlobals, resetStats } from './library';
+import { recordGlobals, resetStats } from './library';
 import { wrapWithMemoryHack } from './utils/memory-hack';
 import { resolveSleep } from './library/sleep';
 import { main } from './routines/main';
-
-const logger = createLogger('coroutines');
-run.onError = (err) => {
-  logger.error(err as Error);
-};
+import { go, run } from './runner';
 
 go(main);
 

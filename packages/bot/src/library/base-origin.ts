@@ -1,7 +1,11 @@
 import { findLocalMaxima } from './graph-transforms';
 import { Coordinates } from './coordinates';
+import { SubRoutine } from 'coroutines';
 
-export function* chooseBaseOrigin(room: Room, distanceTransform: CostMatrix) {
+export function* chooseBaseOrigin(
+  room: Room,
+  distanceTransform: CostMatrix
+): SubRoutine<Coordinates> {
   const maxima = yield* findLocalMaxima(distanceTransform);
   const candidates = maxima.flatMap((c) => c);
   yield;

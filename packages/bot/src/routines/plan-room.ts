@@ -1,4 +1,5 @@
-import { go, Routine } from 'coroutines';
+import { Routine } from 'coroutines';
+import { SubRoutine } from 'coroutines';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -10,6 +11,7 @@ import {
 import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
+import { go } from '../runner';
 
 const logger = createLogger('room-planner');
 
@@ -21,10 +23,10 @@ function* getRoadTo(
   target: Coordinates,
   roomName: string,
   navigation: CostMatrix
-) {
+): SubRoutine<Coordinates[]> {
   const room = Game.rooms[roomName];
   if (!room) {
-    return;
+    return [];
     // return exit(`No vision in room ${roomName}`);
   }
 
@@ -202,7 +204,7 @@ function* canPlaceStamp(
   buildingSpace: CostMatrix,
   origin: Coordinates,
   pointsToReach: Coordinates[]
-) {
+): SubRoutine<boolean> {
   const placement = placeStamp(stamp, center);
 
   for (const [structureType, x, y] of placement) {
@@ -252,7 +254,7 @@ function* placeNumberOfStamp(
   distanceTransform: CostMatrix,
   buildingSpace: CostMatrix,
   pointsToReach: Coordinates[]
-) {
+): SubRoutine<StructurePlacement[]> {
   let placed = 0;
   const structures: StructurePlacement[] = [];
   for (const stamp of stamps) {
