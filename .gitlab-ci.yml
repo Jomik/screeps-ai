@@ -45,4 +45,3 @@ deploy_mmo:
     url: https://screeps.com/a/#!/profile/Jomik
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
