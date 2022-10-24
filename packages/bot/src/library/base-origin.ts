@@ -1,11 +1,7 @@
-import { Thread } from 'kernel';
 import { findLocalMaxima } from './graph-transforms';
 import { Coordinates } from './coordinates';
 
-export function* chooseBaseOrigin(
-  room: Room,
-  distanceTransform: CostMatrix
-): Thread<Coordinates> {
+export function* chooseBaseOrigin(room: Room, distanceTransform: CostMatrix) {
   const maxima = yield* findLocalMaxima(distanceTransform);
   const candidates = maxima.flatMap((c) => c);
   yield;

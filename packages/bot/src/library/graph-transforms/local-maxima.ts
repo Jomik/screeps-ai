@@ -1,14 +1,10 @@
-import { sleep, Thread } from 'kernel';
 import {
-  Coordinates,
   expandOrtogonally,
   coordinatesToNumber,
   numberToCoordinates,
 } from '../coordinates';
 
-export function* findLocalMaxima(
-  distanceTransform: CostMatrix
-): Thread<Array<Coordinates[]>> {
+export function* findLocalMaxima(distanceTransform: CostMatrix) {
   const candidates = new Set<number>();
   const maxima: Set<number>[] = [];
   for (let x = 1; x <= 48; ++x) {
@@ -26,7 +22,7 @@ export function* findLocalMaxima(
       candidates.add(coordinatesToNumber([x, y]));
     }
   }
-  yield* sleep();
+  yield;
   for (const origin of [...candidates]) {
     if (maxima.some((group) => group.has(origin))) {
       continue;

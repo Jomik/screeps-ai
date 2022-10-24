@@ -2,7 +2,7 @@ import { Future } from './Future';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RoutineCall = void | Future<any>;
-type Routine = Generator<RoutineCall, void, unknown>;
+export type Routine = Generator<RoutineCall, void, unknown>;
 
 const Result = Symbol('Result');
 const IsReady = Symbol('IsReady');

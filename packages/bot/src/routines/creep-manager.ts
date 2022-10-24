@@ -1,4 +1,4 @@
-import { sleep, createProcess } from 'kernel';
+import { sleep } from '../library/sleep';
 import { isDefined, restartOnTickChange } from '../utils';
 
 const runMiners = () => {
@@ -175,19 +175,17 @@ const runHaulers = () => {
   }
 };
 
-export const CreepManager = createProcess(
-  restartOnTickChange(function* () {
-    for (;;) {
-      runAttackers();
-      yield;
-      runMiners();
-      yield;
-      runHaulers();
-      yield;
-      runUpgraders();
-      yield;
-      runWorkers();
-      yield* sleep();
-    }
-  })
-);
+export const creepManager = restartOnTickChange(function* creepManager() {
+  for (;;) {
+    runAttackers();
+    yield;
+    runMiners();
+    yield;
+    runHaulers();
+    yield;
+    runUpgraders();
+    yield;
+    runWorkers();
+    yield* sleep();
+  }
+});

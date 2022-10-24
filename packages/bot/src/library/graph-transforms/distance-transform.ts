@@ -1,5 +1,3 @@
-import type { Thread } from 'kernel';
-
 // prettier-ignore
 const forwardMask = [
     /*[-1,-1],*/ [0,-1], /*[1,-1],*/
@@ -32,7 +30,7 @@ const updateCM = (
 export function* calculateDistanceTransform(
   bounds: { x: [number, number]; y: [number, number] },
   base: CostMatrix
-): Thread<CostMatrix> {
+) {
   const dt = base.clone();
 
   const {

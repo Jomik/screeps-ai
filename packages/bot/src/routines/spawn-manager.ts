@@ -1,8 +1,10 @@
-import { sleep, createProcess } from 'kernel';
-import { Coordinates, expandPosition } from '../library';
+import { Coordinates, createLogger, expandPosition } from '../library';
+import { sleep } from '../library/sleep';
 import { isDefined } from '../utils';
 
-export const SpawnManager = createProcess(function* () {
+const logger = createLogger('spawn-manager');
+
+export function* spawnManager() {
   const getSpawn = (): StructureSpawn => {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Game.spawns['Spawn1']!;
@@ -40,10 +42,10 @@ export const SpawnManager = createProcess(function* () {
   };
 
   for (;;) {
-    const spawn = getSpawn();
-    if (spawn.spawning) {
-      yield* sleep(spawn.spawning.remainingTime);
+    while (getSpawn().spawning) {
+      yield* sleep();
     }
+    const spawn = getSpawn();
 
     const sources = spawn.room.find(FIND_SOURCES);
     const terrain = spawn.room.getTerrain();
@@ -104,6 +106,6 @@ export const SpawnManager = createProcess(function* () {
     } else if (workers.length < 2) {
       spawnWorker();
     }
-    yield* sleep(10);
+    yield* sleep();
   }
-});
+}

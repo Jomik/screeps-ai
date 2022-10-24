@@ -1672,12 +1672,12 @@ __metadata:
     dotenv: "npm:16.0.3"
     jest: "npm:^29.1.2"
     jest-iterator: "workspace:*"
-    kernel: "workspace:*"
     prettier: "npm:^2.7.1"
     rollup: "npm:^2.79.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
     rollup-plugin-typescript2: "npm:^0.34.0"
+    runner: "workspace:*"
     source-map: "npm:~0.6.1"
     ts-jest: "npm:^29.0.3"
     ts-polyfill: "npm:^3.8.2"
@@ -3611,7 +3611,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"kernel@workspace:*, kernel@workspace:packages/kernel":
+"kernel@workspace:packages/kernel":
   version: 0.0.0-use.local
   resolution: "kernel@workspace:packages/kernel"
   dependencies:
@@ -4449,7 +4449,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"runner@workspace:packages/runner":
+"runner@workspace:*, runner@workspace:packages/runner":
   version: 0.0.0-use.local
   resolution: "runner@workspace:packages/runner"
   dependencies:

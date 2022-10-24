@@ -1,2 +1,3 @@
 export { make } from './channel';
-export { run, go } from './runner';
+export { Future } from './Future';
+export { go, Routine, run } from './runner';

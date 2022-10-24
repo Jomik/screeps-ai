@@ -1,4 +1,4 @@
-import { createProcess, sleep, Thread } from 'kernel';
+import { go, Routine } from 'runner';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -6,9 +6,10 @@ import {
   createLogger,
   expandPosition,
   numberToCoordinates,
-  exit,
 } from '../library';
 import { chooseBaseOrigin } from '../library/base-origin';
+import { sleep } from '../library/sleep';
+import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 
 const logger = createLogger('room-planner');
 
@@ -20,10 +21,11 @@ function* getRoadTo(
   target: Coordinates,
   roomName: string,
   navigation: CostMatrix
-): Thread<Coordinates[]> {
+) {
   const room = Game.rooms[roomName];
   if (!room) {
-    return exit(`No vision in room ${roomName}`);
+    return;
+    // return exit(`No vision in room ${roomName}`);
   }
 
   const originPos = new RoomPosition(origin[0], origin[1], roomName);
@@ -200,7 +202,7 @@ function* canPlaceStamp(
   buildingSpace: CostMatrix,
   origin: Coordinates,
   pointsToReach: Coordinates[]
-): Thread<boolean> {
+) {
   const placement = placeStamp(stamp, center);
 
   for (const [structureType, x, y] of placement) {
@@ -250,7 +252,7 @@ function* placeNumberOfStamp(
   distanceTransform: CostMatrix,
   buildingSpace: CostMatrix,
   pointsToReach: Coordinates[]
-): Thread<StructurePlacement[]> {
+) {
   let placed = 0;
   const structures: StructurePlacement[] = [];
   for (const stamp of stamps) {
@@ -304,71 +306,73 @@ const invertBuildingSpaceForDT = (buildingSpace: CostMatrix): CostMatrix => {
   return cm;
 };
 
-export const RoomPlanner = createProcess(function* (roomName: string) {
-  for (;;) {
-    const room = Game.rooms[roomName];
-    if (!room) {
-      return exit(`No vision in room ${roomName}`);
-    }
-    const buildingSpace = getBuildingSpace(room);
+export function* planRoom(roomName: string): Routine {
+  const room = Game.rooms[roomName];
+  if (!room) {
+    return;
+    // return exit(`No vision in room ${roomName}`);
+  }
+  const buildingSpace = getBuildingSpace(room);
 
-    const distanceTransform = yield* calculateDistanceTransform(
-      { x: [1, 48], y: [1, 48] },
-      invertBuildingSpaceForDT(buildingSpace)
+  const distanceTransform = yield* calculateDistanceTransform(
+    { x: [1, 48], y: [1, 48] },
+    invertBuildingSpaceForDT(buildingSpace)
+  );
+
+  const origin = yield* chooseBaseOrigin(room, distanceTransform);
+
+  yield;
+
+  const pointsToReach: Coordinates[] = room
+    .find(FIND_SOURCES)
+    .map(({ pos }) => pos)
+    .concat(room.find(FIND_MINERALS).map(({ pos }) => pos))
+    .concat(room.find(FIND_EXIT))
+    .concat(room.controller ? [room.controller.pos] : [])
+    .map(({ x, y }) => [x, y]);
+
+  const placedStructures: StructurePlacement[] = [];
+  for (const [count, stamps] of Stamps) {
+    const structures = yield* placeNumberOfStamp(
+      room,
+      count,
+      stamps,
+      origin,
+      distanceTransform,
+      buildingSpace,
+      pointsToReach
     );
+    placedStructures.push(...structures);
+  }
+  yield;
 
-    const origin = yield* chooseBaseOrigin(room, distanceTransform);
-
-    yield;
-
-    const pointsToReach: Coordinates[] = room
-      .find(FIND_SOURCES)
-      .map(({ pos }) => pos)
-      .concat(room.find(FIND_MINERALS).map(({ pos }) => pos))
-      .concat(room.find(FIND_EXIT))
-      .concat(room.controller ? [room.controller.pos] : [])
-      .map(({ x, y }) => [x, y]);
-
-    const placedStructures: StructurePlacement[] = [];
-    for (const [count, stamps] of Stamps) {
-      const structures = yield* placeNumberOfStamp(
-        room,
-        count,
-        stamps,
-        origin,
-        distanceTransform,
-        buildingSpace,
-        pointsToReach
-      );
-      placedStructures.push(...structures);
+  for (const [structureType, x, y] of placedStructures) {
+    if (structureType === 'empty' || structureType === 'blocked') {
+      continue;
     }
-    yield;
-
-    for (const [structureType, x, y] of placedStructures) {
-      if (structureType === 'empty' || structureType === 'blocked') {
-        continue;
-      }
-      room.visual.structure(x, y, structureType, {
-        opacity: 0.2,
-      });
-    }
-    room.visual.connectRoads({
+    room.visual.structure(x, y, structureType, {
       opacity: 0.2,
     });
+  }
+  room.visual.connectRoads({
+    opacity: 0.2,
+  });
 
-    const buildingVisuals = room.visual.export();
-    room.visual.clear();
+  const buildingVisuals = room.visual.export();
+  room.visual.clear();
 
+  go(function* () {
     for (;;) {
       // room.visual.import(
       //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)
       // );
+      // room.visual.import(overlayCostMatrix(buildingSpace));
       room.visual.import(buildingVisuals);
       room.visual.circle(...origin, {
         fill: 'red',
         radius: 0.25,
       });
-      yield* sleep();
+      yield sleep();
     }
-  }
-});
+  });
+}

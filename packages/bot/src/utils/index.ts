@@ -1,5 +1,4 @@
-import { Thread } from 'kernel';
-import { Coordinates } from '../library';
+import { Routine } from 'runner';
 
 type GroupByKey<T extends Record<Key, string>, Key extends string> = {
   [Type in T[Key]]?: Array<Extract<T, Record<Key, Type>>>;
@@ -19,13 +18,13 @@ export const groupByKey = <T extends Record<Key, string>, Key extends string>(
 export const isDefined = <T>(value: T | undefined | null): value is T =>
   value !== undefined && value !== null;
 
-export const restartOnTickChange = <Args extends unknown[], R>(
-  process: (...args: Args) => Thread<R>
-): ((...args: Args) => Thread<R>) => {
+export const restartOnTickChange = <Args extends unknown[]>(
+  routine: (...args: Args) => Routine
+): ((...args: Args) => Routine) => {
   return function* (...args) {
     for (;;) {
       const tick = Game.time;
-      const thread = process(...args);
+      const thread = routine(...args);
       while (tick === Game.time) {
         const { done, value } = thread.next();
 
