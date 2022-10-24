@@ -1,4 +1,4 @@
-import { Future } from 'runner';
+import { Future } from 'coroutines';
 
 export let resolveSleep = () => {
   //Nothing

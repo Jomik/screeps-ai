@@ -1,4 +1,4 @@
-import { go } from 'runner';
+import { go } from 'coroutines';
 import { creepManager } from './creep-manager';
 import { planRoom } from './plan-room';
 import { spawnManager } from './spawn-manager';

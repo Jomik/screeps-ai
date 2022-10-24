@@ -1,4 +1,4 @@
-import { Routine } from 'runner';
+import { Routine } from 'coroutines';
 
 type GroupByKey<T extends Record<Key, string>, Key extends string> = {
   [Type in T[Key]]?: Array<Extract<T, Record<Key, Type>>>;

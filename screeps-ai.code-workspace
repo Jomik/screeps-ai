@@ -9,8 +9,8 @@
       "path": "packages/bot"
     },
     {
-      "name": "Runner",
-      "path": "packages/runner"
+      "name": "Coroutines",
+      "path": "packages/coroutines"
     }
   ],
   "settings": {

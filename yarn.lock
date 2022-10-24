@@ -1669,6 +1669,7 @@ __metadata:
     "@types/jest": "npm:^29.1.1"
     "@types/lodash": "npm:3.10.2"
     "@types/screeps": "npm:^3.3.0"
+    coroutines: "workspace:*"
     dotenv: "npm:16.0.3"
     jest: "npm:^29.1.2"
     prettier: "npm:^2.7.1"
@@ -1676,7 +1677,6 @@ __metadata:
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
     rollup-plugin-typescript2: "npm:^0.34.0"
-    runner: "workspace:*"
     source-map: "npm:~0.6.1"
     ts-jest: "npm:^29.0.3"
     ts-polyfill: "npm:^3.8.2"
@@ -2009,6 +2009,18 @@ __metadata:
   checksum: 7b98bb706fd9c37b4563d6bc7026b94c9efd52f03e96bcd198125755f03024ff53682e68096d4c303b650d3f650b1942390ff0f0f756c011ea8c08a10bceae47
   languageName: node
   linkType: hard
+
+"coroutines@workspace:*, coroutines@workspace:packages/coroutines":
+  version: 0.0.0-use.local
+  resolution: "coroutines@workspace:packages/coroutines"
+  dependencies:
+    "@types/jest": "npm:^29.1.1"
+    jest: "npm:^29.1.2"
+    prettier: "npm:^2.7.1"
+    ts-jest: "npm:^29.0.3"
+    typescript: "npm:^4.8.4"
+  languageName: unknown
+  linkType: soft
 
 "cross-spawn@npm:^7.0.2, cross-spawn@npm:^7.0.3":
   version: 7.0.3
@@ -4421,18 +4433,6 @@ __metadata:
   checksum: 45bff4f6664ae79b8653ebd32c6e9e9e37139683f7bd1d54d5a05c409c9d167ece16c9b7e36a99ac4bb7a08b5f72b4084a1e08eba443bc6e2ca9044ef972752c
   languageName: node
   linkType: hard
-
-"runner@workspace:*, runner@workspace:packages/runner":
-  version: 0.0.0-use.local
-  resolution: "runner@workspace:packages/runner"
-  dependencies:
-    "@types/jest": "npm:^29.1.1"
-    jest: "npm:^29.1.2"
-    prettier: "npm:^2.7.1"
-    ts-jest: "npm:^29.0.3"
-    typescript: "npm:^4.8.4"
-  languageName: unknown
-  linkType: soft
 
 "safe-buffer@npm:~5.1.1":
   version: 5.1.2

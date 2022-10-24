@@ -1,4 +1,4 @@
-import { go, Routine } from 'runner';
+import { go, Routine } from 'coroutines';
 import {
   calculateDistanceTransform,
   Coordinates,
