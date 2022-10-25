@@ -398,8 +398,12 @@ export function* planRoom(roomName: string): Routine {
       });
 
     while (toBePlaced.length > 0) {
-      yield sleep();
+      yield;
       if (room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
+        const start = Game.time;
+        while (Game.time < start + 100) {
+          yield sleep();
+        }
         continue;
       }
       const controller = room.controller;
@@ -421,11 +425,15 @@ export function* planRoom(roomName: string): Routine {
         return (CONTROLLER_STRUCTURES[type][controller.level] ?? 0) > placed;
       });
       if (index === -1) {
+        const start = controller.level;
+        while (start < controller.level) {
+          yield sleep();
+        }
         continue;
       }
       const [placement] = toBePlaced.splice(index, 1);
       if (!placement) {
-        continue;
+        throw new Error('Something went wrong with our array');
       }
       const [type, x, y] = placement;
       const res = room.createConstructionSite(x, y, type);
