@@ -389,6 +389,13 @@ export function* planRoom(roomName: string): Routine {
         }
       )
       .filter(([type, x, y]) => {
+        const [structure] = room.lookForAt(LOOK_STRUCTURES, x, y);
+        if (structure && structure.structureType !== type) {
+          logger.warn(
+            `Wrong structure, ${structure.structureType} at ${x},${y}, want ${type}`
+          );
+          return false;
+        }
         const [site] = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
         if (site?.structureType !== type) {
           site?.remove();
