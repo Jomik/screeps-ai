@@ -348,22 +348,22 @@ export function* planRoom(roomName: string): Routine {
   }
   yield;
 
-  for (const [structureType, x, y] of placedStructures) {
-    if (structureType === 'empty' || structureType === 'blocked') {
-      continue;
+  go(function* roomPlanVisuals() {
+    for (const [structureType, x, y] of placedStructures) {
+      if (structureType === 'empty' || structureType === 'blocked') {
+        continue;
+      }
+      room.visual.structure(x, y, structureType, {
+        opacity: 0.2,
+      });
     }
-    room.visual.structure(x, y, structureType, {
+    room.visual.connectRoads({
       opacity: 0.2,
     });
-  }
-  room.visual.connectRoads({
-    opacity: 0.2,
-  });
 
-  const buildingVisuals = room.visual.export();
-  room.visual.clear();
+    const buildingVisuals = room.visual.export();
+    room.visual.clear();
 
-  go(function* roomPlanVisuals() {
     for (;;) {
       // room.visual.import(
       //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)
@@ -375,6 +375,65 @@ export function* planRoom(roomName: string): Routine {
         radius: 0.25,
       });
       yield sleep();
+    }
+  });
+
+  go(function* constructRoom() {
+    const toBePlaced = placedStructures
+      .filter(
+        (
+          placement
+        ): placement is [BuildableStructureConstant, ...Coordinates] => {
+          const [type] = placement;
+          return type !== 'empty' && type !== 'blocked';
+        }
+      )
+      .filter(([type, x, y]) => {
+        const [site] = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
+        if (site?.structureType !== type) {
+          site?.remove();
+          return true;
+        }
+        return false;
+      });
+
+    while (toBePlaced.length > 0) {
+      yield sleep();
+      if (room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
+        continue;
+      }
+      const controller = room.controller;
+      if (!controller) {
+        return;
+      }
+
+      const index = toBePlaced.findIndex(([type]) => {
+        if (type === STRUCTURE_ROAD) {
+          return false;
+        }
+
+        const placed =
+          room
+            .find(FIND_MY_CONSTRUCTION_SITES)
+            .filter((s) => s.structureType === type).length +
+          room.find(FIND_MY_STRUCTURES).filter((s) => s.structureType === type)
+            .length;
+        return (CONTROLLER_STRUCTURES[type][controller.level] ?? 0) > placed;
+      });
+      if (index === -1) {
+        continue;
+      }
+      const [placement] = toBePlaced.splice(index, 1);
+      if (!placement) {
+        continue;
+      }
+      const [type, x, y] = placement;
+      const res = room.createConstructionSite(x, y, type);
+      if (res !== OK) {
+        logger.warn(`Error placing ${type} at ${x},${y}: ${res}`);
+        // This will keep erroring, so give up.
+        return;
+      }
     }
   });
 }
