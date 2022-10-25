@@ -18,7 +18,7 @@ export function* spawnManager(): Routine {
     );
   };
 
-  const spawnMiner = (slot: Coordinates) => {
+  const spawnMiner = (slot: [...Coordinates, string]) => {
     getSpawn().spawnCreep([WORK, WORK, CARRY, MOVE], `miner-${Game.time}`, {
       memory: { slot },
     });
@@ -85,7 +85,7 @@ export function* spawnManager(): Routine {
         // TODO
         // this.logger.error('No source slot', spawn.room);
       } else {
-        spawnMiner([closestSlot.x, closestSlot.y]);
+        spawnMiner([closestSlot.x, closestSlot.y, closestSlot.roomName]);
       }
     } else if (haulers.length === 0) {
       spawnHauler();
@@ -98,7 +98,7 @@ export function* spawnManager(): Routine {
       );
       const freeSlot = spawn.pos.findClosestByPath(freeSlots);
       if (freeSlot) {
-        spawnMiner([freeSlot.x, freeSlot.y]);
+        spawnMiner([freeSlot.x, freeSlot.y, freeSlot.roomName]);
       }
     } else if (haulers.length < 2) {
       spawnHauler();

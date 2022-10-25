@@ -12,9 +12,11 @@ const runMiners = () => {
       miner.suicide();
       continue;
     }
-    const [x, y] = miner.memory.slot;
+    const [x, y, roomName = miner.room.name] = miner.memory.slot;
     if (miner.pos.x !== x || miner.pos.y !== y) {
-      miner.moveTo(x, y, { visualizePathStyle: { lineStyle: 'dashed' } });
+      miner.moveTo(new RoomPosition(x, y, roomName), {
+        visualizePathStyle: { lineStyle: 'dashed' },
+      });
     }
     const [source] = miner.pos.findInRange(FIND_SOURCES, 1);
     if (source === undefined) {

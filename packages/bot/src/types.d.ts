@@ -1,3 +1,3 @@
 interface CreepMemory {
-  slot?: [number, number];
+  slot?: [x: number, y: number, roomName: string];
 }
