@@ -34,6 +34,16 @@ export const loop = ErrorMapper.wrapLoop(
         }
       );
     });
+    visuals.text(
+      `Heap usage: ${(
+        ((Game.cpu.getHeapStatistics?.().used_heap_size ?? 0) /
+          (Game.cpu.getHeapStatistics?.().heap_size_limit ?? 0)) *
+        100
+      ).toFixed(2)}%`,
+      0,
+      0.2,
+      { font: 0.7, align: 'left' }
+    );
 
     // Automatically delete memory of missing creeps
     for (const name in Memory.creeps) {
