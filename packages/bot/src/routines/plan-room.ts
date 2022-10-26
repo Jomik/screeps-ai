@@ -1,5 +1,6 @@
 import { Routine } from 'coroutines';
 import { SubRoutine } from 'coroutines';
+import { SourceMapConsumer } from 'source-map';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -106,6 +107,7 @@ const Stamps: Array<[count: number, stamps: Stamp[]]> = [
   [1, [[[STRUCTURE_POWER_SPAWN]]]],
   [1, [[[STRUCTURE_NUKER]]]],
   [1, [[[STRUCTURE_OBSERVER]]]],
+  [6, [[[STRUCTURE_TOWER]]]],
 ];
 
 const getBuildingSpace = (room: Room): CostMatrix => {
@@ -308,6 +310,47 @@ const invertBuildingSpaceForDT = (buildingSpace: CostMatrix): CostMatrix => {
   return cm;
 };
 
+const nextStructure = (
+  room: Room,
+  placements: [BuildableStructureConstant, ...Coordinates][]
+) => {
+  const { controller } = room;
+  if (!controller) {
+    return undefined;
+  }
+
+  const towers = room
+    .find(FIND_MY_STRUCTURES)
+    .filter((s) => s.structureType === STRUCTURE_TOWER);
+  const index = placements.findIndex(([type]) => {
+    if (type === STRUCTURE_ROAD) {
+      return false;
+    }
+
+    if (
+      towers.length === 0 &&
+      (CONTROLLER_STRUCTURES[STRUCTURE_TOWER][controller.level] ?? 0) > 0
+    ) {
+      return type === STRUCTURE_TOWER;
+    }
+
+    const placed =
+      room
+        .find(FIND_MY_CONSTRUCTION_SITES)
+        .filter((s) => s.structureType === type).length +
+      room
+        .find(FIND_STRUCTURES)
+        .filter((s) => s.structureType === type && ('my' in s ? s.my : true))
+        .length;
+    return (CONTROLLER_STRUCTURES[type][controller.level] ?? 0) > placed;
+  });
+
+  if (index === -1) {
+    return undefined;
+  }
+  return placements.splice(index, 1)[0];
+};
+
 export function* planRoom(roomName: string): Routine {
   const room = Game.rooms[roomName];
   if (!room) {
@@ -391,10 +434,12 @@ export function* planRoom(roomName: string): Routine {
       )
       .filter(([type, x, y]) => {
         const [structure] = room.lookForAt(LOOK_STRUCTURES, x, y);
-        if (structure && structure.structureType !== type) {
-          logger.warn(
-            `Wrong structure, ${structure.structureType} at ${x},${y}, want ${type}`
-          );
+        if (structure) {
+          if (structure.structureType !== type) {
+            logger.warn(
+              `Wrong structure, ${structure.structureType} at ${x},${y}, want ${type}`
+            );
+          }
           return false;
         }
         const [ruin] = room.lookForAt(LOOK_RUINS, x, y);
@@ -416,9 +461,9 @@ export function* planRoom(roomName: string): Routine {
       if (!room) {
         return;
       }
-      if (room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
-        const start = Game.time;
-        while (Game.time < start + 100) {
+      const [site] = room.find(FIND_MY_CONSTRUCTION_SITES);
+      if (site) {
+        while (Game.getObjectById(site.id) !== null) {
           yield sleep();
         }
         continue;
@@ -428,29 +473,19 @@ export function* planRoom(roomName: string): Routine {
         return;
       }
 
-      const index = toBePlaced.findIndex(([type]) => {
-        if (type === STRUCTURE_ROAD) {
-          return false;
-        }
+      const placement = nextStructure(room, toBePlaced);
 
-        const placed =
-          room
-            .find(FIND_MY_CONSTRUCTION_SITES)
-            .filter((s) => s.structureType === type).length +
-          room.find(FIND_MY_STRUCTURES).filter((s) => s.structureType === type)
-            .length;
-        return (CONTROLLER_STRUCTURES[type][controller.level] ?? 0) > placed;
-      });
-      if (index === -1) {
+      if (!placement) {
         const start = controller.level;
-        while (start < controller.level) {
+        if (!(controller.level + 1 in CONTROLLER_LEVELS)) {
+          logger.info(`${roomName} construction done`);
+          return;
+        }
+        logger.info('No structures left, waiting for next RCL');
+        while (start <= controller.level) {
           yield sleep();
         }
         continue;
-      }
-      const [placement] = toBePlaced.splice(index, 1);
-      if (!placement) {
-        throw new Error('Something went wrong with our array');
       }
       const [type, x, y] = placement;
       const res = room.createConstructionSite(x, y, type);
