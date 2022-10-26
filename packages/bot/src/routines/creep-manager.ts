@@ -2,6 +2,51 @@ import { Routine } from 'coroutines';
 import { sleep } from '../library/sleep';
 import { isDefined, restartOnTickChange } from '../utils';
 
+const pickupEnergy = (worker: Creep, includeContainer = true) => {
+  const containers = includeContainer
+    ? worker.room
+        .find(FIND_STRUCTURES)
+        .filter(isStructureType(STRUCTURE_CONTAINER))
+        .filter(
+          (s) =>
+            s.store.getUsedCapacity(RESOURCE_ENERGY) >=
+            worker.store.getFreeCapacity()
+        )
+    : [];
+  const energyDrops = worker.room
+    .find(FIND_DROPPED_RESOURCES, {
+      filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
+    })
+    .filter((s) => s.amount >= worker.store.getFreeCapacity());
+
+  const ruins = worker.room
+    .find(FIND_RUINS)
+    .filter(
+      (s) =>
+        s.store.getUsedCapacity(RESOURCE_ENERGY) >=
+        worker.store.getFreeCapacity()
+    );
+  const tombstones = worker.room
+    .find(FIND_TOMBSTONES)
+    .filter(
+      (s) =>
+        s.store.getUsedCapacity(RESOURCE_ENERGY) >=
+        worker.store.getFreeCapacity()
+    );
+  const targets = [...containers, ...energyDrops, ...ruins, ...tombstones];
+  const target = worker.pos.findClosestByRange(targets);
+
+  if (!target) {
+    return;
+  }
+  worker.moveTo(target);
+  if ('resourceType' in target) {
+    worker.pickup(target);
+  } else {
+    worker.withdraw(target, RESOURCE_ENERGY);
+  }
+};
+
 const runMiners = () => {
   const miners = Object.values(Game.creeps).filter(
     (creep) => creep.my && creep.name.startsWith('miner')
@@ -76,21 +121,9 @@ const runWorkers = () => {
         ? buildings[0]
         : worker.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES);
 
-    const pickupEnergy = () => {
-      const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
-        filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
-      });
-      const resource = _.max(energyDrops, 'amount');
-      if (!resource) {
-        return;
-      }
-      worker.moveTo(resource);
-      worker.pickup(resource);
-    };
-
     if (!target) {
       if (worker.store.getFreeCapacity()) {
-        pickupEnergy();
+        pickupEnergy(worker);
       }
       continue;
     }
@@ -106,7 +139,7 @@ const runWorkers = () => {
         worker.repair(target);
       }
     } else {
-      pickupEnergy();
+      pickupEnergy(worker);
     }
   }
 };
@@ -133,18 +166,15 @@ const runUpgraders = () => {
       upgrader.moveTo(controller, { range: 3 });
       upgrader.upgradeController(controller);
     } else {
-      const energyDrops = upgrader.room.find(FIND_DROPPED_RESOURCES, {
-        filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
-      });
-      const resource = _.max(energyDrops, 'amount');
-      if (!resource) {
-        continue;
-      }
-      upgrader.moveTo(resource);
-      upgrader.pickup(resource);
+      pickupEnergy(upgrader);
     }
   }
 };
+
+const isStructureType =
+  <T extends StructureConstant[]>(...types: T) =>
+  (structure: AnyStructure): structure is ConcreteStructure<T[number]> =>
+    types.includes(structure.structureType);
 
 const runHaulers = () => {
   const haulers = Object.values(Game.creeps).filter(
@@ -154,10 +184,17 @@ const runHaulers = () => {
   for (const hauler of haulers) {
     if (hauler.store.getFreeCapacity() < 75) {
       const target = hauler.pos.findClosestByRange(FIND_STRUCTURES, {
-        filter: (structure): structure is StructureSpawn | StructureContainer =>
-          (structure.structureType === STRUCTURE_CONTAINER ||
-            structure.structureType === STRUCTURE_SPAWN) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        filter: (
+          structure
+        ): structure is
+          | StructureSpawn
+          | StructureContainer
+          | StructureExtension =>
+          isStructureType(
+            STRUCTURE_CONTAINER,
+            STRUCTURE_SPAWN,
+            STRUCTURE_EXTENSION
+          )(structure) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
       });
       if (!target) {
         continue;
@@ -165,15 +202,7 @@ const runHaulers = () => {
       hauler.moveTo(target);
       hauler.transfer(target, RESOURCE_ENERGY);
     } else {
-      const energyDrops = hauler.room.find(FIND_DROPPED_RESOURCES, {
-        filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
-      });
-      const resource = _.max(energyDrops, 'amount');
-      if (!resource) {
-        continue;
-      }
-      hauler.moveTo(resource);
-      hauler.pickup(resource);
+      pickupEnergy(hauler, false);
     }
   }
 };
