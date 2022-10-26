@@ -379,6 +379,7 @@ export function* planRoom(roomName: string): Routine {
   });
 
   go(function* constructRoom() {
+    yield;
     const toBePlaced = placedStructures
       .filter(
         (
@@ -396,6 +397,11 @@ export function* planRoom(roomName: string): Routine {
           );
           return false;
         }
+        const [ruin] = room.lookForAt(LOOK_RUINS, x, y);
+        if (ruin) {
+          logger.warn(`Ruin at ${x},${y}, want ${type}`);
+          return false;
+        }
         const [site] = room.lookForAt(LOOK_CONSTRUCTION_SITES, x, y);
         if (site?.structureType !== type) {
           site?.remove();
@@ -406,6 +412,10 @@ export function* planRoom(roomName: string): Routine {
 
     while (toBePlaced.length > 0) {
       yield;
+      const room = Game.rooms[roomName];
+      if (!room) {
+        return;
+      }
       if (room.find(FIND_MY_CONSTRUCTION_SITES).length >= 5) {
         const start = Game.time;
         while (Game.time < start + 100) {
