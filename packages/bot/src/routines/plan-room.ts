@@ -1,6 +1,5 @@
 import { Routine } from 'coroutines';
 import { SubRoutine } from 'coroutines';
-import { SourceMapConsumer } from 'source-map';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -456,7 +455,6 @@ export function* planRoom(roomName: string): Routine {
       });
 
     while (toBePlaced.length > 0) {
-      yield;
       const room = Game.rooms[roomName];
       if (!room) {
         return;
@@ -494,6 +492,7 @@ export function* planRoom(roomName: string): Routine {
         // This will keep erroring, so give up.
         return;
       }
+      yield sleep();
     }
   });
 }
