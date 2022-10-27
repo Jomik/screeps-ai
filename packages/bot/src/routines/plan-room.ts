@@ -50,53 +50,58 @@ function* getRoadTo(
   return res.path.map(({ x, y }) => [x, y]);
 }
 
-type Stamp = Array<BuildableStructureConstant | 'empty' | 'blocked'>[];
+type Stamp = Array<BuildableStructureConstant | EMPTY | BLOCKED>[];
 type StructurePlacement = [
-  BuildableStructureConstant | 'empty' | 'blocked',
+  BuildableStructureConstant | EMPTY | BLOCKED,
   ...Coordinates
 ];
 
+const EMPTY = 'empty';
+type EMPTY = typeof EMPTY;
+const BLOCKED = 'blocked';
+type BLOCKED = typeof BLOCKED;
+
 // prettier-ignore
 const HubStamp: Stamp = [
-  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,'empty']        ,
+  [EMPTY        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,EMPTY]        ,
   [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
-  [STRUCTURE_ROAD ,STRUCTURE_SPAWN     ,'blocked'           ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_SPAWN     ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_SPAWN     ,BLOCKED           ,STRUCTURE_EXTENSION ,BLOCKED           ,STRUCTURE_SPAWN     ,STRUCTURE_ROAD] ,
   [STRUCTURE_ROAD ,STRUCTURE_CONTAINER ,STRUCTURE_EXTENSION ,STRUCTURE_LINK      ,STRUCTURE_EXTENSION ,STRUCTURE_CONTAINER ,STRUCTURE_ROAD] ,
-  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_EXTENSION ,'blocked'           ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
+  [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,BLOCKED           ,STRUCTURE_EXTENSION ,BLOCKED           ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
   [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_SPAWN     ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
-  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,'empty']
+  [EMPTY        ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,STRUCTURE_ROAD      ,EMPTY]
 ];
 
 // prettier-ignore
 const Lab1Stamp: Stamp = [
-  [STRUCTURE_ROAD , STRUCTURE_LAB  , STRUCTURE_LAB  , 'empty']       ,
+  [STRUCTURE_ROAD , STRUCTURE_LAB  , STRUCTURE_LAB  , EMPTY]       ,
   [STRUCTURE_LAB  , STRUCTURE_ROAD , STRUCTURE_LAB  , STRUCTURE_LAB] ,
   [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_ROAD , STRUCTURE_LAB] ,
-  ['empty'        , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_ROAD] ,
+  [EMPTY        , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_ROAD] ,
 ];
 
 // prettier-ignore
 const Lab2Stamp: Stamp = [
-  ['blocked'      , STRUCTURE_LAB  , STRUCTURE_LAB  , 'blocked']      ,
+  [BLOCKED      , STRUCTURE_LAB  , STRUCTURE_LAB  , BLOCKED]      ,
   [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB]  ,
   [STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB  , STRUCTURE_LAB]  ,
 ];
 
 // prettier-ignore
 const ExtensionPlusStamp: Stamp = [
-  ['empty'        ,'empty'             ,STRUCTURE_ROAD      ,'empty'             ,'empty']        ,
-  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,'empty']        ,
+  [EMPTY        ,EMPTY             ,STRUCTURE_ROAD      ,EMPTY             ,EMPTY]        ,
+  [EMPTY        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,EMPTY]        ,
   [STRUCTURE_ROAD ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD] ,
-  ['empty'        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,'empty']        ,
-  ['empty'        ,'empty'             ,STRUCTURE_ROAD      ,'empty'             ,'empty']
+  [EMPTY        ,STRUCTURE_ROAD      ,STRUCTURE_EXTENSION ,STRUCTURE_ROAD      ,EMPTY]        ,
+  [EMPTY        ,EMPTY             ,STRUCTURE_ROAD      ,EMPTY             ,EMPTY]
 ];
 
 // prettier-ignore
 const StorageStamp: Stamp = [
-  ['empty'        , STRUCTURE_ROAD    , STRUCTURE_ROAD     , 'empty']        ,
+  [EMPTY        , STRUCTURE_ROAD    , STRUCTURE_ROAD     , EMPTY]        ,
   [STRUCTURE_ROAD , STRUCTURE_STORAGE , STRUCTURE_TERMINAL , STRUCTURE_ROAD] ,
-  [STRUCTURE_ROAD , STRUCTURE_FACTORY , STRUCTURE_ROAD     , 'empty']        ,
-  ['empty'        , STRUCTURE_ROAD    , 'empty'            , 'empty']        ,
+  [STRUCTURE_ROAD , STRUCTURE_FACTORY , STRUCTURE_ROAD     , EMPTY]        ,
+  [EMPTY        , STRUCTURE_ROAD    , EMPTY            , EMPTY]        ,
 ];
 
 const Stamps: Array<[count: number, stamps: Stamp[]]> = [
@@ -184,13 +189,13 @@ const updateCMWithPlacement = (
   buildingSpace: CostMatrix
 ) => {
   for (const [structureType, x, y] of placement) {
-    if (structureType === 'empty') {
+    if (structureType === EMPTY) {
       continue;
     }
     buildingSpace.set(
       x,
       y,
-      structureType === 'blocked'
+      structureType === BLOCKED
         ? 254
         : structureType === STRUCTURE_CONTAINER
         ? ContainerCost
@@ -212,7 +217,7 @@ function* canPlaceStamp(
   const placement = placeStamp(stamp, center);
 
   for (const [structureType, x, y] of placement) {
-    if (structureType === 'empty') {
+    if (structureType === EMPTY) {
       continue;
     }
     const cost = buildingSpace.get(x, y);
@@ -446,11 +451,22 @@ export function* planRoom(roomName: string): Routine {
     .filter(isDefined);
 
   placedStructures.push(...containers);
+  yield;
 
   go(function* roomPlanVisuals() {
     const visuals = new RoomVisual();
     for (const [structureType, x, y] of placedStructures) {
-      if (structureType === 'empty' || structureType === 'blocked') {
+      if (structureType === EMPTY) {
+        continue;
+      }
+
+      if (structureType === BLOCKED) {
+        visuals.circle(x, y, {
+          stroke: 'red',
+          fill: 'transparent',
+          radius: 0.25,
+          opacity: 0.2,
+        });
         continue;
       }
       visuals.structure(x, y, structureType, {
@@ -476,7 +492,7 @@ export function* planRoom(roomName: string): Routine {
       // room.visual.import(overlayCostMatrix(buildingSpace));
       room.visual.import(buildingVisuals);
       room.visual.circle(...origin, {
-        fill: 'red',
+        fill: 'green',
         radius: 0.25,
       });
       yield sleep();
@@ -491,7 +507,7 @@ export function* planRoom(roomName: string): Routine {
           placement
         ): placement is [BuildableStructureConstant, ...Coordinates] => {
           const [type] = placement;
-          return type !== 'empty' && type !== 'blocked';
+          return type !== EMPTY && type !== BLOCKED;
         }
       )
       .filter(([type, x, y]) => {
