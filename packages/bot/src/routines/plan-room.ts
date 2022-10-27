@@ -313,6 +313,7 @@ const invertBuildingSpaceForDT = (buildingSpace: CostMatrix): CostMatrix => {
 const nextStructure = (
   room: Room,
   placements: [BuildableStructureConstant, ...Coordinates][],
+  includeContainer = false,
   includeRoad = false
 ): [BuildableStructureConstant, ...Coordinates] | undefined => {
   const { controller } = room;
@@ -323,7 +324,12 @@ const nextStructure = (
   const towers = room
     .find(FIND_MY_STRUCTURES)
     .filter((s) => s.structureType === STRUCTURE_TOWER);
+  const spawns = room.find(FIND_MY_SPAWNS);
   const index = placements.findIndex(([type, x, y]) => {
+    if (spawns.length === 0) {
+      return type === STRUCTURE_SPAWN;
+    }
+
     if (type === STRUCTURE_ROAD) {
       return (
         includeRoad &&
@@ -332,6 +338,14 @@ const nextStructure = (
           .filter((res) => res.structure.structureType !== STRUCTURE_ROAD)
           .length > 0
       );
+    }
+
+    if (
+      type === STRUCTURE_CONTAINER &&
+      controller.level < 3 &&
+      !includeContainer
+    ) {
+      return false;
     }
 
     if (
@@ -353,8 +367,11 @@ const nextStructure = (
   });
 
   if (index === -1) {
-    if (!includeRoad) {
+    if (!includeContainer) {
       return nextStructure(room, placements, true);
+    }
+    if (!includeRoad) {
+      return nextStructure(room, placements, true, true);
     }
     return undefined;
   }
