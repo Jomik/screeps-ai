@@ -1,7 +1,7 @@
 import { Routine } from 'coroutines';
 import { Coordinates, createLogger, expandPosition } from '../library';
 import { sleep } from '../library/sleep';
-import { isDefined, MaxControllerLevel } from '../utils';
+import { isDefined, isStructureType, MaxControllerLevel } from '../utils';
 
 const MaxWorkers = 5;
 const MaxUpgraders = 5;
@@ -63,24 +63,21 @@ export function* spawnManager(): Routine {
     spawn.spawnCreep(body, `worker-${Game.time}`);
   };
 
-  const spawnAttacker = () => {
-    getSpawn().spawnCreep([MOVE, ATTACK], `attacker-${Game.time}`);
-  };
-
   for (;;) {
     while (getSpawn().spawning) {
       yield sleep();
     }
     const spawn = getSpawn();
+    const { room } = spawn;
 
-    const sources = spawn.room.find(FIND_SOURCES);
-    const terrain = spawn.room.getTerrain();
+    const sources = room.find(FIND_SOURCES);
+    const terrain = room.getTerrain();
     const goal = spawn.pos;
 
     const slots = sources
       .map((source) =>
         expandPosition([source.pos.x, source.pos.y])
-          .map(([x, y]) => new RoomPosition(x, y, spawn.room.name))
+          .map(([x, y]) => new RoomPosition(x, y, room.name))
           .filter(({ x, y }) => !(terrain.get(x, y) & TERRAIN_MASK_WALL))
           .sort((a, b) => {
             const adistx = Math.abs(goal.x - a.x);
@@ -98,20 +95,35 @@ export function* spawnManager(): Routine {
       hauler: haulers = [],
       upgrader: upgraders = [],
       worker: workers = [],
-      attacker: attackers = [],
     } = _.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]);
-    const enemies = spawn.room.find(FIND_HOSTILE_CREEPS);
 
     const hasConstructionSite =
-      spawn.room.find(FIND_MY_CONSTRUCTION_SITES).length > 0;
+      room.find(FIND_MY_CONSTRUCTION_SITES).length > 0;
 
-    if (attackers.length < enemies.length) {
-      spawnAttacker();
+    const energyInRoom = [
+      ...room.find(FIND_DROPPED_RESOURCES, {
+        filter: (resource): resource is Resource<RESOURCE_ENERGY> =>
+          resource.resourceType === RESOURCE_ENERGY,
+      }),
+      ...room
+        .find(FIND_STRUCTURES)
+        .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE)),
+    ].reduce(
+      (acc, cur) =>
+        acc +
+        ('resourceType' in cur
+          ? cur.amount
+          : cur.store.getUsedCapacity(RESOURCE_ENERGY)),
+      0
+    );
+
+    if (haulers.length === 0 && energyInRoom >= 300) {
+      spawnHauler();
     } else if (miners.length === 0) {
       const closestSlot = spawn.pos.findClosestByPath(slots);
       if (!closestSlot) {
         // TODO
-        // this.logger.error('No source slot', spawn.room);
+        // this.logger.error('No source slot', room);
       } else {
         spawnMiner([closestSlot.x, closestSlot.y, closestSlot.roomName]);
       }
@@ -131,7 +143,7 @@ export function* spawnManager(): Routine {
     } else if (haulers.length < 2) {
       spawnHauler();
     } else {
-      const controller = spawn.room.controller;
+      const controller = room.controller;
       if (
         controller &&
         (controller.level < MaxControllerLevel ||

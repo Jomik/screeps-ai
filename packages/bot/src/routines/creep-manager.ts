@@ -1,7 +1,7 @@
 import { Routine } from 'coroutines';
 import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
-import { isDefined, restartOnTickChange } from '../utils';
+import { isDefined, isStructureType, restartOnTickChange } from '../utils';
 
 const logger = createLogger('creep-manager');
 
@@ -161,11 +161,6 @@ const runUpgraders = () => {
     }
   }
 };
-
-const isStructureType =
-  <T extends StructureConstant[]>(...types: T) =>
-  (structure: AnyStructure): structure is ConcreteStructure<T[number]> =>
-    types.includes(structure.structureType);
 
 const runHaulers = () => {
   const haulers = Object.values(Game.creeps).filter(

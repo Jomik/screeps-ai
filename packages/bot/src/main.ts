@@ -9,6 +9,9 @@ import { canRun, go, run } from './runner';
 
 go(main);
 
+declare const global: { go: typeof go };
+global.go = go;
+
 export const loop = ErrorMapper.wrapLoop(
   wrapWithMemoryHack(() => {
     resetStats();
