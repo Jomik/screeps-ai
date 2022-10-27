@@ -12,7 +12,7 @@ import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
-import { MaxControllerLevel } from '../utils';
+import { isDefined, MaxControllerLevel, min } from '../utils';
 
 const logger = createLogger('room-planner');
 
@@ -114,13 +114,6 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   const terrain = room.getTerrain();
   const cm = new PathFinder.CostMatrix();
 
-  // Set walls to 0 and rest to Infinity.
-  for (let x = 0; x <= 49; ++x) {
-    for (let y = 0; y <= 49; ++y) {
-      cm.set(x, y, terrain.get(x, y) & TERRAIN_MASK_WALL ? Infinity : 0);
-    }
-  }
-
   // Block off tiles around exit tiles.
   for (const { x, y } of room.find(FIND_EXIT)) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
@@ -152,6 +145,15 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
       cm.set(x, y, 254)
     );
+  }
+
+  // Set walls to 0 and rest to Infinity.
+  for (let x = 0; x <= 49; ++x) {
+    for (let y = 0; y <= 49; ++y) {
+      if (terrain.get(x, y) & TERRAIN_MASK_WALL) {
+        cm.set(x, y, Infinity);
+      }
+    }
   }
 
   return cm;
@@ -417,6 +419,33 @@ export function* planRoom(roomName: string): Routine {
     placedStructures.push(...structures);
   }
   yield;
+  const [, storageX, storageY] = placedStructures.find(
+    ([type]) => type === STRUCTURE_STORAGE
+  ) ?? ['origin', ...origin];
+  const containers = [...room.find(FIND_SOURCES), room.controller]
+    .filter(isDefined)
+    .map((target) => {
+      const { pos } = target;
+      const range = target instanceof Source ? 1 : 3;
+      const { path } = PathFinder.search(
+        new RoomPosition(storageX, storageY, roomName),
+        { pos, range },
+        {
+          roomCallback: () => buildingSpace,
+        }
+      );
+      const tile = path[path.length - 1];
+
+      if (!tile) {
+        logger.warn(`No container position found for ${target.id}`);
+        return undefined;
+      }
+
+      return ['container', tile.x, tile.y] as StructurePlacement;
+    })
+    .filter(isDefined);
+
+  placedStructures.push(...containers);
 
   go(function* roomPlanVisuals() {
     const visuals = new RoomVisual();
