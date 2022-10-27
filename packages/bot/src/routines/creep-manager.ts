@@ -91,6 +91,32 @@ const runAttackers = () => {
   }
 };
 
+const getStoredWorkerTarget = (
+  worker: Creep
+): AnyStructure | ConstructionSite | null => {
+  const storedTarget = worker.memory.target
+    ? Game.getObjectById(worker.memory.target)
+    : null;
+  if (!storedTarget) {
+    worker.memory.target = undefined;
+    return null;
+  }
+
+  if (storedTarget instanceof ConstructionSite) {
+    if (storedTarget.progress >= storedTarget.progressTotal) {
+      worker.memory.target = undefined;
+      return null;
+    }
+    return storedTarget;
+  }
+
+  if (storedTarget.hits >= storedTarget.hitsMax) {
+    worker.memory.target = undefined;
+    return null;
+  }
+  return storedTarget;
+};
+
 const runWorkers = () => {
   const workers = Object.values(Game.creeps).filter(
     (creep) => creep.my && creep.name.startsWith('worker')
@@ -98,27 +124,30 @@ const runWorkers = () => {
 
   for (const worker of workers) {
     const room = worker.room;
-    const buildings = room
-      .find(FIND_STRUCTURES, {
-        filter: (s) =>
-          s.hits < s.hitsMax / 2 && s.structureType !== STRUCTURE_WALL,
-      })
-      .sort((a, b) => a.hits - b.hits);
+
     const target =
-      buildings.length > 0
-        ? buildings[0]
-        : worker.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES);
+      getStoredWorkerTarget(worker) ??
+      room
+        .find(FIND_STRUCTURES, {
+          filter: (s) =>
+            s.hits < s.hitsMax / 2 && s.structureType !== STRUCTURE_WALL,
+        })
+        .sort((a, b) => a.hits - b.hits)[0] ??
+      worker.pos.findClosestByRange(FIND_MY_CONSTRUCTION_SITES);
 
     if (!target) {
-      if (worker.store.getFreeCapacity()) {
-        pickupEnergy(worker, worker.store.getFreeCapacity());
+      if (worker.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
+        worker.drop(RESOURCE_ENERGY);
       }
       continue;
     }
 
+    worker.memory.target = target.id;
+
     if (
-      (worker.store.getUsedCapacity() && worker.pos.inRangeTo(target, 3)) ||
-      !worker.store.getFreeCapacity()
+      (worker.store.getUsedCapacity(RESOURCE_ENERGY) &&
+        worker.pos.inRangeTo(target, 3)) ||
+      !worker.store.getFreeCapacity(RESOURCE_ENERGY)
     ) {
       worker.moveTo(target, { range: 3 });
       if (target instanceof ConstructionSite) {
@@ -127,7 +156,7 @@ const runWorkers = () => {
         worker.repair(target);
       }
     } else {
-      pickupEnergy(worker, worker.store.getFreeCapacity());
+      pickupEnergy(worker, worker.store.getFreeCapacity(RESOURCE_ENERGY));
     }
   }
 };
