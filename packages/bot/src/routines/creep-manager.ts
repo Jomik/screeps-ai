@@ -10,7 +10,10 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
     ? worker.room
         .find(FIND_STRUCTURES)
         .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
-    : [];
+    : worker.room
+        .find(FIND_STRUCTURES)
+        .filter(isStructureType(STRUCTURE_CONTAINER))
+        .filter((s) => s.pos.findInRange(FIND_SOURCES, 1).length > 0);
   const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
     filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
   });
@@ -221,6 +224,7 @@ const runHaulers = () => {
       hauler.pos.findClosestByRange(FIND_STRUCTURES, {
         filter: (structure): structure is StructureContainer =>
           isStructureType(STRUCTURE_CONTAINER)(structure) &&
+          structure.pos.findInRange(FIND_SOURCES, 1).length === 0 &&
           structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
       }) ??
       hauler.room.storage;
