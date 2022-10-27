@@ -13,6 +13,7 @@ const calculateBodyCost = (body: BodyPartConstant[]): number =>
 
 export function* spawnManager(): Routine {
   const getSpawn = (): StructureSpawn => {
+    // TODO: This is slightly bad.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Game.spawns['Spawn1']!;
   };
@@ -64,7 +65,7 @@ export function* spawnManager(): Routine {
   };
 
   for (;;) {
-    while (getSpawn().spawning) {
+    while (!getSpawn() || getSpawn().spawning) {
       yield sleep();
     }
     const spawn = getSpawn();
@@ -116,6 +117,13 @@ export function* spawnManager(): Routine {
           : cur.store.getUsedCapacity(RESOURCE_ENERGY)),
       0
     );
+    const takenSlots = miners
+      .filter((creep) => (creep.ticksToLive ?? 0) > 100)
+      .map((creep) => creep.memory.slot)
+      .filter(isDefined);
+    const freeSlots = slots.filter(
+      (pos) => !takenSlots.some(([x, y]) => pos.x === x && pos.y === y)
+    );
 
     if (haulers.length === 0 && energyInRoom >= 300) {
       spawnHauler();
@@ -129,13 +137,7 @@ export function* spawnManager(): Routine {
       }
     } else if (haulers.length === 0) {
       spawnHauler();
-    } else if (miners.length < slots.length) {
-      const takenSlots = miners
-        .map((creep) => creep.memory.slot)
-        .filter(isDefined);
-      const freeSlots = slots.filter(
-        (pos) => !takenSlots.some(([x, y]) => pos.x === x && pos.y === y)
-      );
+    } else if (freeSlots.length > 0) {
       const freeSlot = spawn.pos.findClosestByPath(freeSlots);
       if (freeSlot) {
         spawnMiner([freeSlot.x, freeSlot.y, freeSlot.roomName]);
@@ -149,15 +151,22 @@ export function* spawnManager(): Routine {
         (controller.level < MaxControllerLevel ||
           controller.ticksToDowngrade < 500) &&
         upgraders.length < workers.length &&
-        upgraders.length < MaxUpgraders
+        upgraders.length < MaxUpgraders * Math.min(controller.level / 4, 1)
       ) {
         spawnUpgrader();
       } else if (
-        (hasConstructionSite || workers.length < 1) &&
-        workers.length < MaxWorkers
+        (hasConstructionSite ||
+          workers.length < 1 ||
+          (controller &&
+            controller.progressTotal - controller.progress < 100)) &&
+        workers.length <
+          MaxWorkers * Math.min((room.controller?.level ?? 4) / 4, 1)
       ) {
         spawnWorker();
-      } else if (upgraders.length < MaxUpgraders) {
+      } else if (
+        controller &&
+        upgraders.length < MaxUpgraders - workers.length + 1
+      ) {
         spawnUpgrader();
       }
     }
