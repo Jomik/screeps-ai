@@ -232,8 +232,9 @@ const runHaulers = () => {
       target.store.getFreeCapacity(RESOURCE_ENERGY)
     );
     if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) >= need) {
-      hauler.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
-      hauler.transfer(target, RESOURCE_ENERGY);
+      if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
+        hauler.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
+      }
     } else {
       pickupEnergy(
         hauler,
