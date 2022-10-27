@@ -126,19 +126,10 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     );
   }
 
-  // Block off tiles around sources.
+  // Block off tiles around sources and minerals.
   for (const {
     pos: { x, y },
-  } of room.find(FIND_SOURCES)) {
-    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 254)
-    );
-  }
-
-  // Block off tiles around minerals.
-  for (const {
-    pos: { x, y },
-  } of room.find(FIND_MINERALS)) {
+  } of [...room.find(FIND_SOURCES), ...room.find(FIND_MINERALS)]) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
       cm.set(x, y, 254)
     );
@@ -432,7 +423,7 @@ export function* planRoom(roomName: string): Routine {
     .map((target) => {
       const { pos } = target;
       const range = target instanceof Source ? 1 : 3;
-      const { path } = PathFinder.search(
+      const { path, incomplete } = PathFinder.search(
         new RoomPosition(storageX, storageY, roomName),
         { pos, range },
         {
@@ -441,7 +432,7 @@ export function* planRoom(roomName: string): Routine {
       );
       const tile = path[path.length - 1];
 
-      if (!tile) {
+      if (!tile || incomplete) {
         logger.warn(`No container position found for ${target.id}`);
         return undefined;
       }
