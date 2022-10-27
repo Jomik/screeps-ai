@@ -33,12 +33,16 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   if (!target) {
     return;
   }
-  worker.moveTo(target);
   if ('resourceType' in target) {
-    worker.pickup(target);
+    if (worker.pickup(target) === OK) {
+      return;
+    }
   } else {
-    worker.withdraw(target, RESOURCE_ENERGY);
+    if (worker.withdraw(target, RESOURCE_ENERGY) === OK) {
+      return;
+    }
   }
+  worker.moveTo(target);
 };
 
 const runMiners = () => {
