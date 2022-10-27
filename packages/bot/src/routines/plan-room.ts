@@ -419,22 +419,28 @@ export function* planRoom(roomName: string): Routine {
   yield;
 
   go(function* roomPlanVisuals() {
+    const visuals = new RoomVisual();
     for (const [structureType, x, y] of placedStructures) {
       if (structureType === 'empty' || structureType === 'blocked') {
         continue;
       }
-      room.visual.structure(x, y, structureType, {
+      visuals.structure(x, y, structureType, {
         opacity: 0.2,
       });
     }
-    room.visual.connectRoads({
+    visuals.connectRoads({
       opacity: 0.2,
     });
 
-    const buildingVisuals = room.visual.export();
-    room.visual.clear();
+    const buildingVisuals = visuals.export();
+    visuals.clear();
+    yield;
 
     for (;;) {
+      const room = Game.rooms[roomName];
+      if (!room) {
+        return;
+      }
       // room.visual.import(
       //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)
       // );

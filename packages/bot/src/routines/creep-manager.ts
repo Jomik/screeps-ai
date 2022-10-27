@@ -1,7 +1,7 @@
 import { Routine } from 'coroutines';
 import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
-import { isDefined, isStructureType, restartOnTickChange } from '../utils';
+import { isDefined, isStructureType, max, restartOnTickChange } from '../utils';
 
 const logger = createLogger('creep-manager');
 
@@ -26,7 +26,7 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   );
   const target =
     worker.pos.findClosestByRange(targetsWithNeeded) ??
-    _.max(targets, (s) =>
+    max(targets, (s) =>
       'resourceType' in s ? s.amount : s.store.getUsedCapacity(RESOURCE_ENERGY)
     );
 

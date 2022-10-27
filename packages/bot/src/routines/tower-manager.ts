@@ -1,12 +1,12 @@
 import { sleep } from '../library/sleep';
-import { isStructureType } from '../utils';
+import { isStructureType, min } from '../utils';
 
 export function* towerManager() {
   for (;;) {
     yield sleep();
     for (const room of Object.values(Game.rooms)) {
-      const hostiles = room.find(FIND_HOSTILE_CREEPS);
-      if (hostiles.length === 0) {
+      const target = min(room.find(FIND_HOSTILE_CREEPS), (v) => v.hits);
+      if (!target) {
         continue;
       }
 
@@ -14,7 +14,7 @@ export function* towerManager() {
         .find(FIND_STRUCTURES)
         .filter(isStructureType(STRUCTURE_TOWER));
       for (const tower of towers) {
-        tower.attack(_.min(hostiles, 'hits'));
+        tower.attack(target);
       }
     }
   }

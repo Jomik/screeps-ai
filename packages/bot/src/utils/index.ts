@@ -58,3 +58,15 @@ export const getGuid = (): string => {
 export const objectEntries = <T extends string, V>(
   obj: Partial<Record<T, V>>
 ): [T, V][] => Object.entries(obj).filter(isDefined) as [T, V][];
+
+export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
+  arr.reduce<{ value: number; item: T | null }>(
+    (prev, item) => {
+      const value = map(item);
+      return value > prev.value ? { value, item } : prev;
+    },
+    { value: -Infinity, item: null }
+  ).item;
+
+export const min = <T>(arr: T[], map: (v: T) => number): T | null =>
+  max(arr, (v) => -map(v));
