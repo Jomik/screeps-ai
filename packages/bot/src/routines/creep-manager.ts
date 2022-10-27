@@ -64,17 +64,11 @@ const runMiners = () => {
       continue;
     }
 
-    const site = miner.pos.findInRange(FIND_CONSTRUCTION_SITES, 1)[0];
-    if (site) {
-      miner.build(site);
-      continue;
-    }
-
     const container = miner.pos.findClosestByRange(FIND_STRUCTURES, {
       filter: (structure): structure is StructureContainer =>
         structure.structureType === STRUCTURE_CONTAINER,
     });
-    if (container && miner.pos.isNearTo(container)) {
+    if (container && miner.pos.getRangeTo(container) === 1) {
       miner.transfer(container, RESOURCE_ENERGY);
     }
   }
