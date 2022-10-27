@@ -126,7 +126,7 @@ export function* spawnManager(): Routine {
     } else {
       if (
         workers.length < upgraders.length &&
-        hasConstructionSite &&
+        (hasConstructionSite || workers.length < 2) &&
         workers.length < MaxWorkers
       ) {
         spawnWorker();
