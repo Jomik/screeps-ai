@@ -42,7 +42,7 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
       return;
     }
   }
-  worker.moveTo(target);
+  worker.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
 };
 
 const runMiners = () => {
@@ -89,7 +89,10 @@ const runAttackers = () => {
   for (const attacker of attackers) {
     const enemy = attacker.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
     if (enemy) {
-      attacker.moveTo(enemy, { range: 1 });
+      attacker.moveTo(enemy, {
+        range: 1,
+        visualizePathStyle: { lineStyle: 'dashed' },
+      });
       attacker.attack(enemy);
     }
   }
@@ -153,7 +156,10 @@ const runWorkers = () => {
         worker.pos.inRangeTo(target, 3)) ||
       !worker.store.getFreeCapacity(RESOURCE_ENERGY)
     ) {
-      worker.moveTo(target, { range: 3 });
+      worker.moveTo(target, {
+        range: 3,
+        visualizePathStyle: { lineStyle: 'dashed' },
+      });
       if (target instanceof ConstructionSite) {
         worker.build(target);
       } else {
@@ -184,7 +190,10 @@ const runUpgraders = () => {
         upgrader.pos.inRangeTo(controller, 3)) ||
       !upgrader.store.getFreeCapacity()
     ) {
-      upgrader.moveTo(controller, { range: 3 });
+      upgrader.moveTo(controller, {
+        range: 3,
+        visualizePathStyle: { lineStyle: 'dashed' },
+      });
       upgrader.upgradeController(controller);
     } else {
       pickupEnergy(upgrader, upgrader.store.getFreeCapacity());
@@ -223,7 +232,7 @@ const runHaulers = () => {
       target.store.getFreeCapacity(RESOURCE_ENERGY)
     );
     if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) >= need) {
-      hauler.moveTo(target);
+      hauler.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
       hauler.transfer(target, RESOURCE_ENERGY);
     } else {
       pickupEnergy(
