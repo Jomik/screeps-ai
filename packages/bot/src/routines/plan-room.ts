@@ -12,6 +12,7 @@ import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
+import { MaxControllerLevel } from '../utils';
 
 const logger = createLogger('room-planner');
 
@@ -475,7 +476,7 @@ export function* planRoom(roomName: string): Routine {
 
       if (!placement) {
         const start = controller.level;
-        if (!(controller.level + 1 in CONTROLLER_LEVELS)) {
+        if (start >= MaxControllerLevel) {
           logger.info(`${roomName} construction done`);
           return;
         }

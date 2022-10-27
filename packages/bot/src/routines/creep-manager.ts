@@ -1,38 +1,29 @@
 import { Routine } from 'coroutines';
+import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { isDefined, restartOnTickChange } from '../utils';
 
-const pickupEnergy = (worker: Creep, includeContainer = true) => {
+const logger = createLogger('creep-manager');
+
+const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   const containers = includeContainer
     ? worker.room
         .find(FIND_STRUCTURES)
-        .filter(isStructureType(STRUCTURE_CONTAINER))
-        .filter(
-          (s) =>
-            s.store.getUsedCapacity(RESOURCE_ENERGY) >=
-            worker.store.getFreeCapacity()
-        )
+        .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
+        .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need)
     : [];
   const energyDrops = worker.room
     .find(FIND_DROPPED_RESOURCES, {
       filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
     })
-    .filter((s) => s.amount >= worker.store.getFreeCapacity());
+    .filter((s) => s.amount >= need);
 
   const ruins = worker.room
     .find(FIND_RUINS)
-    .filter(
-      (s) =>
-        s.store.getUsedCapacity(RESOURCE_ENERGY) >=
-        worker.store.getFreeCapacity()
-    );
+    .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need);
   const tombstones = worker.room
     .find(FIND_TOMBSTONES)
-    .filter(
-      (s) =>
-        s.store.getUsedCapacity(RESOURCE_ENERGY) >=
-        worker.store.getFreeCapacity()
-    );
+    .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need);
   const targets = [...containers, ...energyDrops, ...ruins, ...tombstones];
   const target = worker.pos.findClosestByRange(targets);
 
@@ -123,7 +114,7 @@ const runWorkers = () => {
 
     if (!target) {
       if (worker.store.getFreeCapacity()) {
-        pickupEnergy(worker);
+        pickupEnergy(worker, worker.store.getFreeCapacity());
       }
       continue;
     }
@@ -139,7 +130,7 @@ const runWorkers = () => {
         worker.repair(target);
       }
     } else {
-      pickupEnergy(worker);
+      pickupEnergy(worker, worker.store.getFreeCapacity());
     }
   }
 };
@@ -166,7 +157,7 @@ const runUpgraders = () => {
       upgrader.moveTo(controller, { range: 3 });
       upgrader.upgradeController(controller);
     } else {
-      pickupEnergy(upgrader);
+      pickupEnergy(upgrader, upgrader.store.getFreeCapacity());
     }
   }
 };
@@ -182,27 +173,44 @@ const runHaulers = () => {
   );
 
   for (const hauler of haulers) {
-    if (hauler.store.getFreeCapacity() < 75) {
-      const target = hauler.pos.findClosestByRange(FIND_STRUCTURES, {
+    const target =
+      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
         filter: (
           structure
-        ): structure is
-          | StructureSpawn
-          | StructureContainer
-          | StructureExtension =>
+        ): structure is StructureSpawn | StructureExtension | StructureTower =>
           isStructureType(
-            STRUCTURE_CONTAINER,
             STRUCTURE_SPAWN,
-            STRUCTURE_EXTENSION
+            STRUCTURE_EXTENSION,
+            STRUCTURE_TOWER
           )(structure) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-      });
-      if (!target) {
-        continue;
-      }
+      }) ??
+      hauler.pos.findClosestByRange(FIND_STRUCTURES, {
+        filter: (structure): structure is StructureContainer =>
+          isStructureType(STRUCTURE_CONTAINER)(structure) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+      }) ??
+      hauler.room.storage;
+    if (!target) {
+      continue;
+    }
+    const need = Math.min(
+      hauler.store.getCapacity(RESOURCE_ENERGY),
+      target.store.getFreeCapacity(RESOURCE_ENERGY)
+    );
+    if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) >= need) {
       hauler.moveTo(target);
       hauler.transfer(target, RESOURCE_ENERGY);
     } else {
-      pickupEnergy(hauler, false);
+      pickupEnergy(
+        hauler,
+        need - hauler.store.getUsedCapacity(RESOURCE_ENERGY),
+        !(
+          [
+            STRUCTURE_CONTAINER,
+            STRUCTURE_STORAGE,
+          ] as BuildableStructureConstant[]
+        ).includes(target.structureType)
+      );
     }
   }
 };

@@ -1,10 +1,10 @@
 import { Routine } from 'coroutines';
 import { Coordinates, createLogger, expandPosition } from '../library';
 import { sleep } from '../library/sleep';
-import { isDefined } from '../utils';
+import { isDefined, MaxControllerLevel } from '../utils';
 
-const MaxWorkers = 10;
-const MaxUpgraders = 10;
+const MaxWorkers = 5;
+const MaxUpgraders = 5;
 
 const logger = createLogger('spawn-manager');
 
@@ -124,13 +124,21 @@ export function* spawnManager(): Routine {
     } else if (haulers.length < 2) {
       spawnHauler();
     } else {
+      const controller = spawn.room.controller;
       if (
-        workers.length < upgraders.length &&
-        (hasConstructionSite || workers.length < 2) &&
+        controller &&
+        (controller.level < MaxControllerLevel ||
+          controller.ticksToDowngrade < 500) &&
+        upgraders.length < workers.length &&
+        upgraders.length < MaxUpgraders
+      ) {
+        spawnUpgrader();
+      } else if (
+        (hasConstructionSite || workers.length < 1) &&
         workers.length < MaxWorkers
       ) {
         spawnWorker();
-      } else if (spawn.room.controller && upgraders.length < MaxUpgraders) {
+      } else if (upgraders.length < MaxUpgraders) {
         spawnUpgrader();
       }
     }

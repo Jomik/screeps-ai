@@ -4,6 +4,10 @@ type GroupByKey<T extends Record<Key, string>, Key extends string> = {
   [Type in T[Key]]?: Array<Extract<T, Record<Key, Type>>>;
 };
 
+export const MaxControllerLevel =
+  Math.max(...Object.keys(CONTROLLER_LEVELS).map((n) => Number.parseInt(n))) +
+  1;
+
 export const groupByKey = <T extends Record<Key, string>, Key extends string>(
   values: Array<T>,
   key: Key
