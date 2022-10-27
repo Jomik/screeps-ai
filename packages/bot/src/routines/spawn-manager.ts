@@ -29,7 +29,14 @@ export function* spawnManager(): Routine {
   };
 
   const spawnMiner = (slot: [...Coordinates, string]) => {
-    getSpawn().spawnCreep([WORK, WORK, CARRY, MOVE], `miner-${Game.time}`, {
+    const spawn = getSpawn();
+    const capacity = spawn.room.energyAvailable;
+    const body = [WORK, WORK, CARRY, MOVE];
+    const extras = [WORK];
+    while (calculateBodyCost(body.concat(extras)) < capacity) {
+      body.push(...extras);
+    }
+    spawn.spawnCreep(body, `miner-${Game.time}`, {
       memory: { slot },
     });
   };
