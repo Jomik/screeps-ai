@@ -10,22 +10,25 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
     ? worker.room
         .find(FIND_STRUCTURES)
         .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
-        .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need)
     : [];
-  const energyDrops = worker.room
-    .find(FIND_DROPPED_RESOURCES, {
-      filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
-    })
-    .filter((s) => s.amount >= need);
+  const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
+    filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
+  });
 
-  const ruins = worker.room
-    .find(FIND_RUINS)
-    .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need);
-  const tombstones = worker.room
-    .find(FIND_TOMBSTONES)
-    .filter((s) => s.store.getUsedCapacity(RESOURCE_ENERGY) >= need);
+  const ruins = worker.room.find(FIND_RUINS);
+  const tombstones = worker.room.find(FIND_TOMBSTONES);
   const targets = [...containers, ...energyDrops, ...ruins, ...tombstones];
-  const target = worker.pos.findClosestByRange(targets);
+  const targetsWithNeeded = targets.filter(
+    (s) =>
+      ('resourceType' in s
+        ? s.amount
+        : s.store.getUsedCapacity(RESOURCE_ENERGY)) >= need
+  );
+  const target =
+    worker.pos.findClosestByRange(targetsWithNeeded) ??
+    _.max(targets, (s) =>
+      'resourceType' in s ? s.amount : s.store.getUsedCapacity(RESOURCE_ENERGY)
+    );
 
   if (!target) {
     return;
