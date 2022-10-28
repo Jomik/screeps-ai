@@ -168,6 +168,8 @@ export function* spawnManager(): Routine {
         upgraders.length < MaxUpgraders - workers.length + 1
       ) {
         spawnUpgrader();
+      } else if (haulers.length < 3) {
+        spawnHauler();
       }
     }
     yield sleep();
