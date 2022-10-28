@@ -29,9 +29,7 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   );
   const target =
     worker.pos.findClosestByRange(targetsWithNeeded) ??
-    max(targets, (s) =>
-      'resourceType' in s ? s.amount : s.store.getUsedCapacity(RESOURCE_ENERGY)
-    );
+    worker.pos.findClosestByRange(targets);
 
   if (!target) {
     return;
