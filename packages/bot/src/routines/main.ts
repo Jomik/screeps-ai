@@ -10,9 +10,7 @@ export function* main() {
   go(spawnManager);
 
   for (const room of Object.values(Game.rooms)) {
-    const spawns = room.find(FIND_MY_SPAWNS);
-
-    if (spawns.length > 0) {
+    if (room.controller?.my) {
       go(planRoom, room.name);
     }
   }
