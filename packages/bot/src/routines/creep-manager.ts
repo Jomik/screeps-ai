@@ -227,7 +227,11 @@ const runHaulers = () => {
           structure.pos.findInRange(FIND_SOURCES, 1).length === 0 &&
           structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
       }) ??
-      hauler.room.storage;
+      hauler.room.storage ??
+      hauler.pos.findClosestByRange(FIND_MY_CREEPS, {
+        filter: (c) => c.name.startsWith('worker'),
+      });
+
     if (!target) {
       continue;
     }
@@ -243,12 +247,14 @@ const runHaulers = () => {
       pickupEnergy(
         hauler,
         need - hauler.store.getUsedCapacity(RESOURCE_ENERGY),
-        !(
-          [
-            STRUCTURE_CONTAINER,
-            STRUCTURE_STORAGE,
-          ] as BuildableStructureConstant[]
-        ).includes(target.structureType)
+        target instanceof Structure
+          ? !(
+              [
+                STRUCTURE_CONTAINER,
+                STRUCTURE_STORAGE,
+              ] as BuildableStructureConstant[]
+            ).includes(target.structureType)
+          : true
       );
     }
   }
