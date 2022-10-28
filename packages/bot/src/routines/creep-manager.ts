@@ -229,7 +229,9 @@ const runHaulers = () => {
       }) ??
       hauler.room.storage ??
       hauler.pos.findClosestByRange(FIND_MY_CREEPS, {
-        filter: (c) => c.name.startsWith('worker'),
+        filter: (c) =>
+          c.name.startsWith('worker') &&
+          c.store.getFreeCapacity(RESOURCE_ENERGY) >= CARRY_CAPACITY,
       });
 
     if (!target) {
