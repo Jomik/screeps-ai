@@ -5,6 +5,7 @@ import {
   Coordinates,
   coordinatesToNumber,
   createLogger,
+  dist,
   expandPosition,
   numberToCoordinates,
 } from '../library';
@@ -331,6 +332,7 @@ const nextStructure = (
     if (type === STRUCTURE_ROAD) {
       return (
         includeRoad &&
+        controller.level > 3 &&
         room
           .lookForAtArea(LOOK_STRUCTURES, y - 1, x - 1, y + 1, x + 1, true)
           .filter((res) => res.structure.structureType !== STRUCTURE_ROAD)
@@ -340,8 +342,9 @@ const nextStructure = (
 
     if (
       type === STRUCTURE_CONTAINER &&
-      controller.level < 3 &&
-      !includeContainer
+      ((controller.level < 3 &&
+        dist([x, y], [controller.pos.x, controller.pos.y]) > 3) ||
+        !includeContainer)
     ) {
       return false;
     }
@@ -550,9 +553,10 @@ export function* planRoom(roomName: string): Routine {
           return;
         }
         logger.info('No structures left, waiting for next RCL');
-        while (start <= controller.level) {
+        while (start >= (Game.rooms[roomName]?.controller?.level ?? 0)) {
           yield sleep();
         }
+        logger.info('RCL increased, starting construction...');
         continue;
       }
       const [type, x, y] = placement;
