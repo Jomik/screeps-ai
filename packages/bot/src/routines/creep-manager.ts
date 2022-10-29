@@ -12,7 +12,7 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
         .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
     : worker.room
         .find(FIND_STRUCTURES)
-        .filter(isStructureType(STRUCTURE_CONTAINER))
+        .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
         .filter((s) => s.pos.findInRange(FIND_SOURCES, 1).length > 0);
   const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
     filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
@@ -254,7 +254,7 @@ const runHaulers = () => {
                 STRUCTURE_STORAGE,
               ] as BuildableStructureConstant[]
             ).includes(target.structureType)
-          : true
+          : false
       );
     }
   }
