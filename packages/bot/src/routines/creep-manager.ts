@@ -29,7 +29,13 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   );
   const target =
     worker.pos.findClosestByRange(targetsWithNeeded) ??
-    worker.pos.findClosestByRange(targets);
+    worker.pos.findClosestByRange(
+      targets.filter((s) =>
+        s instanceof Resource
+          ? s.amount > 0
+          : s.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      )
+    );
 
   if (!target) {
     return;
@@ -241,20 +247,12 @@ const runHaulers = () => {
           c.store.getFreeCapacity(RESOURCE_ENERGY) >= CARRY_CAPACITY,
       });
 
-    if (!target) {
-      continue;
-    }
     const need = Math.min(
       hauler.store.getCapacity(RESOURCE_ENERGY),
-      target.store.getFreeCapacity(RESOURCE_ENERGY)
+      target?.store.getFreeCapacity(RESOURCE_ENERGY) ?? Infinity
     );
-    if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) >= need) {
-      if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
-        hauler.moveTo(target, {
-          visualizePathStyle: { lineStyle: 'dashed', stroke: 'green' },
-        });
-      }
-    } else {
+
+    if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) < need) {
       pickupEnergy(
         hauler,
         need - hauler.store.getUsedCapacity(RESOURCE_ENERGY),
@@ -267,6 +265,17 @@ const runHaulers = () => {
             ).includes(target.structureType)
           : false
       );
+      continue;
+    }
+
+    if (!target) {
+      continue;
+    }
+
+    if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
+      hauler.moveTo(target, {
+        visualizePathStyle: { lineStyle: 'dashed', stroke: 'green' },
+      });
     }
   }
 };
