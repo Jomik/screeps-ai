@@ -23,7 +23,7 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   const targets = [...containers, ...energyDrops, ...ruins, ...tombstones];
   const targetsWithNeeded = targets.filter(
     (s) =>
-      ('resourceType' in s
+      (s instanceof Resource
         ? s.amount
         : s.store.getUsedCapacity(RESOURCE_ENERGY)) >= need
   );
@@ -34,7 +34,8 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
   if (!target) {
     return;
   }
-  if ('resourceType' in target) {
+
+  if (target instanceof Resource) {
     if (worker.pickup(target) === OK) {
       return;
     }
@@ -43,7 +44,14 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
       return;
     }
   }
-  worker.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
+
+  worker.moveTo(target, {
+    range: 1,
+    visualizePathStyle: {
+      lineStyle: 'dashed',
+      stroke: 'yellow',
+    },
+  });
 };
 
 const runMiners = () => {
@@ -242,7 +250,9 @@ const runHaulers = () => {
     );
     if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) >= need) {
       if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
-        hauler.moveTo(target, { visualizePathStyle: { lineStyle: 'dashed' } });
+        hauler.moveTo(target, {
+          visualizePathStyle: { lineStyle: 'dashed', stroke: 'green' },
+        });
       }
     } else {
       pickupEnergy(
