@@ -11,6 +11,30 @@ const logger = createLogger('spawn-manager');
 const calculateBodyCost = (body: BodyPartConstant[]): number =>
   body.reduce((acc, cur) => acc + BODYPART_COST[cur], 0);
 
+const spawnCreep = (
+  spawn: StructureSpawn,
+  type: string,
+  memory: CreepMemory,
+  bodyGenerator: IterableIterator<BodyPartConstant[]>
+): ScreepsReturnCode => {
+  const capacity = spawn.room.energyAvailable;
+  const body: BodyPartConstant[] = [];
+  for (const next of bodyGenerator) {
+    const newBody = body.concat(next);
+    if (
+      newBody.length > MAX_CREEP_SIZE ||
+      calculateBodyCost(newBody) > capacity
+    ) {
+      break;
+    }
+    body.push(...next);
+  }
+
+  return spawn.spawnCreep(body, `${type}-${Game.time}`, {
+    memory,
+  });
+};
+
 export function* spawnManager(): Routine {
   const getSpawn = (): StructureSpawn => {
     // TODO: This is slightly bad.
@@ -19,49 +43,45 @@ export function* spawnManager(): Routine {
   };
 
   const spawnHauler = () => {
-    const spawn = getSpawn();
-    const capacity = spawn.room.energyAvailable;
-    const body = [CARRY, CARRY, CARRY, MOVE, MOVE, MOVE];
-    const extras = [CARRY, MOVE];
-    while (calculateBodyCost(body.concat(extras)) < capacity) {
-      body.push(...extras);
+    function* bodyGenerator() {
+      for (;;) {
+        yield [CARRY, MOVE];
+      }
     }
-    spawn.spawnCreep(body, `hauler-${Game.time}`);
+    return spawnCreep(getSpawn(), 'hauler', {}, bodyGenerator());
   };
 
   const spawnMiner = (slot: [...Coordinates, string]) => {
-    const spawn = getSpawn();
-    const capacity = spawn.room.energyAvailable;
-    const body = [WORK, WORK, CARRY, MOVE];
-    const extras = [WORK];
-    while (calculateBodyCost(body.concat(extras)) < capacity) {
-      body.push(...extras);
+    function* bodyGenerator() {
+      yield [WORK, WORK, CARRY, MOVE];
+      for (;;) {
+        yield [WORK];
+      }
     }
-    spawn.spawnCreep(body, `miner-${Game.time}`, {
-      memory: { slot },
-    });
+    return spawnCreep(getSpawn(), 'miner', { slot }, bodyGenerator());
   };
 
   const spawnUpgrader = () => {
-    const spawn = getSpawn();
-    const capacity = spawn.room.energyAvailable;
-    const body = [WORK, CARRY, CARRY, MOVE, MOVE];
-    const extras = [WORK, CARRY];
-    while (calculateBodyCost(body.concat(extras)) < capacity) {
-      body.push(...extras);
+    function* bodyGenerator() {
+      yield [WORK, WORK, CARRY, MOVE];
+      for (;;) {
+        yield [WORK];
+      }
     }
-    spawn.spawnCreep(body, `upgrader-${Game.time}`);
+    return spawnCreep(getSpawn(), 'upgrader', {}, bodyGenerator());
   };
 
   const spawnWorker = () => {
-    const spawn = getSpawn();
-    const capacity = spawn.room.energyAvailable;
-    const body = [WORK, CARRY, CARRY, MOVE, MOVE];
-    const extras = [WORK, CARRY];
-    while (calculateBodyCost(body.concat(extras)) < capacity) {
-      body.push(...extras);
+    function* bodyGenerator() {
+      yield [WORK, WORK, CARRY, MOVE];
+      yield [MOVE];
+      for (;;) {
+        yield [CARRY];
+        yield [MOVE];
+        yield [WORK];
+      }
     }
-    spawn.spawnCreep(body, `worker-${Game.time}`);
+    return spawnCreep(getSpawn(), 'worker', {}, bodyGenerator());
   };
 
   for (;;) {
