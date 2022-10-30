@@ -125,10 +125,6 @@ const getStoredWorkerTarget = (
   }
 
   if (storedTarget instanceof ConstructionSite) {
-    if (storedTarget.progress >= storedTarget.progressTotal) {
-      worker.memory.target = undefined;
-      return null;
-    }
     return storedTarget;
   }
 
@@ -138,6 +134,17 @@ const getStoredWorkerTarget = (
   }
   return storedTarget;
 };
+
+const DirectionConstants: DirectionConstant[] = [
+  TOP,
+  TOP_RIGHT,
+  RIGHT,
+  BOTTOM_RIGHT,
+  BOTTOM,
+  BOTTOM_LEFT,
+  LEFT,
+  TOP_LEFT,
+];
 
 const runWorkers = () => {
   const workers = Object.values(Game.creeps).filter(
@@ -167,16 +174,28 @@ const runWorkers = () => {
     worker.memory.target = target.id;
 
     if (
-      (worker.store.getUsedCapacity(RESOURCE_ENERGY) &&
+      (worker.store.getUsedCapacity(RESOURCE_ENERGY) > 0 &&
         worker.pos.inRangeTo(target, 3)) ||
-      !worker.store.getFreeCapacity(RESOURCE_ENERGY)
+      worker.store.getFreeCapacity(RESOURCE_ENERGY) === 0
     ) {
       worker.moveTo(target, {
         range: 3,
         visualizePathStyle: { lineStyle: 'dashed' },
       });
       if (target instanceof ConstructionSite) {
-        worker.build(target);
+        if (worker.build(target) === ERR_INVALID_TARGET) {
+          // Move creeps that may be blocking the site
+          for (const creep of target.pos.lookFor(LOOK_CREEPS)) {
+            if (!creep.my) {
+              continue;
+            }
+            for (const dir of DirectionConstants) {
+              if (creep.move(dir) === OK) {
+                break;
+              }
+            }
+          }
+        }
       } else {
         worker.repair(target);
       }
