@@ -13,12 +13,12 @@ import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
-import { isDefined, MaxControllerLevel, min } from '../utils';
+import { isDefined, MaxControllerLevel } from '../utils';
 
 const logger = createLogger('room-planner');
 
 const RoadCost = 1;
-const ContainerCost = 2;
+const BlockedCost = 2;
 
 function* getRoadTo(
   origin: Coordinates,
@@ -132,7 +132,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     pos: { x, y },
   } of [...room.find(FIND_SOURCES), ...room.find(FIND_MINERALS)]) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 254)
+      cm.set(x, y, BlockedCost)
     );
   }
 
@@ -140,7 +140,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   if (room.controller) {
     const { x, y } = room.controller.pos;
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 254)
+      cm.set(x, y, BlockedCost)
     );
   }
 
@@ -188,9 +188,9 @@ const updateCMWithPlacement = (
       x,
       y,
       structureType === BLOCKED
-        ? 254
+        ? BlockedCost
         : structureType === STRUCTURE_CONTAINER
-        ? ContainerCost
+        ? BlockedCost
         : structureType === STRUCTURE_ROAD
         ? RoadCost
         : Infinity
@@ -429,9 +429,7 @@ export function* planRoom(roomName: string): Routine {
       const { path, incomplete } = PathFinder.search(
         new RoomPosition(storageX, storageY, roomName),
         { pos, range },
-        {
-          roomCallback: () => buildingSpace,
-        }
+        { roomCallback: () => buildingSpace }
       );
       const tile = path[path.length - 1];
 
