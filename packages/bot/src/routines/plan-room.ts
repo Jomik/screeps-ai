@@ -474,7 +474,11 @@ export function* planRoom(roomName: string): Routine {
     })
     .filter(isDefined);
 
+  containers.forEach(([, x, y]) => {
+    buildingSpace.set(x, y, BlockedCost);
+  });
   placedStructures.push(...containers);
+
   yield;
 
   // Controller link
