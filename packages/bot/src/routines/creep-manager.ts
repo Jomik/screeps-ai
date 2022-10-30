@@ -1,11 +1,16 @@
 import { Routine } from 'coroutines';
 import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
-import { isDefined, isStructureType, max, restartOnTickChange } from '../utils';
+import { isDefined, isStructureType, restartOnTickChange } from '../utils';
 
 const logger = createLogger('creep-manager');
 
-const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
+const pickupEnergy = (
+  worker: Creep,
+  need: number,
+  includeContainer = true,
+  includeLinks = true
+) => {
   const containers = includeContainer
     ? worker.room
         .find(FIND_STRUCTURES)
@@ -13,14 +18,29 @@ const pickupEnergy = (worker: Creep, need: number, includeContainer = true) => {
     : worker.room
         .find(FIND_STRUCTURES)
         .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
-        .filter((s) => s.pos.findInRange(FIND_SOURCES, 1).length > 0);
+        .filter(
+          (s) =>
+            s.pos.findInRange(FIND_SOURCES, 1).length > 0 &&
+            (!s.room.controller || s.pos.getRangeTo(s.room.controller) > 3)
+        );
   const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
     filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
   });
 
   const ruins = worker.room.find(FIND_RUINS);
+  const links = includeLinks
+    ? worker.room
+        .find(FIND_MY_STRUCTURES)
+        .filter(isStructureType(STRUCTURE_LINK))
+    : [];
   const tombstones = worker.room.find(FIND_TOMBSTONES);
-  const targets = [...containers, ...energyDrops, ...ruins, ...tombstones];
+  const targets = [
+    ...containers,
+    ...energyDrops,
+    ...ruins,
+    ...tombstones,
+    ...links,
+  ];
   const targetsWithNeeded = targets.filter(
     (s) =>
       (s instanceof Resource
@@ -243,14 +263,21 @@ const runHaulers = () => {
   for (const hauler of haulers) {
     const target =
       hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-        filter: (
-          structure
-        ): structure is StructureSpawn | StructureExtension | StructureTower =>
-          isStructureType(
-            STRUCTURE_SPAWN,
-            STRUCTURE_EXTENSION,
-            STRUCTURE_TOWER
-          )(structure) && structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+        filter: (structure): structure is StructureTower =>
+          isStructureType(STRUCTURE_TOWER)(structure) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+      }) ??
+      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+        filter: (structure): structure is StructureSpawn | StructureExtension =>
+          isStructureType(STRUCTURE_SPAWN, STRUCTURE_EXTENSION)(structure) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
+      }) ??
+      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
+        filter: (structure): structure is StructureLink =>
+          isStructureType(STRUCTURE_LINK)(structure) &&
+          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
+          (!structure.room.controller ||
+            structure.pos.getRangeTo(structure.room.controller) > 3),
       }) ??
       hauler.pos.findClosestByRange(FIND_STRUCTURES, {
         filter: (structure): structure is StructureContainer =>
@@ -282,7 +309,8 @@ const runHaulers = () => {
                 STRUCTURE_STORAGE,
               ] as BuildableStructureConstant[]
             ).includes(target.structureType)
-          : false
+          : false,
+        false
       );
       continue;
     }

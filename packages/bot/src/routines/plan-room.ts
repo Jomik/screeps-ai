@@ -13,7 +13,7 @@ import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
-import { isDefined, MaxControllerLevel } from '../utils';
+import { isDefined, MaxControllerLevel, min } from '../utils';
 
 const logger = createLogger('room-planner');
 
@@ -421,6 +421,8 @@ export function* planRoom(roomName: string): Routine {
   const [, storageX, storageY] = placedStructures.find(
     ([type]) => type === STRUCTURE_STORAGE
   ) ?? ['origin', ...origin];
+
+  // Source containers
   const containers = [...room.find(FIND_SOURCES), room.controller]
     .filter(isDefined)
     .map((target) => {
@@ -438,11 +440,36 @@ export function* planRoom(roomName: string): Routine {
         return undefined;
       }
 
-      return ['container', tile.x, tile.y] as StructurePlacement;
+      return [STRUCTURE_CONTAINER, tile.x, tile.y] as StructurePlacement;
     })
     .filter(isDefined);
 
   placedStructures.push(...containers);
+  yield;
+
+  // Controller link
+  const controllerContainer = placedStructures.find(
+    ([type, x, y]) =>
+      type === STRUCTURE_CONTAINER &&
+      (room.controller?.pos.getRangeTo(x, y) ?? Infinity) <= 3
+  );
+  const hubLink = placedStructures.find(
+    ([type, x, y]) => type === STRUCTURE_LINK
+  );
+  if (controllerContainer && hubLink) {
+    const [, ...cPos] = controllerContainer;
+    const [, ...hPos] = hubLink;
+    const linkPos = min(
+      expandPosition(cPos).filter(([x, y]) => buildingSpace.get(x, y) === 0),
+      (potential) => dist(potential, hPos)
+    );
+    if (linkPos) {
+      placedStructures.push([STRUCTURE_LINK, ...linkPos]);
+    } else {
+      logger.warn(`No link position found for controller`);
+    }
+  }
+
   yield;
 
   go(function* roomPlanVisuals() {
