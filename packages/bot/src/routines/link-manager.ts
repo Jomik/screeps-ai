@@ -19,7 +19,6 @@ export function* linkManager(roomName: string) {
     yield sleep();
   }
 
-  logger.info(`Managing links in ${roomName}`);
   for (;;) {
     yield sleep();
     const room = Game.rooms[roomName];
@@ -38,17 +37,16 @@ export function* linkManager(roomName: string) {
 
     const source = min(links, (link) => storage.pos.getRangeTo(link));
     const target = links.find((link) => link.pos.getRangeTo(controller) <= 3);
+
     if (!source || !target) {
       continue;
     }
+
     if (
       source.cooldown > 0 ||
-      source.store.getUsedCapacity(RESOURCE_ENERGY) <
-        source.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
+      source.store.getUsedCapacity(RESOURCE_ENERGY) === 0 ||
       target.store.getFreeCapacity(RESOURCE_ENERGY) <
-        target.store.getCapacity(RESOURCE_ENERGY) * 0.5 ||
-      source.store.getUsedCapacity(RESOURCE_ENERGY) <
-        target.store.getFreeCapacity(RESOURCE_ENERGY)
+        target.store.getCapacity(RESOURCE_ENERGY) * 0.5
     ) {
       continue;
     }

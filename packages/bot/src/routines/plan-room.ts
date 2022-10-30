@@ -13,7 +13,7 @@ import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
 import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
-import { isDefined, MaxControllerLevel, min } from '../utils';
+import { isDefined, MaxControllerLevel, max } from '../utils';
 
 const logger = createLogger('room-planner');
 
@@ -379,6 +379,36 @@ const nextStructure = (
   return placements.splice(index, 1)[0];
 };
 
+const findControllerLink = (
+  room: Room,
+  buildingSpace: CostMatrix
+): Coordinates | null => {
+  if (!room.controller) {
+    return null;
+  }
+  const { x: controllerX, y: controllerY } = room.controller.pos;
+
+  const potentialPositions: Coordinates[] = [];
+  for (let y = controllerY - 3; y < controllerY + 3; ++y) {
+    for (let x = controllerX - 3; x < controllerX + 3; ++x) {
+      if (buildingSpace.get(x, y) > 0) {
+        continue;
+      }
+      potentialPositions.push([x, y]);
+    }
+  }
+
+  const linkPos = max(
+    potentialPositions,
+    (potential) =>
+      expandPosition(potential).filter(
+        ([x, y]) => buildingSpace.get(x, y) <= BlockedCost
+      ).length
+  );
+
+  return linkPos;
+};
+
 export function* planRoom(roomName: string): Routine {
   const room = Game.rooms[roomName];
   if (!room) {
@@ -448,26 +478,11 @@ export function* planRoom(roomName: string): Routine {
   yield;
 
   // Controller link
-  const controllerContainer = placedStructures.find(
-    ([type, x, y]) =>
-      type === STRUCTURE_CONTAINER &&
-      (room.controller?.pos.getRangeTo(x, y) ?? Infinity) <= 3
-  );
-  const hubLink = placedStructures.find(
-    ([type, x, y]) => type === STRUCTURE_LINK
-  );
-  if (controllerContainer && hubLink) {
-    const [, ...cPos] = controllerContainer;
-    const [, ...hPos] = hubLink;
-    const linkPos = min(
-      expandPosition(cPos).filter(([x, y]) => buildingSpace.get(x, y) === 0),
-      (potential) => dist(potential, hPos)
-    );
-    if (linkPos) {
-      placedStructures.push([STRUCTURE_LINK, ...linkPos]);
-    } else {
-      logger.warn(`No link position found for controller`);
-    }
+  const linkPos = findControllerLink(room, buildingSpace);
+  if (linkPos) {
+    placedStructures.push([STRUCTURE_LINK, ...linkPos]);
+  } else {
+    logger.warn(`No link position found for controller`);
   }
 
   yield;

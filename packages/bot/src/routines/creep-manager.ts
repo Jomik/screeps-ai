@@ -249,8 +249,28 @@ const runUpgraders = () => {
         visualizePathStyle: { lineStyle: 'dashed' },
       });
       upgrader.upgradeController(controller);
-    } else {
+      continue;
+    }
+
+    const links = upgrader.room
+      .find(FIND_MY_STRUCTURES)
+      .filter(isStructureType(STRUCTURE_LINK));
+    const controllerLink = links.find(
+      (link) =>
+        (upgrader.room.controller?.pos.getRangeTo(link) ?? Infinity) <= 3
+    );
+
+    if (!controllerLink || links.length < 2) {
       pickupEnergy(upgrader, upgrader.store.getFreeCapacity());
+      continue;
+    }
+
+    const res = upgrader.withdraw(controllerLink, RESOURCE_ENERGY);
+    if (res === ERR_NOT_IN_RANGE) {
+      upgrader.moveTo(controllerLink, {
+        range: 1,
+        visualizePathStyle: { lineStyle: 'dashed' },
+      });
     }
   }
 };
