@@ -77,8 +77,15 @@ export function* spawnManager(): Routine {
       yield [MOVE];
       for (;;) {
         yield [CARRY];
+        yield [CARRY];
         yield [MOVE];
+
+        yield [CARRY];
+        yield [CARRY];
+        yield [MOVE];
+
         yield [WORK];
+        yield [MOVE];
       }
     }
     return spawnCreep(getSpawn(), 'worker', {}, bodyGenerator());
