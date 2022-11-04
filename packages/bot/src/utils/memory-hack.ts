@@ -10,6 +10,7 @@ export const wrapWithMemoryHack = (fn: () => void) => {
 
     fn();
 
+    const start = Game.cpu.getUsed();
     // there are two ways of saving Memory with different advantages and disadvantages
     // 1. RawMemory.set(JSON.stringify(Memory));
     // + ability to use custom serialization method
@@ -22,5 +23,14 @@ export const wrapWithMemoryHack = (fn: () => void) => {
 
     // this implementation uses the official way of saving Memory
     RawMemory.set(JSON.stringify(Memory));
+    const end = Game.cpu.getUsed();
+
+    const visuals = new RoomVisual();
+    visuals.text(
+      `Memory stringify: ${(end - start).toFixed(2).toString()}`,
+      0,
+      1.2,
+      { font: 0.7, align: 'left' }
+    );
   };
 };

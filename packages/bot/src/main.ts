@@ -27,15 +27,10 @@ export const loop = ErrorMapper.wrapLoop(
 
     const visuals = new RoomVisual();
     Object.entries(cpuUsage).forEach(([name, usage], index) => {
-      visuals.text(
-        `${name} > ${usage.toFixed(2).toString()}`,
-        49,
-        index + 0.2,
-        {
-          font: 0.7,
-          align: 'right',
-        }
-      );
+      visuals.text(`${name}: ${usage.toFixed(2).toString()}`, 49, index + 0.2, {
+        font: 0.7,
+        align: 'right',
+      });
     });
     visuals.text(
       `Heap usage: ${(
