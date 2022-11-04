@@ -1,5 +1,4 @@
 import { Routine } from 'coroutines';
-import { StartOfSourceMap } from 'source-map';
 export * from './isStructureType';
 
 type GroupByKey<T extends Record<Key, string>, Key extends string> = {

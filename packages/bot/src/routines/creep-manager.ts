@@ -1,6 +1,7 @@
 import { Routine } from 'coroutines';
 import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
+import { go } from '../runner';
 import { isDefined, isStructureType, restartOnTickChange } from '../utils';
 
 const logger = createLogger('creep-manager');
@@ -76,27 +77,30 @@ const pickupEnergy = (
     visualizePathStyle: {
       lineStyle: 'dashed',
       stroke: 'yellow',
+      opacity: 0.2,
     },
   });
 };
 
-const runMiners = () => {
-  const miners = Object.values(Game.creeps).filter(
-    (creep) => creep.my && creep.name.startsWith('miner')
-  );
-
-  for (const miner of miners) {
+function* runMiner(id: Id<Creep>) {
+  for (;;) {
+    yield sleep();
+    const miner = Game.getObjectById(id);
+    if (!miner) {
+      return;
+    }
     if (!isDefined(miner.memory.slot)) {
       miner.suicide();
-      continue;
+      return;
     }
+
     const [x, y, roomName = miner.room.name] = miner.memory.slot;
     if (miner.pos.x !== x || miner.pos.y !== y) {
       miner.moveTo(new RoomPosition(x, y, roomName), {
-        visualizePathStyle: { lineStyle: 'dashed' },
+        visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
     }
-    const [source] = miner.pos.findInRange(FIND_SOURCES, 1);
+    const [source] = miner.pos.findInRange(FIND_SOURCES_ACTIVE, 1);
     if (source === undefined) {
       continue;
     }
@@ -114,24 +118,26 @@ const runMiners = () => {
       miner.transfer(container, RESOURCE_ENERGY);
     }
   }
-};
+}
 
-const runAttackers = () => {
-  const attackers = Object.values(Game.creeps).filter(
-    (creep) => creep.my && creep.name.startsWith('attacker')
-  );
+function* runAttacker(id: Id<Creep>) {
+  for (;;) {
+    yield sleep();
+    const attacker = Game.getObjectById(id);
+    if (!attacker) {
+      return;
+    }
 
-  for (const attacker of attackers) {
     const enemy = attacker.pos.findClosestByRange(FIND_HOSTILE_CREEPS);
     if (enemy) {
       attacker.moveTo(enemy, {
         range: 1,
-        visualizePathStyle: { lineStyle: 'dashed' },
+        visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
       attacker.attack(enemy);
     }
   }
-};
+}
 
 const getStoredWorkerTarget = (
   worker: Creep
@@ -166,12 +172,13 @@ const DirectionConstants: DirectionConstant[] = [
   TOP_LEFT,
 ];
 
-const runWorkers = () => {
-  const workers = Object.values(Game.creeps).filter(
-    (creep) => creep.my && creep.name.startsWith('worker')
-  );
-
-  for (const worker of workers) {
+function* runWorker(id: Id<Creep>) {
+  for (;;) {
+    yield sleep();
+    const worker = Game.getObjectById(id);
+    if (!worker) {
+      return;
+    }
     const room = worker.room;
 
     const target =
@@ -200,7 +207,7 @@ const runWorkers = () => {
     ) {
       worker.moveTo(target, {
         range: 3,
-        visualizePathStyle: { lineStyle: 'dashed' },
+        visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
       if (target instanceof ConstructionSite) {
         if (worker.build(target) === ERR_INVALID_TARGET) {
@@ -223,20 +230,20 @@ const runWorkers = () => {
       pickupEnergy(worker, worker.store.getFreeCapacity(RESOURCE_ENERGY));
     }
   }
-};
+}
 
-const runUpgraders = () => {
-  const upgraders = Object.values(Game.creeps).filter(
-    (creep) => creep.my && creep.name.startsWith('upgrader')
-  );
+function* runUpgrader(id: Id<Creep>) {
+  for (;;) {
+    yield sleep();
+    const upgrader = Game.getObjectById(id);
+    if (!upgrader) {
+      return;
+    }
 
-  for (const upgrader of upgraders) {
     const controller = upgrader.room.controller;
     if (!controller) {
-      // TODO
-      // this.logger.warn('upgrader in room with no controller', upgrader);
       upgrader.suicide();
-      continue;
+      return;
     }
 
     if (
@@ -246,7 +253,7 @@ const runUpgraders = () => {
     ) {
       upgrader.moveTo(controller, {
         range: 3,
-        visualizePathStyle: { lineStyle: 'dashed' },
+        visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
       upgrader.upgradeController(controller);
       continue;
@@ -269,18 +276,20 @@ const runUpgraders = () => {
     if (res === ERR_NOT_IN_RANGE) {
       upgrader.moveTo(controllerLink, {
         range: 1,
-        visualizePathStyle: { lineStyle: 'dashed' },
+        visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
     }
   }
-};
+}
 
-const runHaulers = () => {
-  const haulers = Object.values(Game.creeps).filter(
-    (creep) => creep.my && creep.name.startsWith('hauler')
-  );
+function* runHauler(id: Id<Creep>) {
+  for (;;) {
+    yield sleep();
+    const hauler = Game.getObjectById(id);
+    if (!hauler) {
+      return;
+    }
 
-  for (const hauler of haulers) {
     const target =
       hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
         filter: (structure): structure is StructureTower =>
@@ -341,25 +350,42 @@ const runHaulers = () => {
 
     if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
       hauler.moveTo(target, {
-        visualizePathStyle: { lineStyle: 'dashed', stroke: 'green' },
+        visualizePathStyle: {
+          lineStyle: 'dashed',
+          stroke: 'green',
+          opacity: 0.2,
+        },
       });
     }
   }
-};
+}
 
-export const creepManager = restartOnTickChange(
-  function* creepManager(): Routine {
-    for (;;) {
-      runAttackers();
-      yield;
-      runMiners();
-      yield;
-      runHaulers();
-      yield;
-      runUpgraders();
-      yield;
-      runWorkers();
-      yield sleep();
+export function* creepManager(): Routine {
+  const running = new Set<string>();
+  for (;;) {
+    yield sleep();
+    const creeps = Object.values(Game.creeps).filter((c) => c.my);
+    for (const creep of creeps) {
+      if (!creep.id || running.has(creep.id)) {
+        continue;
+      }
+      if (creep.name.startsWith('hauler')) {
+        go(runHauler, creep.id);
+      } else if (creep.name.startsWith('upgrader')) {
+        go(runUpgrader, creep.id);
+      } else if (creep.name.startsWith('worker')) {
+        go(runWorker, creep.id);
+      } else if (creep.name.startsWith('miner')) {
+        go(runMiner, creep.id);
+      } else if (creep.name.startsWith('attacker')) {
+        go(runAttacker, creep.id);
+      } else {
+        logger.info(`Unknown creep ${creep.name}`);
+        continue;
+      }
+      running.add(creep.id);
+
+      logger.info(`Started ${creep.name}`);
     }
   }
-);
+}
