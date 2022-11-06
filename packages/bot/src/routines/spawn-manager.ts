@@ -1,7 +1,8 @@
 import { Routine } from 'coroutines';
-import { Coordinates, createLogger, expandPosition } from '../library';
+import { Coordinates, createLogger, dist, expandPosition } from '../library';
 import { sleep } from '../library/sleep';
 import { isDefined, isStructureType, MaxControllerLevel } from '../utils';
+import { intelRef } from './intel-manager';
 
 const MaxWorkers = 5;
 const MaxUpgraders = 5;
@@ -48,7 +49,13 @@ export function* spawnManager(): Routine {
         yield [CARRY, MOVE];
       }
     }
-    return spawnCreep(getSpawn(), 'hauler', {}, bodyGenerator());
+    const spawn = getSpawn();
+    return spawnCreep(
+      spawn,
+      'hauler',
+      { home: spawn.room.name },
+      bodyGenerator()
+    );
   };
 
   const spawnMiner = (slot: [...Coordinates, string]) => {
@@ -56,6 +63,17 @@ export function* spawnManager(): Routine {
       yield [WORK, WORK, CARRY, MOVE];
       for (;;) {
         yield [WORK];
+      }
+    }
+    return spawnCreep(getSpawn(), 'miner', { slot }, bodyGenerator());
+  };
+
+  const spawnRemoteMiner = (slot: [...Coordinates, string]) => {
+    function* bodyGenerator() {
+      yield [WORK, WORK, CARRY, MOVE];
+      for (;;) {
+        yield [WORK];
+        yield [MOVE];
       }
     }
     return spawnCreep(getSpawn(), 'miner', { slot }, bodyGenerator());
@@ -91,7 +109,23 @@ export function* spawnManager(): Routine {
     return spawnCreep(getSpawn(), 'worker', {}, bodyGenerator());
   };
 
+  const spawnScout = () => {
+    function* bodyGenerator() {
+      yield [MOVE];
+    }
+    const spawn = getSpawn();
+    return spawnCreep(
+      spawn,
+      'scout',
+      { home: spawn.room.name },
+      bodyGenerator()
+    );
+  };
+
+  const intel = intelRef.get();
+
   for (;;) {
+    yield sleep();
     while (!getSpawn() || getSpawn().spawning) {
       yield sleep();
     }
@@ -102,27 +136,26 @@ export function* spawnManager(): Routine {
     const terrain = room.getTerrain();
     const goal = spawn.pos;
 
-    const slots = sources
-      .map((source) =>
-        expandPosition([source.pos.x, source.pos.y])
-          .map(([x, y]) => new RoomPosition(x, y, room.name))
-          .filter(({ x, y }) => !(terrain.get(x, y) & TERRAIN_MASK_WALL))
-          .sort((a, b) => {
-            const adistx = Math.abs(goal.x - a.x);
-            const bdistx = Math.abs(goal.x - b.x);
-            const adisty = Math.abs(goal.y - a.y);
-            const bdisty = Math.abs(goal.y - b.y);
-            return adistx - bdistx + adisty - bdisty;
-          })
-          .slice(0, 3)
-      )
-      .flat();
+    const slots = sources.flatMap((source) =>
+      expandPosition([source.pos.x, source.pos.y])
+        .map(([x, y]) => new RoomPosition(x, y, room.name))
+        .filter(({ x, y }) => !(terrain.get(x, y) & TERRAIN_MASK_WALL))
+        .sort((a, b) => {
+          const adistx = Math.abs(goal.x - a.x);
+          const bdistx = Math.abs(goal.x - b.x);
+          const adisty = Math.abs(goal.y - a.y);
+          const bdisty = Math.abs(goal.y - b.y);
+          return adistx - bdistx + adisty - bdisty;
+        })
+        .slice(0, 3)
+    );
 
     const {
       miner: miners = [],
       hauler: haulers = [],
       upgrader: upgraders = [],
       worker: workers = [],
+      scout: scouts = [],
     } = _.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]);
 
     const hasConstructionSite =
@@ -149,56 +182,122 @@ export function* spawnManager(): Routine {
       .map((creep) => creep.memory.slot)
       .filter(isDefined);
     const freeSlots = slots.filter(
-      (pos) => !takenSlots.some(([x, y]) => pos.x === x && pos.y === y)
+      (pos) =>
+        !takenSlots.some(
+          ([x, y, roomName]) =>
+            pos.x === x && pos.y === y && pos.roomName === roomName
+        )
     );
 
+    const adjacentRooms = Object.values(
+      Game.map.describeExits(room.name)
+    ).filter(
+      (roomName) => Game.map.getRoomStatus(roomName).status === 'normal'
+    );
     if (haulers.length === 0 && energyInRoom >= 300) {
       spawnHauler();
-    } else if (miners.length === 0) {
+      continue;
+    }
+
+    if (miners.length === 0) {
       const closestSlot = spawn.pos.findClosestByPath(slots);
-      if (!closestSlot) {
-        // TODO
-        // this.logger.error('No source slot', room);
-      } else {
+      if (closestSlot) {
         spawnMiner([closestSlot.x, closestSlot.y, closestSlot.roomName]);
-      }
-    } else if (haulers.length === 0) {
-      spawnHauler();
-    } else if (freeSlots.length > 0) {
-      const freeSlot = spawn.pos.findClosestByPath(freeSlots);
-      if (freeSlot) {
-        spawnMiner([freeSlot.x, freeSlot.y, freeSlot.roomName]);
-      }
-    } else if (haulers.length < 2) {
-      spawnHauler();
-    } else {
-      const controller = room.controller;
-      if (
-        controller &&
-        (controller.level < MaxControllerLevel ||
-          controller.ticksToDowngrade < 500) &&
-        upgraders.length < workers.length &&
-        upgraders.length < MaxUpgraders * Math.min(controller.level / 4, 1)
-      ) {
-        spawnUpgrader();
-      } else if (
-        (hasConstructionSite ||
-          workers.length < 1 ||
-          (controller &&
-            controller.progressTotal - controller.progress < 100)) &&
-        workers.length <
-          MaxWorkers * Math.min((room.controller?.level ?? 4) / 4, 1)
-      ) {
-        spawnWorker();
-      } else if (
-        controller &&
-        upgraders.length < MaxUpgraders - workers.length + 1
-      ) {
-        spawnUpgrader();
-      } else if (haulers.length < 3) {
-        spawnHauler();
+        continue;
       }
     }
-    yield sleep();
+
+    if (haulers.length === 0) {
+      spawnHauler();
+      continue;
+    }
+
+    if (freeSlots.length > 0) {
+      const path = PathFinder.search(spawn.pos, freeSlots);
+      if (!path.incomplete) {
+        const freeSlot = path.path[path.path.length - 1];
+        if (freeSlot) {
+          spawnMiner([freeSlot.x, freeSlot.y, freeSlot.roomName]);
+          continue;
+        }
+      }
+    }
+
+    if (haulers.length < 2) {
+      spawnHauler();
+      continue;
+    }
+
+    if (
+      scouts.length < 1 &&
+      adjacentRooms.some((roomName) => !(roomName in intel))
+    ) {
+      spawnScout();
+      continue;
+    }
+
+    const remoteSlots = adjacentRooms.flatMap((roomName) => {
+      const roomIntel = intel[roomName];
+      if (!roomIntel || roomIntel.hostile) {
+        return [];
+      }
+      return roomIntel.remotes.map(
+        ([x, y]) => new RoomPosition(x, y, roomName)
+      );
+    });
+    const freeRemoteSlots = remoteSlots.filter(
+      (pos) =>
+        !takenSlots.some(
+          ([x, y, roomName]) =>
+            pos.roomName === roomName && dist([x, y], [pos.x, pos.y]) <= 1
+        )
+    );
+
+    if (freeRemoteSlots.length > 0) {
+      const path = PathFinder.search(
+        spawn.pos,
+        freeRemoteSlots.map((pos) => ({ pos, range: 1 }))
+      );
+      if (!path.incomplete) {
+        const freeSlot = path.path[path.path.length - 1];
+        if (freeSlot) {
+          spawnRemoteMiner([freeSlot.x, freeSlot.y, freeSlot.roomName]);
+          continue;
+        }
+      }
+    }
+
+    const controller = room.controller;
+    if (
+      controller &&
+      (controller.level < MaxControllerLevel ||
+        controller.ticksToDowngrade < 500) &&
+      upgraders.length < workers.length &&
+      upgraders.length < MaxUpgraders * Math.min(controller.level / 4, 1)
+    ) {
+      spawnUpgrader();
+      continue;
+    }
+
+    if (
+      (hasConstructionSite ||
+        workers.length < 1 ||
+        (controller && controller.progressTotal - controller.progress < 100)) &&
+      workers.length <
+        MaxWorkers * Math.min((room.controller?.level ?? 4) / 4, 1)
+    ) {
+      spawnWorker();
+      continue;
+    }
+
+    if (controller && upgraders.length < MaxUpgraders - workers.length + 1) {
+      spawnUpgrader();
+      continue;
+    }
+
+    if (haulers.length < 3) {
+      spawnHauler();
+      continue;
+    }
   }
 }

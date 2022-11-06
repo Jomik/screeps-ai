@@ -20,6 +20,18 @@ export const groupByKey = <T extends Record<Key, string>, Key extends string>(
     };
   }, {} as GroupByKey<T, Key>);
 
+export const groupBy = <T, K extends string | number>(
+  values: Array<T>,
+  keyFn: (v: T) => K
+): Record<K, T[]> =>
+  values.reduce((acc, cur) => {
+    const key = keyFn(cur);
+    return {
+      ...acc,
+      [key]: (acc[key] ?? ([] as T[])).concat(cur),
+    };
+  }, {} as Record<K, T[]>);
+
 export const isDefined = <T>(value: T | undefined | null): value is T =>
   value !== undefined && value !== null;
 

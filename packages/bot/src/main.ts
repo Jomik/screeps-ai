@@ -12,6 +12,8 @@ go(main);
 declare const global: { go: typeof go };
 global.go = go;
 
+PathFinder.use(true);
+
 export const loop = ErrorMapper.wrapLoop(
   wrapWithMemoryHack(() => {
     resetStats();

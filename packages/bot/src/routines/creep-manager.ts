@@ -2,38 +2,24 @@ import { Routine } from 'coroutines';
 import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
-import { isDefined, isStructureType, restartOnTickChange } from '../utils';
+import { isDefined, isStructureType } from '../utils';
+import { intelRef } from './intel-manager';
+import { runHauler } from './hauler';
 
 const logger = createLogger('creep-manager');
 
-const pickupEnergy = (
-  worker: Creep,
-  need: number,
-  includeContainer = true,
-  includeLinks = true
-) => {
-  const containers = includeContainer
-    ? worker.room
-        .find(FIND_STRUCTURES)
-        .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
-    : worker.room
-        .find(FIND_STRUCTURES)
-        .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE))
-        .filter(
-          (s) =>
-            s.pos.findInRange(FIND_SOURCES, 1).length > 0 &&
-            (!s.room.controller || s.pos.getRangeTo(s.room.controller) > 3)
-        );
+const pickupEnergy = (worker: Creep, need: number) => {
+  const containers = worker.room
+    .find(FIND_STRUCTURES)
+    .filter(isStructureType(STRUCTURE_CONTAINER, STRUCTURE_STORAGE));
   const energyDrops = worker.room.find(FIND_DROPPED_RESOURCES, {
     filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
   });
 
   const ruins = worker.room.find(FIND_RUINS);
-  const links = includeLinks
-    ? worker.room
-        .find(FIND_MY_STRUCTURES)
-        .filter(isStructureType(STRUCTURE_LINK))
-    : [];
+  const links = worker.room
+    .find(FIND_MY_STRUCTURES)
+    .filter(isStructureType(STRUCTURE_LINK));
   const tombstones = worker.room.find(FIND_TOMBSTONES);
   const targets = [
     ...containers,
@@ -42,11 +28,10 @@ const pickupEnergy = (
     ...tombstones,
     ...links,
   ];
-  const targetsWithNeeded = targets.filter(
-    (s) =>
-      (s instanceof Resource
-        ? s.amount
-        : s.store.getUsedCapacity(RESOURCE_ENERGY)) >= need
+  const targetsWithNeeded = targets.filter((s) =>
+    s instanceof Resource
+      ? s.amount >= need
+      : s.store.getUsedCapacity(RESOURCE_ENERGY) >= need
   );
   const target =
     worker.pos.findClosestByRange(targetsWithNeeded) ??
@@ -282,77 +267,41 @@ function* runUpgrader(id: Id<Creep>) {
   }
 }
 
-function* runHauler(id: Id<Creep>) {
+function* runScout(id: Id<Creep>) {
+  const intel = intelRef.get();
+
   for (;;) {
     yield sleep();
-    const hauler = Game.getObjectById(id);
-    if (!hauler) {
+    const scout = Game.getObjectById(id);
+
+    if (!scout) {
       return;
     }
 
-    const target =
-      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-        filter: (structure): structure is StructureTower =>
-          isStructureType(STRUCTURE_TOWER)(structure) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-      }) ??
-      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-        filter: (structure): structure is StructureSpawn | StructureExtension =>
-          isStructureType(STRUCTURE_SPAWN, STRUCTURE_EXTENSION)(structure) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-      }) ??
-      hauler.pos.findClosestByRange(FIND_MY_STRUCTURES, {
-        filter: (structure): structure is StructureLink =>
-          isStructureType(STRUCTURE_LINK)(structure) &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
-          (!structure.room.controller ||
-            structure.pos.getRangeTo(structure.room.controller) > 3),
-      }) ??
-      hauler.pos.findClosestByRange(FIND_STRUCTURES, {
-        filter: (structure): structure is StructureContainer =>
-          isStructureType(STRUCTURE_CONTAINER)(structure) &&
-          structure.pos.findInRange(FIND_SOURCES, 1).length === 0 &&
-          structure.store.getFreeCapacity(RESOURCE_ENERGY) > 0,
-      }) ??
-      hauler.room.storage ??
-      hauler.pos.findClosestByRange(FIND_MY_CREEPS, {
-        filter: (c) =>
-          c.name.startsWith('worker') &&
-          c.memory.target &&
-          c.store.getFreeCapacity(RESOURCE_ENERGY) >= CARRY_CAPACITY,
-      });
+    const home = scout.memory.home;
 
-    const need = Math.min(
-      hauler.store.getCapacity(RESOURCE_ENERGY),
-      target?.store.getFreeCapacity(RESOURCE_ENERGY) ?? Infinity
+    if (!home) {
+      scout.suicide();
+      return;
+    }
+
+    const adjacentRooms = Object.values(Game.map.describeExits(home)).filter(
+      (roomName) => Game.map.getRoomStatus(roomName).status === 'normal'
+    );
+    const [targetRoom] = adjacentRooms.filter(
+      (roomName) => !(roomName in intel)
     );
 
-    if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) < need) {
-      pickupEnergy(
-        hauler,
-        need - hauler.store.getUsedCapacity(RESOURCE_ENERGY),
-        target instanceof Structure
-          ? !(
-              [
-                STRUCTURE_CONTAINER,
-                STRUCTURE_STORAGE,
-              ] as BuildableStructureConstant[]
-            ).includes(target.structureType)
-          : false,
-        false
-      );
-      continue;
+    if (!targetRoom) {
+      scout.suicide();
+      return;
     }
 
-    if (!target) {
-      continue;
-    }
-
-    if (hauler.transfer(target, RESOURCE_ENERGY) !== OK) {
-      hauler.moveTo(target, {
+    if (scout.room.name !== targetRoom) {
+      scout.moveTo(new RoomPosition(25, 25, targetRoom), {
         visualizePathStyle: {
+          stroke: 'purple',
           lineStyle: 'dashed',
-          stroke: 'green',
           opacity: 0.2,
         },
       });
@@ -379,13 +328,13 @@ export function* creepManager(): Routine {
         go(runMiner, creep.id);
       } else if (creep.name.startsWith('attacker')) {
         go(runAttacker, creep.id);
+      } else if (creep.name.startsWith('scout')) {
+        go(runScout, creep.id);
       } else {
         logger.info(`Unknown creep ${creep.name}`);
         continue;
       }
       running.add(creep.id);
-
-      logger.info(`Started ${creep.name}`);
     }
   }
 }
