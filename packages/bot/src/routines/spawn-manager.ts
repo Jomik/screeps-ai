@@ -267,6 +267,11 @@ export function* spawnManager(): Routine {
       }
     }
 
+    if (haulers.length < 2 + freeRemoteSlots.length) {
+      spawnHauler();
+      continue;
+    }
+
     const controller = room.controller;
     if (
       controller &&
@@ -290,13 +295,8 @@ export function* spawnManager(): Routine {
       continue;
     }
 
-    if (controller && upgraders.length < MaxUpgraders - workers.length + 1) {
+    if (controller && upgraders.length < MaxUpgraders) {
       spawnUpgrader();
-      continue;
-    }
-
-    if (haulers.length < 3) {
-      spawnHauler();
       continue;
     }
   }
