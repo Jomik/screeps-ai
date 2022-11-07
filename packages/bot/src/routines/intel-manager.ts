@@ -32,12 +32,11 @@ export function* intelManager() {
         .find(FIND_SOURCES)
         .map(({ pos: { x, y } }) => [x, y] as Coordinates)
         .filter(([x, y]) => {
-          const { incomplete, cost } = PathFinder.search(originPos, {
+          const { incomplete } = PathFinder.search(originPos, {
             pos: new RoomPosition(x, y, room.name),
             range: 1,
           });
-          logger.info(`${room.name} : ${cost}`);
-          return !incomplete && cost < 50;
+          return !incomplete;
         });
       const hostile =
         room.find(FIND_HOSTILE_CREEPS).length > 0 ||
