@@ -277,25 +277,29 @@ export function* spawnManager(): Routine {
       controller &&
       (controller.level < MaxControllerLevel ||
         controller.ticksToDowngrade < 500) &&
-      upgraders.length < workers.length &&
-      upgraders.length < MaxUpgraders * Math.min(controller.level / 4, 1)
+      upgraders.length < workers.length
     ) {
       spawnUpgrader();
       continue;
     }
 
     if (
+      controller &&
       (hasConstructionSite ||
         workers.length < 1 ||
-        (controller && controller.progressTotal - controller.progress < 100)) &&
-      workers.length <
-        MaxWorkers * Math.min((room.controller?.level ?? 4) / 4, 1)
+        controller.progressTotal - controller.progress < 100) &&
+      workers.length < MaxWorkers * Math.min((controller.level ?? 4) / 4, 1)
     ) {
       spawnWorker();
       continue;
     }
 
-    if (controller && upgraders.length < MaxUpgraders) {
+    if (
+      controller &&
+      upgraders.length < MaxUpgraders &&
+      (!room.storage ||
+        room.storage.store.getUsedCapacity(RESOURCE_ENERGY) > 10000)
+    ) {
       spawnUpgrader();
       continue;
     }
