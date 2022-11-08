@@ -80,8 +80,9 @@ function* runMiner(id: Id<Creep>) {
     }
 
     const [x, y, roomName = miner.room.name] = miner.memory.slot;
-    if (miner.pos.x !== x || miner.pos.y !== y) {
-      miner.moveTo(new RoomPosition(x, y, roomName), {
+    const target = new RoomPosition(x, y, roomName);
+    if (!miner.pos.isEqualTo(target)) {
+      miner.moveTo(target, {
         visualizePathStyle: { lineStyle: 'dashed', opacity: 0.2 },
       });
     }
