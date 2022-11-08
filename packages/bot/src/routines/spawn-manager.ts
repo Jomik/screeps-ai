@@ -91,8 +91,7 @@ export function* spawnManager(): Routine {
 
   const spawnWorker = () => {
     function* bodyGenerator() {
-      yield [WORK, WORK, CARRY, MOVE];
-      yield [MOVE];
+      yield [WORK, CARRY, MOVE, MOVE];
       for (;;) {
         yield [CARRY];
         yield [CARRY];
