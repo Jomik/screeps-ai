@@ -266,7 +266,7 @@ export function* spawnManager(): Routine {
       }
     }
 
-    if (haulers.length < 2 + freeRemoteSlots.length) {
+    if (haulers.length < 2 + remoteSlots.length) {
       spawnHauler();
       continue;
     }

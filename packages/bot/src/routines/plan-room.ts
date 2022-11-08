@@ -17,6 +17,7 @@ import { isDefined, MaxControllerLevel, max } from '../utils';
 
 const logger = createLogger('room-planner');
 
+const MaxConstructionSites = 2;
 const RoadCost = 1;
 const BlockedCost = 2;
 
@@ -576,11 +577,10 @@ export function* planRoom(roomName: string): Routine {
       if (!room) {
         return;
       }
-      const [site] = room.find(FIND_MY_CONSTRUCTION_SITES);
-      if (site) {
-        while (Game.getObjectById(site.id) !== null) {
-          yield sleep();
-        }
+      if (
+        room.find(FIND_MY_CONSTRUCTION_SITES).length >= MaxConstructionSites
+      ) {
+        yield sleep();
         continue;
       }
       const controller = room.controller;
