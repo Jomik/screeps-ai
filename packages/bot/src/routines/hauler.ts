@@ -148,7 +148,7 @@ const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
       ({ store, structureType, pos }) =>
         store.getFreeCapacity(RESOURCE_ENERGY) > 0 &&
         (structureType !== STRUCTURE_LINK ||
-          pos.findInRange(FIND_MY_SPAWNS, 5).length > 0) &&
+          (room.controller && !pos.inRangeTo(room.controller, 5))) &&
         (structureType !== STRUCTURE_CONTAINER ||
           pos.findInRange(FIND_SOURCES, 1).length === 0)
     );
