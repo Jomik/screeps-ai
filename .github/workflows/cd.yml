@@ -1,0 +1,20 @@
+name: Continous delivery
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  integration:
+    uses: ./.github/workflows/ci.yml
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: MMO
+      url: https://screeps.com/a/#!/profile/Jomik
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - name: Deploy MMO
+        run: yarn deploy:mmo

@@ -1,0 +1,46 @@
+name: Continous integration
+
+on:
+  pull_request:
+    branches:
+      - 'main'
+  workflow_call:
+
+jobs:
+  workspaces:
+    uses: ./.github/workflows/workspaces.yml
+  build:
+    runs-on: ubuntu-latest
+    needs: workspaces
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJSON(needs.workspaces.outputs.workspaces) }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - name: 'typescript compile'
+        run: yarn workspace ${{ matrix.workspace }} run tsc --noEmit --strict --skipLibCheck
+  unit-test:
+    runs-on: ubuntu-latest
+    needs:
+      - workspaces
+      - build
+    strategy:
+      fail-fast: false
+      matrix:
+        workspace: ${{ fromJSON(needs.workspaces.outputs.workspaces) }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - name: 'run test'
+        run: yarn workspace ${{ matrix.workspace }} run test
+  lint:
+    runs-on: ubuntu-latest
+    needs:
+      - build
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - name: 'run lint'
+        run: yarn lint
