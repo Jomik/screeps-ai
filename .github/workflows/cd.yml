@@ -19,3 +19,5 @@ jobs:
       - uses: ./.github/actions/install
       - name: Deploy MMO
         run: yarn deploy:mmo
+        env:
+          SCREEPS_MMO_TOKEN: ${{ secrets.SCREEPS_TOKEN }}
