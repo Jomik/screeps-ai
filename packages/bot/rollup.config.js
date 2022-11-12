@@ -27,6 +27,10 @@ if (cfg && dest) {
     }
     cfg[key.slice(Prefix.length).toLowerCase()] = value;
   }
+
+  if (!cfg.token && !(cfg.email && cfg.password)) {
+    throw new Error('Missing token, or email and password');
+  }
 }
 
 export default {

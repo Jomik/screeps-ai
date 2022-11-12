@@ -9,6 +9,7 @@ jobs:
   integration:
     uses: ./.github/workflows/ci.yml
   deploy:
+    needs: integration
     runs-on: ubuntu-latest
     environment:
       name: MMO
