@@ -1,5 +1,7 @@
 import { Coordinates, createLogger, getMemoryRef } from '../library';
 import { sleep } from '../library/sleep';
+import { createSpawnRequest } from '../library/spawn';
+import { go } from '../runner';
 
 const logger = createLogger('intel-manager');
 
@@ -18,6 +20,35 @@ export function* intelManager() {
   if (!originPos) {
     return;
   }
+
+  go(function* scoutRequester() {
+    for (;;) {
+      yield sleep();
+      const adjacentRooms = Object.values(
+        Game.map.describeExits(originPos.roomName)
+      ).filter(
+        (roomName) => Game.map.getRoomStatus(roomName).status === 'normal'
+      );
+
+      if (
+        adjacentRooms.some((roomName) => !(roomName in intel)) &&
+        Object.keys(Game.creeps).every((name) => !name.startsWith('scout'))
+      ) {
+        logger.info(`Creating spawn request`);
+        const creep = yield* createSpawnRequest({
+          memory: { home: originPos.roomName },
+          priority: 99,
+          roomName: originPos.roomName,
+          type: 'scout',
+          *bodyFactory() {
+            yield [MOVE];
+            yield [TOUGH];
+          },
+        });
+        logger.info(`Got scout ${creep.name}`);
+      }
+    }
+  });
 
   for (;;) {
     yield sleep();

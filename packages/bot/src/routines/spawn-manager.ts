@@ -2,6 +2,7 @@ import { Routine } from 'coroutines';
 import { Coordinates, createLogger, dist, expandPosition } from '../library';
 import { sleep } from '../library/sleep';
 import { isDefined, isStructureType, MaxControllerLevel } from '../utils';
+import { CreepTypes } from './creep-manager';
 import { intelRef } from './intel-manager';
 
 const MaxWorkers = 5;
@@ -14,7 +15,7 @@ const calculateBodyCost = (body: BodyPartConstant[]): number =>
 
 const spawnCreep = (
   spawn: StructureSpawn,
-  type: string,
+  type: CreepTypes,
   memory: CreepMemory,
   bodyGenerator: IterableIterator<BodyPartConstant[]>
 ): ScreepsReturnCode => {
@@ -108,19 +109,6 @@ export function* spawnManager(): Routine {
     return spawnCreep(getSpawn(), 'worker', {}, bodyGenerator());
   };
 
-  const spawnScout = () => {
-    function* bodyGenerator() {
-      yield [MOVE];
-    }
-    const spawn = getSpawn();
-    return spawnCreep(
-      spawn,
-      'scout',
-      { home: spawn.room.name },
-      bodyGenerator()
-    );
-  };
-
   const intel = intelRef.get();
 
   for (;;) {
@@ -154,7 +142,6 @@ export function* spawnManager(): Routine {
       hauler: haulers = [],
       upgrader: upgraders = [],
       worker: workers = [],
-      scout: scouts = [],
     } = _.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]);
 
     const hasConstructionSite =
@@ -224,14 +211,6 @@ export function* spawnManager(): Routine {
 
     if (haulers.length < 2) {
       spawnHauler();
-      continue;
-    }
-
-    if (
-      scouts.length < 1 &&
-      adjacentRooms.some((roomName) => !(roomName in intel))
-    ) {
-      spawnScout();
       continue;
     }
 
