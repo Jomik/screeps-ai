@@ -145,7 +145,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     );
   }
 
-  // Set walls to 0 and rest to Infinity.
+  // Block off walls
   for (let x = 0; x <= 49; ++x) {
     for (let y = 0; y <= 49; ++y) {
       if (terrain.get(x, y) & TERRAIN_MASK_WALL) {
