@@ -1,4 +1,5 @@
 import { RawSourceMap, SourceMapConsumer } from 'source-map';
+import { isDefined } from './small-fns';
 
 declare const console: { log(msg: string): void };
 declare const require: (module: `${string}.js.map`) => RawSourceMap;
@@ -31,7 +32,7 @@ export class ErrorMapper {
     const stack: string =
       error instanceof Error ? (error.stack as string) : error;
     const cached = this.cache.get(stack);
-    if (cached) {
+    if (cached != null) {
       return cached;
     }
 
@@ -48,10 +49,10 @@ export class ErrorMapper {
         });
 
         if (pos.line != null) {
-          if (pos.name) {
+          if (isDefined(pos.name)) {
             outStack += `\n    at ${pos.name} (${pos.source}:${pos.line}:${pos.column})`;
           } else {
-            if (match[1]) {
+            if (match[1] !== undefined) {
               // no original source file name known - use file name from given trace
               outStack += `\n    at ${match[1]} (${pos.source}:${pos.line}:${pos.column})`;
             } else {

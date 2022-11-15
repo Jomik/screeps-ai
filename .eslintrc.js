@@ -30,6 +30,11 @@ const config = {
         'plugin:@typescript-eslint/recommended-requiring-type-checking',
       ],
       rules: {
+        '@typescript-eslint/strict-boolean-expressions': [
+          'warn',
+          { allowNullableBoolean: true },
+        ],
+
         'require-yield': 'off',
         '@typescript-eslint/no-unused-vars': 'off',
         '@typescript-eslint/ban-ts-comment': [

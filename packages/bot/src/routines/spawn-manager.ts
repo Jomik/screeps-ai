@@ -125,7 +125,7 @@ export function* spawnManager(): Routine {
 
   for (;;) {
     yield sleep();
-    while (!getSpawn() || getSpawn().spawning) {
+    while (getSpawn().spawning) {
       yield sleep();
     }
     const spawn = getSpawn();

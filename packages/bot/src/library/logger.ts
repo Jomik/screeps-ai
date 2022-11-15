@@ -1,3 +1,4 @@
+import { isDefined } from '../utils';
 import { ErrorMapper } from '../utils/ErrorMapper';
 import { InvalidArgumentError, registerCommand } from './console';
 import { getMemoryRef } from './memory';
@@ -108,7 +109,7 @@ class ConsoleLogger implements Logger {
     output += this.name;
     output += Separator;
 
-    if (location) {
+    if (isDefined(location)) {
       const roomName = this.getRoomName(location);
       output += `<a href="#!/room/${Game.shard.name}/${roomName}">${roomName}</a>`;
       output += Separator;
@@ -116,7 +117,7 @@ class ConsoleLogger implements Logger {
     output += typeof message === 'function' ? message() : message;
 
     const filter = settingsRef.filter;
-    if (filter && !output.includes(filter)) {
+    if (isDefined(filter) && !output.includes(filter)) {
       return;
     }
     console.log(`<span style="color:${color}">${output}</span>`);

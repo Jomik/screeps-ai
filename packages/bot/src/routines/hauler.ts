@@ -7,7 +7,7 @@ const logger = createLogger('hauler');
 
 const intel = intelRef.get();
 const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
-  if (!hauler.memory.home) {
+  if (!isDefined(hauler.memory.home)) {
     return;
   }
   const containers = includeContainer
@@ -113,7 +113,7 @@ const isHaulerTarget = isStructureType(
 );
 
 const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
-  if (!hauler.memory.home) {
+  if (!isDefined(hauler.memory.home)) {
     return null;
   }
 

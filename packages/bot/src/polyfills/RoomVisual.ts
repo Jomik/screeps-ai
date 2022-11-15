@@ -21,7 +21,7 @@ interface AnimatedStyle {
 }
 
 interface RoomVisual {
-  roads: Poly;
+  roads?: Poly;
   structure(
     x: number,
     y: number,
@@ -380,7 +380,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
         stroke: undefined,
         opacity: opts.opacity,
       });
-      if (!this.roads) this.roads = [];
+      this.roads ??= [];
       this.roads.push([x, y]);
       break;
     case STRUCTURE_RAMPART:
@@ -530,18 +530,18 @@ function relPoly(x: number, y: number, poly: Poly) {
 }
 
 RoomVisual.prototype.connectRoads = function (opts = {}) {
-  const color = opts.color || colors.road || 'white';
+  const color = opts.color ?? colors.road ?? 'white';
   if (!this.roads) return this;
   this.roads.forEach((r) => {
     for (let i = 1; i <= 4; i++) {
       const d = dirs[i]!;
       const c = [r[0]! + d[0]!, r[1]! + d[1]!];
-      const rd = _.some(this.roads, (r) => r[0] == c[0] && r[1] == c[1]);
+      const rd = _.some(this.roads ?? [], (r) => r[0] == c[0] && r[1] == c[1]);
       if (rd) {
         this.line(r[0], r[1], c[0]!, c[1]!, {
           color: color,
           width: 0.35,
-          opacity: opts.opacity || 1,
+          opacity: opts.opacity ?? 1,
         });
       }
     }
@@ -551,16 +551,14 @@ RoomVisual.prototype.connectRoads = function (opts = {}) {
 };
 
 RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
-  const background = opts.background
-    ? opts.background
-    : colors.speechBackground;
-  const textcolor = opts.textcolor ? opts.textcolor : colors.speechText;
-  const textstyle = opts.textstyle ? opts.textstyle : false;
-  const textsize = opts.textsize ? opts.textsize : speechSize;
-  const textfont = opts.textfont ? opts.textfont : speechFont;
-  const opacity = opts.opacity ? opts.opacity : 1;
+  const background = opts.background ?? colors.speechBackground;
+  const textcolor = opts.textcolor ?? colors.speechText;
+  const textstyle = opts.textstyle ?? undefined;
+  const textsize = opts.textsize ?? speechSize;
+  const textfont = opts.textfont ?? speechFont;
+  const opacity = opts.opacity ?? 1;
   let fontstring = '';
-  if (textstyle) {
+  if (textstyle !== undefined) {
     fontstring = textstyle + ' ';
   }
   fontstring += `${textsize} ${textfont}`;
@@ -592,10 +590,10 @@ RoomVisual.prototype.speech = function (text, x, y, opts = {}) {
 };
 
 RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
-  const color = opts.color ? opts.color : 'blue';
-  const opacity = opts.opacity ? opts.opacity : 0.5;
-  let radius = opts.radius ? opts.radius : 0.75;
-  const frames = opts.frames ? opts.frames : 6;
+  const color = opts.color ?? 'blue';
+  const opacity = opts.opacity ?? 0.5;
+  let radius = opts.radius ?? 0.75;
+  const frames = opts.frames ?? 6;
 
   const angle = (((Game.time % frames) * 90) / frames) * (Math.PI / 180);
   const s = Math.sin(angle);

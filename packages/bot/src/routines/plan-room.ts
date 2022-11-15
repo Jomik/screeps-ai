@@ -1,5 +1,4 @@
-import { Routine } from 'coroutines';
-import { SubRoutine } from 'coroutines';
+import { Routine, SubRoutine } from 'coroutines';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -11,9 +10,8 @@ import {
 } from '../library';
 import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
-import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
-import { isDefined, MaxControllerLevel, max } from '../utils';
+import { isDefined, max, MaxControllerLevel } from '../utils';
 
 const logger = createLogger('room-planner');
 

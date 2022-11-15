@@ -3,8 +3,8 @@ import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
 import { isDefined, isStructureType } from '../utils';
-import { intelRef } from './intel-manager';
 import { runHauler } from './hauler';
+import { intelRef } from './intel-manager';
 
 const logger = createLogger('creep-manager');
 
@@ -281,7 +281,7 @@ function* runScout(id: Id<Creep>) {
 
     const home = scout.memory.home;
 
-    if (!home) {
+    if (!isDefined(home)) {
       scout.suicide();
       return;
     }
@@ -293,7 +293,7 @@ function* runScout(id: Id<Creep>) {
       (roomName) => !(roomName in intel)
     );
 
-    if (!targetRoom) {
+    if (!isDefined(targetRoom)) {
       scout.suicide();
       return;
     }
@@ -316,7 +316,7 @@ export function* creepManager(): Routine {
     yield sleep();
     const creeps = Object.values(Game.creeps).filter((c) => c.my);
     for (const creep of creeps) {
-      if (!creep.id || running.has(creep.id)) {
+      if (isDefined(creep.id) || running.has(creep.id)) {
         continue;
       }
       if (creep.name.startsWith('hauler')) {

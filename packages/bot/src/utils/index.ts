@@ -1,4 +1,5 @@
 import { Routine } from 'coroutines';
+export * from './small-fns';
 export * from './isStructureType';
 
 type GroupByKey<T extends Record<Key, string>, Key extends string> = {
@@ -32,9 +33,6 @@ export const groupBy = <T, K extends string | number>(
     };
   }, {} as Record<K, T[]>);
 
-export const isDefined = <T>(value: T | undefined | null): value is T =>
-  value !== undefined && value !== null;
-
 export const restartOnTickChange = <Args extends unknown[]>(
   routine: (...args: Args) => Routine
 ): ((...args: Args) => Routine) => {
@@ -66,10 +64,6 @@ export const getGuid = (): string => {
   }
   return `${time.toString(36)}:${(++counter).toString(36)}`;
 };
-
-export const objectEntries = <T extends string, V>(
-  obj: Partial<Record<T, V>>
-): [T, V][] => Object.entries(obj).filter(isDefined) as [T, V][];
 
 export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
   arr.reduce<{ value: number; item: T | null }>(
