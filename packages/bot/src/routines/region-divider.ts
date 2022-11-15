@@ -1,7 +1,9 @@
-import { Routine, SubRoutine } from 'coroutines';
-import { createLogger } from '../library';
+import { Routine } from 'coroutines';
+import { createLogger, dist } from '../library';
 import { sleep } from '../library/sleep';
+import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
+import { isDefined } from '../utils';
 
 const rounding = 10 ** 10;
 const round = (num: number) =>
@@ -32,13 +34,10 @@ const angleToDirection = (angle: number): Vector => {
   return { x: -sinTheta, y: cosTheta };
 };
 
-function* collect<T>(
-  generator: Generator<T, void, undefined>
-): SubRoutine<T[]> {
+function collect<T>(generator: Generator<T, void, undefined>): T[] {
   const res: T[] = [];
   for (const next of generator) {
     res.push(next);
-    yield;
   }
 
   return res;
@@ -154,11 +153,39 @@ function* castRay(
   }
 }
 
+const getVisionLine = (terrain: RoomTerrain, origin: Vector, angle: number) => {
+  const ray1 = collect(castRay(terrain, origin, angle));
+  const ray2 = collect(castRay(terrain, origin, angle + 180));
+  return [...ray1].reverse().concat(ray2.slice(1));
+};
+
+const isTileExit = (terrain: RoomTerrain, { x, y }: Vector) =>
+  (x === 0 || y === 0 || x === 49 || y === 49) &&
+  !(terrain.get(x, y) & TERRAIN_MASK_WALL);
+
+const getLineLength = (
+  terrain: RoomTerrain,
+  line: RayCastResult[],
+  exitDistance = Infinity
+): number => {
+  const start = line[0];
+  const end = line[line.length - 1];
+  if (!isDefined(start) || !isDefined(end)) {
+    return 0;
+  }
+
+  const d = dist([start.tile.x, start.tile.y], [end.tile.x, end.tile.y]);
+  if (isTileExit(terrain, end.tile) || isTileExit(terrain, start.tile)) {
+    return Math.max(d, exitDistance);
+  }
+  return d;
+};
+
 export function* regionDivider(roomName: string): Routine {
   const terrain = Game.map.getRoomTerrain(roomName);
   const allWalkableTiles: Vector[] = [];
-  for (let y = 0; y < 49; ++y) {
-    for (let x = 0; x < 49; ++x) {
+  for (let y = 1; y < 49; ++y) {
+    for (let x = 1; x < 49; ++x) {
       if (!(terrain.get(x, y) & TERRAIN_MASK_WALL)) {
         allWalkableTiles.push({ x, y });
       }
@@ -166,25 +193,65 @@ export function* regionDivider(roomName: string): Routine {
   }
   yield;
 
-  let visuals = '';
-  go(function* rayVisuals() {
+  const scores = new PathFinder.CostMatrix();
+  go(function* currentVisual() {
     for (;;) {
-      new RoomVisual(roomName).import(visuals);
+      new RoomVisual(roomName).import(
+        overlayCostMatrix(scores, (value) => value / 30)
+      );
+
       yield sleep();
     }
   });
 
   for (const origin of allWalkableTiles) {
-    const rays: Ray[] = [];
-    const interval = 5;
-    for (let degrees = 0; degrees < 360; degrees += interval) {
-      const ray = yield* collect(castRay(terrain, origin, degrees));
-      rays.push(ray);
+    const interval = 10;
+    for (let degrees = 0; degrees < 175; degrees += interval) {
+      const potentialChoke = getVisionLine(terrain, origin, degrees);
+      const chokeLength = getLineLength(terrain, potentialChoke);
+      if (chokeLength === Infinity) {
+        continue;
+      }
+
+      const perpendicularDegrees = (degrees + 90) % 180;
+      const perpendicularLine1 = collect(
+        castRay(terrain, origin, perpendicularDegrees)
+      );
+      const perpendicularLine2 = collect(
+        castRay(terrain, origin, perpendicularDegrees + 180)
+      );
+
+      const perpendicularLine1Length = getLineLength(
+        terrain,
+        perpendicularLine1,
+        10
+      );
+      const perpendicularLine2Length = getLineLength(
+        terrain,
+        perpendicularLine2,
+        10
+      );
+
+      const shortestHalfDistance = Math.min(
+        perpendicularLine1Length,
+        perpendicularLine2Length
+      );
+      const clampedHalfDistance = Math.min(Infinity, shortestHalfDistance);
+
+      const score =
+        chokeLength === 0 ? 0 : (clampedHalfDistance / chokeLength) * 2;
+      scores.set(
+        origin.x,
+        origin.y,
+        Math.max(scores.get(origin.x, origin.y), Math.min(score ** 2, 30))
+      );
+      yield;
     }
-    visuals = getVisuals(rays);
-    yield sleep();
   }
+
+  // logger.info(`done ${rays.length}`);
 }
+
 const getVisuals = (rays: Ray[]): string => {
   const visuals = new RoomVisual();
   for (const ray of rays) {
@@ -208,15 +275,15 @@ const getVisuals = (rays: Ray[]): string => {
       fill: 'transparent',
       opacity: 1,
     });
-    // ray.forEach(({ tile: { x, y } }) =>
-    //   visuals.rect(x - 0.5, y - 0.5, 1, 1, {
-    //     fill: 'transparent',
-    //     stroke: 'blue',
-    //   })
-    // );
-    // ray.forEach(({ intersection: { x, y } }) =>
-    //   visuals.circle(x, y, { radius: 0.1, stroke: 'blue' })
-    // );
+    ray.forEach(({ tile: { x, y } }) =>
+      visuals.rect(x - 0.5, y - 0.5, 1, 1, {
+        fill: 'transparent',
+        stroke: 'blue',
+      })
+    );
+    ray.forEach(({ intersection: { x, y } }) =>
+      visuals.circle(x, y, { radius: 0.1, stroke: 'blue' })
+    );
   }
   const res = visuals.export();
   visuals.clear();

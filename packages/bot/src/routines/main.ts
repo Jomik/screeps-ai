@@ -12,10 +12,11 @@ export function* main() {
   go(creepManager);
   go(spawnManager);
   go(intelManager);
-  go(regionDivider, 'W8N9');
+  go(regionDivider, 'W8N8');
 
   for (const room of Object.values(Game.rooms)) {
     if (room.controller?.my) {
+      // go(regionDivider, room.name);
       go(planRoom, room.name);
       go(linkManager, room.name);
     }
