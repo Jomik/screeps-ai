@@ -1,4 +1,6 @@
 export type Coordinates = [x: number, y: number];
+export const coordinatesEquals = (a: Coordinates, b: Coordinates): boolean =>
+  a[0] === b[0] && a[1] === b[1];
 
 export const coordinatesToNumber = ([x, y]: Coordinates): number => x + y * 50;
 export const numberToCoordinates = (coordinates: number): Coordinates => {
