@@ -2,6 +2,7 @@ import { SubRoutine } from 'coroutines';
 import { Coordinates, coordinatesEquals, createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
+import { max } from '../utils';
 
 class RectangleArray {
   constructor(
@@ -47,6 +48,17 @@ function collect<T>(generator: Generator<T, void, undefined>): T[] {
   return res;
 }
 
+function* map<T, U>(
+  values: T[],
+  generator: (value: T) => SubRoutine<U>
+): SubRoutine<U[]> {
+  const res: U[] = [];
+  for (const value of values) {
+    res.push(yield* generator(value));
+  }
+  return res;
+}
+
 type Contour = Coordinates[];
 
 const neighbourIndex: Coordinates[] = [
@@ -71,6 +83,51 @@ const translateInDirection = (
 
 const logger = createLogger('room-knowledge');
 
+const distanceFromPointToLine = (
+  [x, y]: Coordinates,
+  [[x1, y1], [x2, y2]]: [Coordinates, Coordinates]
+): number =>
+  Math.abs((x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y)) /
+  Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+
+const startDouglasPecker = (epsilon: number) =>
+  function* douglasPecker(line: Coordinates[]): SubRoutine<Coordinates[]> {
+    yield;
+    const start = line[0];
+    const end = line[line.length - 1];
+    if (start === undefined || end === undefined) {
+      logger.error('douglas pecker: undefined start or end');
+      return [];
+    }
+    // Find the point with the maximum distance
+    const maxPoint = max(line.slice(1, -1), (p) =>
+      distanceFromPointToLine(p, [start, end])
+    );
+    // If max distance is greater than epsilon, recursively simplify
+    // if (dmax > epsilon) {
+    //     # Recursive call
+    //     recResults1[] = DouglasPeucker(PointList[1...index], epsilon)
+    //     recResults2[] = DouglasPeucker(PointList[index...end], epsilon)
+    //     # Build the result list
+    //     ResultList[] = {recResults1[1...length(recResults1) - 1], recResults2[1...length(recResults2)]}
+    if (
+      maxPoint !== null &&
+      distanceFromPointToLine(maxPoint, [start, end]) > epsilon
+    ) {
+      const index = line.indexOf(maxPoint);
+      const left = yield* douglasPecker(line.slice(0, index + 1));
+      const right = yield* douglasPecker(line.slice(index));
+      return left.slice(0, -1).concat(right);
+    }
+    // } else {
+    //     ResultList[] = {PointList[1], PointList[end]}
+    // }
+    // # Return the result
+    // return ResultList[]
+    return [start, end];
+  };
+
+// Component labelling
 const isWhite = (x: number, y: number, terrain: RoomTerrain) =>
   !(terrain.get(x, y) & TERRAIN_MASK_WALL);
 const isOutOfBounds = (x: number, y: number): boolean =>
@@ -193,17 +250,27 @@ export function* roomKnowledge(roomName: string) {
 
   const labelMap = new RectangleArray(50, 50);
 
-  go(function* obstacleMap() {
+  // go(function* obstacleMap() {
+  //   for (;;) {
+  //     new RoomVisual(roomName).import(
+  //       overlayRectangleArray(labelMap, (value) => value / 16)
+  //     );
+  //     yield sleep();
+  //   }
+  // });
+
+  const contours = yield* labelComponents(terrain, labelMap);
+  // Potentially simplify with douglas pecker
+
+  go(function* contourVisuals() {
+    const visuals = new RoomVisual('dummy');
+    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+    const exported = visuals.export();
     for (;;) {
-      new RoomVisual(roomName).import(
-        overlayRectangleArray(labelMap, (value) => value / 16)
-      );
+      new RoomVisual(roomName).import(exported);
       yield sleep();
     }
   });
-
-  const contours = yield* labelComponents(terrain, labelMap);
-  logger.info(`done ${contours.length}`);
 }
 
 export const overlayRectangleArray = (
