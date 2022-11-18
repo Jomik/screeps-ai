@@ -2,7 +2,9 @@ import { SubRoutine } from 'coroutines';
 import { Coordinates, coordinatesEquals, createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
+import Delaunator from 'delaunator';
 import { max } from '../utils';
+import { forEachVoronoiEdge } from '../library/delaunay';
 
 class RectangleArray {
   constructor(
@@ -259,12 +261,34 @@ export function* roomKnowledge(roomName: string) {
   //   }
   // });
 
+  // TODO: Potentially simplify with douglas pecker
   const contours = yield* labelComponents(terrain, labelMap);
-  // Potentially simplify with douglas pecker
 
-  go(function* contourVisuals() {
+  // go(function* contourVisuals() {
+  //   const visuals = new RoomVisual('dummy');
+  //   contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+  //   const exported = visuals.export();
+  //   for (;;) {
+  //     new RoomVisual(roomName).import(exported);
+  //     yield sleep();
+  //   }
+  // });
+
+  const points = contours.flat();
+  const delaunay = new Delaunator(new Uint8Array(points.flat()));
+  yield;
+
+  go(function* delaunayVisuals() {
     const visuals = new RoomVisual('dummy');
-    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+    forEachVoronoiEdge(points, delaunay, (e, p, q) => {
+      if (
+        (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
+        (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
+      ) {
+        return;
+      }
+      visuals.line(...p, ...q);
+    });
     const exported = visuals.export();
     for (;;) {
       new RoomVisual(roomName).import(exported);

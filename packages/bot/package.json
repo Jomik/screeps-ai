@@ -9,12 +9,14 @@
   },
   "dependencies": {
     "coroutines": "workspace:*",
+    "delaunator": "5.0.0",
     "source-map": "~0.6.1",
     "ts-polyfill": "^3.8.2"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^22.0.2",
     "@rollup/plugin-node-resolve": "^14.1.0",
+    "@types/delaunator": "5.0.0",
     "@types/jest": "^29.1.1",
     "@types/lodash": "3.10.2",
     "@types/screeps": "^3.3.0",
