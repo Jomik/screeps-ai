@@ -130,8 +130,12 @@ const startDouglasPecker = (epsilon: number) =>
   };
 
 // Component labelling
-const isWhite = (x: number, y: number, terrain: RoomTerrain) =>
-  !(terrain.get(x, y) & TERRAIN_MASK_WALL);
+const isRoomEdge = (x: number, y: number): boolean =>
+  x === 0 || y === 0 || x === 49 || y === 49;
+const isBlack = (x: number, y: number, terrain: RoomTerrain): boolean =>
+  !!(terrain.get(x, y) & TERRAIN_MASK_WALL);
+const isWhite = (x: number, y: number, terrain: RoomTerrain): boolean =>
+  !isBlack(x, y, terrain);
 const isOutOfBounds = (x: number, y: number): boolean =>
   x < 0 || x >= 50 || y < 0 || y >= 50;
 
@@ -264,15 +268,15 @@ export function* roomKnowledge(roomName: string) {
   // TODO: Potentially simplify with douglas pecker
   const contours = yield* labelComponents(terrain, labelMap);
 
-  // go(function* contourVisuals() {
-  //   const visuals = new RoomVisual('dummy');
-  //   contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
-  //   const exported = visuals.export();
-  //   for (;;) {
-  //     new RoomVisual(roomName).import(exported);
-  //     yield sleep();
-  //   }
-  // });
+  go(function* contourVisuals() {
+    const visuals = new RoomVisual('dummy');
+    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+    const exported = visuals.export();
+    for (;;) {
+      new RoomVisual(roomName).import(exported);
+      yield sleep();
+    }
+  });
 
   const points = contours.flat();
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
@@ -281,13 +285,15 @@ export function* roomKnowledge(roomName: string) {
   go(function* delaunayVisuals() {
     const visuals = new RoomVisual('dummy');
     forEachVoronoiEdge(points, delaunay, (e, p, q) => {
+      const roundedP = p.map(Math.round) as Coordinates;
+      const roundedQ = q.map(Math.round) as Coordinates;
       if (
-        (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
-        (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
+        (labelMap.get(...roundedP) ?? 0) > 0 ||
+        (labelMap.get(...roundedQ) ?? 0) > 0
       ) {
         return;
       }
-      visuals.line(...p, ...q);
+      visuals.line(...roundedP, ...roundedQ);
     });
     const exported = visuals.export();
     for (;;) {
