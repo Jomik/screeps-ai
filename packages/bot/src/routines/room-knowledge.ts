@@ -1,10 +1,16 @@
 import { SubRoutine } from 'coroutines';
-import { Coordinates, coordinatesEquals, createLogger } from '../library';
+import {
+  Coordinates,
+  coordinatesEquals,
+  coordinatesToNumber,
+  createLogger,
+  numberToCoordinates,
+} from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
 import Delaunator from 'delaunator';
 import { max } from '../utils';
-import { forEachVoronoiEdge } from '../library/delaunay';
+import { getVoronoiEdges } from '../library/delaunay';
 
 class RectangleArray {
   constructor(
@@ -38,6 +44,66 @@ class RectangleArray {
     cm._bits = new Uint8Array(this.bits);
 
     return cm;
+  }
+}
+
+class CoordinateSet {
+  private backingSet = new Set<number>();
+
+  public add(p: Coordinates): CoordinateSet {
+    this.backingSet.add(coordinatesToNumber(p));
+    return this;
+  }
+  public delete(p: Coordinates): boolean {
+    return this.backingSet.delete(coordinatesToNumber(p));
+  }
+  public has(p: Coordinates): boolean {
+    return this.backingSet.has(coordinatesToNumber(p));
+  }
+  public get size(): number {
+    return this.backingSet.size;
+  }
+
+  *[Symbol.iterator](): IterableIterator<Coordinates> {
+    for (const point of this.backingSet) {
+      yield numberToCoordinates(point);
+    }
+  }
+}
+
+class CoordinateAdjacencyList {
+  private adjacencyList = new Map<number, CoordinateSet>();
+
+  constructor(edges: [Coordinates, Coordinates][]) {
+    edges.forEach(([p, q]) => {
+      if (coordinatesEquals(p, q)) {
+        return;
+      }
+      this.addEdge(p, q);
+      this.addEdge(q, p);
+    });
+  }
+
+  *[Symbol.iterator](): IterableIterator<
+    [origin: Coordinates, neighbours: CoordinateSet]
+  > {
+    for (const [origin, neighbours] of this.adjacencyList) {
+      yield [numberToCoordinates(origin), neighbours];
+    }
+  }
+
+  public addEdge(p: Coordinates, q: Coordinates): CoordinateAdjacencyList {
+    this.get(p).add(q);
+    return this;
+  }
+
+  public get(p: Coordinates): CoordinateSet {
+    const hash = coordinatesToNumber(p);
+    const set = this.adjacencyList.get(hash) ?? new CoordinateSet();
+    if (!this.adjacencyList.has(hash)) {
+      this.adjacencyList.set(hash, set);
+    }
+    return set;
   }
 }
 
@@ -281,20 +347,37 @@ export function* roomKnowledge(roomName: string) {
   const points = contours.flat();
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
+  const edges = collect(getVoronoiEdges(points, delaunay))
+    .map(
+      ([p, q]) =>
+        [p.map(Math.round), q.map(Math.round)] as [Coordinates, Coordinates]
+    )
+    .filter(
+      ([p, q]) =>
+        !((labelMap.get(...p) ?? 0) > 0 || (labelMap.get(...q) ?? 0) > 0)
+    );
+  yield;
 
   go(function* delaunayVisuals() {
     const visuals = new RoomVisual('dummy');
-    forEachVoronoiEdge(points, delaunay, (e, p, q) => {
-      const roundedP = p.map(Math.round) as Coordinates;
-      const roundedQ = q.map(Math.round) as Coordinates;
-      if (
-        (labelMap.get(...roundedP) ?? 0) > 0 ||
-        (labelMap.get(...roundedQ) ?? 0) > 0
-      ) {
-        return;
-      }
-      visuals.line(...roundedP, ...roundedQ);
+    edges.forEach(([p, q]) => {
+      visuals.line(...p, ...q, { opacity: 0.5 });
     });
+    const exported = visuals.export();
+    for (;;) {
+      new RoomVisual(roomName).import(exported);
+      yield sleep();
+    }
+  });
+
+  const adjacencyList = new CoordinateAdjacencyList(edges);
+  go(function* adjacencyListVisuals() {
+    const visuals = new RoomVisual('dummy');
+
+    for (const [origin, neighbours] of adjacencyList) {
+      visuals.text(neighbours.size.toString(), ...origin, { color: 'black' });
+    }
+
     const exported = visuals.export();
     for (;;) {
       new RoomVisual(roomName).import(exported);

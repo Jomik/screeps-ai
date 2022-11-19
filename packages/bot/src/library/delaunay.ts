@@ -47,11 +47,10 @@ const triangleOfEdge = (e: number): number => {
   return Math.floor(e / 3);
 };
 
-export const forEachVoronoiEdge = (
+export function* getVoronoiEdges(
   points: Coordinates[],
-  delaunay: Delaunator<unknown>,
-  callback: (e: number, p: Coordinates, q: Coordinates) => void
-) => {
+  delaunay: Delaunator<unknown>
+): Generator<[p: Coordinates, q: Coordinates], void, undefined> {
   for (let e = 0; e < delaunay.triangles.length; e++) {
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (e < delaunay.halfedges[e]!) {
@@ -62,7 +61,7 @@ export const forEachVoronoiEdge = (
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         triangleOfEdge(delaunay.halfedges[e]!)
       );
-      callback(e, p, q);
+      yield [p, q];
     }
   }
-};
+}
