@@ -1,16 +1,41 @@
 import { SubRoutine } from 'coroutines';
-import {
-  Coordinates,
-  coordinatesEquals,
-  coordinatesToNumber,
-  createLogger,
-  numberToCoordinates,
-} from '../library';
+import { Coordinates, coordinatesEquals, createLogger, Edge } from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
 import Delaunator from 'delaunator';
 import { max } from '../utils';
 import { getVoronoiEdges } from '../library/delaunay';
+import { RTree } from '../library/rtree';
+
+const MinDistanceToWall = 2;
+
+const roundTo2Decimals = (num: number) =>
+  Math.round((num + Number.EPSILON) * 100) / 100;
+
+export const overlayRectangleArray = (
+  costMatrix: RectangleArray,
+  interpolate: (value: number) => number = (value) => value / 255
+) => {
+  const visual = new RoomVisual('dummy');
+
+  for (let x = 0; x <= 49; ++x) {
+    for (let y = 0; y <= 49; ++y) {
+      const value = costMatrix.get(x, y);
+      if (value === undefined || value === 0) {
+        continue;
+      }
+      visual.text(value.toString(), x, y + 0.25);
+      visual.rect(x - 0.5, y - 0.5, 1, 1, {
+        fill: `hsl(${(1.0 - interpolate(value)) * 240}, 100%, 60%)`,
+        opacity: 0.4,
+      });
+    }
+  }
+  const visuals = visual.export();
+  visual.clear();
+
+  return visuals;
+};
 
 class RectangleArray {
   constructor(
@@ -48,25 +73,41 @@ class RectangleArray {
 }
 
 class CoordinateSet {
-  private backingSet = new Set<number>();
+  constructor(private backingSet = new Set<string>()) {}
 
   public add(p: Coordinates): CoordinateSet {
-    this.backingSet.add(coordinatesToNumber(p));
+    this.backingSet.add(this.hash(p));
     return this;
   }
   public delete(p: Coordinates): boolean {
-    return this.backingSet.delete(coordinatesToNumber(p));
+    return this.backingSet.delete(this.hash(p));
   }
   public has(p: Coordinates): boolean {
-    return this.backingSet.has(coordinatesToNumber(p));
+    return this.backingSet.has(this.hash(p));
   }
+
+  public static from(coordinates: Coordinates[]): CoordinateSet {
+    return new CoordinateSet(new Set(coordinates.map((p) => this.hash(p))));
+  }
+
   public get size(): number {
     return this.backingSet.size;
   }
 
+  private static hash(p: Coordinates): string {
+    return p.join(',');
+  }
+  private hash(p: Coordinates): string {
+    return CoordinateSet.hash(p);
+  }
+
+  private unhash(p: string): Coordinates {
+    return p.split(',').map(Number.parseFloat) as Coordinates;
+  }
+
   *[Symbol.iterator](): IterableIterator<Coordinates> {
     for (const point of this.backingSet) {
-      yield numberToCoordinates(point);
+      yield this.unhash(point);
     }
   }
 }
@@ -74,13 +115,13 @@ class CoordinateSet {
 class CoordinateAdjacencyList {
   private adjacencyList = new Map<string, CoordinateSet>();
 
-  constructor(edges: [Coordinates, Coordinates][]) {
+  constructor(edges: Edge[]) {
     edges.forEach(([p, q]) => {
       if (coordinatesEquals(p, q)) {
         return;
       }
-      this.addEdge(p, q);
-      this.addEdge(q, p);
+      this.addEdge([p, q]);
+      this.addEdge([q, p]);
     });
   }
 
@@ -88,20 +129,34 @@ class CoordinateAdjacencyList {
     [origin: Coordinates, neighbours: CoordinateSet]
   > {
     for (const [origin, neighbours] of this.adjacencyList) {
-      yield [
-        origin.split(',').map(Number.parseFloat) as Coordinates,
-        neighbours,
-      ];
+      yield [this.unhash(origin), neighbours];
     }
   }
 
-  public addEdge(p: Coordinates, q: Coordinates): CoordinateAdjacencyList {
+  public addEdge([p, q]: Edge): CoordinateAdjacencyList {
     this.get(p).add(q);
     return this;
   }
+  public delete(p: Coordinates): CoordinateAdjacencyList {
+    const neighbours = this.get(p);
+    this.adjacencyList.delete(this.hash(p));
+    for (const n of neighbours) {
+      this.get(n)?.delete(p);
+    }
+
+    return this;
+  }
+
+  private hash(p: Coordinates): string {
+    return p.join(',');
+  }
+
+  private unhash(p: string): Coordinates {
+    return p.split(',').map(Number.parseFloat) as Coordinates;
+  }
 
   public get(p: Coordinates): CoordinateSet {
-    const hash = p.join(',');
+    const hash = this.hash(p);
     const set = this.adjacencyList.get(hash) ?? new CoordinateSet();
     if (!this.adjacencyList.has(hash)) {
       this.adjacencyList.set(hash, set);
@@ -156,7 +211,7 @@ const logger = createLogger('room-knowledge');
 
 const distanceFromPointToLine = (
   [x, y]: Coordinates,
-  [[x1, y1], [x2, y2]]: [Coordinates, Coordinates]
+  [[x1, y1], [x2, y2]]: Edge
 ): number =>
   Math.abs((x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y)) /
   Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
@@ -337,24 +392,21 @@ export function* roomKnowledge(roomName: string) {
   // TODO: Potentially simplify with douglas pecker
   const contours = yield* labelComponents(terrain, labelMap);
 
-  go(function* contourVisuals() {
-    const visuals = new RoomVisual('dummy');
-    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
-    const exported = visuals.export();
-    for (;;) {
-      new RoomVisual(roomName).import(exported);
-      yield sleep();
-    }
-  });
+  // go(function* contourVisuals() {
+  //   const visuals = new RoomVisual('dummy');
+  //   contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+  //   const exported = visuals.export();
+  //   for (;;) {
+  //     new RoomVisual(roomName).import(exported);
+  //     yield sleep();
+  //   }
+  // });
 
   const points = contours.flat();
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
   const edges = collect(getVoronoiEdges(points, delaunay))
-    // .map(
-    //   ([p, q]) =>
-    //     [p.map(Math.round), q.map(Math.round)] as [Coordinates, Coordinates]
-    // )
+    .map(([p, q]) => [p.map(roundTo2Decimals), q.map(roundTo2Decimals)] as Edge)
     .filter(
       ([p, q]) =>
         !(
@@ -364,26 +416,65 @@ export function* roomKnowledge(roomName: string) {
     );
   yield;
 
-  go(function* delaunayVisuals() {
-    const visuals = new RoomVisual('dummy');
-    edges.forEach(([p, q]) => {
-      visuals.line(...p, ...q, { opacity: 0.5 });
-    });
-    const exported = visuals.export();
-    for (;;) {
-      new RoomVisual(roomName).import(exported);
-      yield sleep();
-    }
-  });
+  // go(function* voronoiVisuals() {
+  //   const visuals = new RoomVisual('dummy');
+  //   edges.forEach(([p, q]) => {
+  //     visuals.line(...p, ...q, { opacity: 0.3 });
+  //   });
+  //   const exported = visuals.export();
+  //   for (;;) {
+  //     new RoomVisual(roomName).import(exported);
+  //     yield sleep();
+  //   }
+  // });
 
   const adjacencyList = new CoordinateAdjacencyList(edges);
-  go(function* adjacencyListVisuals() {
-    const visuals = new RoomVisual('dummy');
+  yield;
 
-    for (const [origin, neighbours] of adjacencyList) {
-      visuals.text(neighbours.size.toString(), ...origin, { color: 'black' });
+  const rtree = new RTree();
+  rtree.load(
+    contours.flatMap((contour) =>
+      // Since we skip the last element, this should be fine.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      contour.slice(0, -1).map((cur, i) => [cur, contour[i + 1]!])
+    )
+  );
+  yield;
+
+  // Prune medials
+  const candidates = CoordinateSet.from(
+    Array.from(adjacencyList)
+      .filter(([, neighbours]) => neighbours.size === 1)
+      .map(([p]) => p)
+  );
+  for (const p of candidates) {
+    const dist = rtree.nearestNeighbour(p)?.distance ?? 0;
+    const [parent] = adjacencyList.get(p);
+    if (
+      dist < MinDistanceToWall ||
+      !parent ||
+      (rtree.nearestNeighbour(parent)?.distance ?? Infinity) > dist
+    ) {
+      adjacencyList.delete(p);
+      if (parent && adjacencyList.get(parent).size === 1) {
+        candidates.add(parent);
+      }
     }
+  }
+  yield;
 
+  go(function* visualisePath() {
+    const visuals = new RoomVisual('dummy');
+    const seen = new CoordinateSet();
+    for (const [origin, neighbours] of adjacencyList) {
+      seen.add(origin);
+      for (const n of neighbours) {
+        if (seen.has(n)) {
+          continue;
+        }
+        visuals.line(...origin, ...n, { color: 'blue', opacity: 1 });
+      }
+    }
     const exported = visuals.export();
     for (;;) {
       new RoomVisual(roomName).import(exported);
@@ -391,28 +482,3 @@ export function* roomKnowledge(roomName: string) {
     }
   });
 }
-
-export const overlayRectangleArray = (
-  costMatrix: RectangleArray,
-  interpolate: (value: number) => number = (value) => value / 255
-) => {
-  const visual = new RoomVisual('dummy');
-
-  for (let x = 0; x <= 49; ++x) {
-    for (let y = 0; y <= 49; ++y) {
-      const value = costMatrix.get(x, y);
-      if (value === undefined || value === 0) {
-        continue;
-      }
-      visual.text(value.toString(), x, y + 0.25);
-      visual.rect(x - 0.5, y - 0.5, 1, 1, {
-        fill: `hsl(${(1.0 - interpolate(value)) * 240}, 100%, 60%)`,
-        opacity: 0.4,
-      });
-    }
-  }
-  const visuals = visual.export();
-  visual.clear();
-
-  return visuals;
-};
