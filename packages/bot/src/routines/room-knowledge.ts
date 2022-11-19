@@ -72,7 +72,7 @@ class CoordinateSet {
 }
 
 class CoordinateAdjacencyList {
-  private adjacencyList = new Map<number, CoordinateSet>();
+  private adjacencyList = new Map<string, CoordinateSet>();
 
   constructor(edges: [Coordinates, Coordinates][]) {
     edges.forEach(([p, q]) => {
@@ -88,7 +88,10 @@ class CoordinateAdjacencyList {
     [origin: Coordinates, neighbours: CoordinateSet]
   > {
     for (const [origin, neighbours] of this.adjacencyList) {
-      yield [numberToCoordinates(origin), neighbours];
+      yield [
+        origin.split(',').map(Number.parseFloat) as Coordinates,
+        neighbours,
+      ];
     }
   }
 
@@ -98,7 +101,7 @@ class CoordinateAdjacencyList {
   }
 
   public get(p: Coordinates): CoordinateSet {
-    const hash = coordinatesToNumber(p);
+    const hash = p.join(',');
     const set = this.adjacencyList.get(hash) ?? new CoordinateSet();
     if (!this.adjacencyList.has(hash)) {
       this.adjacencyList.set(hash, set);
@@ -348,13 +351,16 @@ export function* roomKnowledge(roomName: string) {
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
   const edges = collect(getVoronoiEdges(points, delaunay))
-    .map(
-      ([p, q]) =>
-        [p.map(Math.round), q.map(Math.round)] as [Coordinates, Coordinates]
-    )
+    // .map(
+    //   ([p, q]) =>
+    //     [p.map(Math.round), q.map(Math.round)] as [Coordinates, Coordinates]
+    // )
     .filter(
       ([p, q]) =>
-        !((labelMap.get(...p) ?? 0) > 0 || (labelMap.get(...q) ?? 0) > 0)
+        !(
+          (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
+          (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
+        )
     );
   yield;
 
