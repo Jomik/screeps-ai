@@ -1,13 +1,21 @@
 import { SubRoutine } from 'coroutines';
-import { Coordinates, coordinatesEquals, createLogger, Edge } from '../library';
+import {
+  CoordinateAdjacencyList,
+  Coordinates,
+  coordinatesEquals,
+  CoordinateSet,
+  createLogger,
+  Edge,
+} from '../library';
 import { sleep } from '../library/sleep';
 import { go } from '../runner';
 import Delaunator from 'delaunator';
 import { max } from '../utils';
 import { getVoronoiEdges } from '../library/delaunay';
 import { RTree } from '../library/rtree';
+import { RegionGraph, RegionNode } from '../library/region-graph';
 
-const MinDistanceToWall = 2;
+const MinDistanceToWall = 1;
 
 const roundTo2Decimals = (num: number) =>
   Math.round((num + Number.EPSILON) * 100) / 100;
@@ -69,99 +77,6 @@ class RectangleArray {
     cm._bits = new Uint8Array(this.bits);
 
     return cm;
-  }
-}
-
-class CoordinateSet {
-  constructor(private backingSet = new Set<string>()) {}
-
-  public add(p: Coordinates): CoordinateSet {
-    this.backingSet.add(this.hash(p));
-    return this;
-  }
-  public delete(p: Coordinates): boolean {
-    return this.backingSet.delete(this.hash(p));
-  }
-  public has(p: Coordinates): boolean {
-    return this.backingSet.has(this.hash(p));
-  }
-
-  public static from(coordinates: Coordinates[]): CoordinateSet {
-    return new CoordinateSet(new Set(coordinates.map((p) => this.hash(p))));
-  }
-
-  public get size(): number {
-    return this.backingSet.size;
-  }
-
-  private static hash(p: Coordinates): string {
-    return p.join(',');
-  }
-  private hash(p: Coordinates): string {
-    return CoordinateSet.hash(p);
-  }
-
-  private unhash(p: string): Coordinates {
-    return p.split(',').map(Number.parseFloat) as Coordinates;
-  }
-
-  *[Symbol.iterator](): IterableIterator<Coordinates> {
-    for (const point of this.backingSet) {
-      yield this.unhash(point);
-    }
-  }
-}
-
-class CoordinateAdjacencyList {
-  private adjacencyList = new Map<string, CoordinateSet>();
-
-  constructor(edges: Edge[]) {
-    edges.forEach(([p, q]) => {
-      if (coordinatesEquals(p, q)) {
-        return;
-      }
-      this.addEdge([p, q]);
-      this.addEdge([q, p]);
-    });
-  }
-
-  *[Symbol.iterator](): IterableIterator<
-    [origin: Coordinates, neighbours: CoordinateSet]
-  > {
-    for (const [origin, neighbours] of this.adjacencyList) {
-      yield [this.unhash(origin), neighbours];
-    }
-  }
-
-  public addEdge([p, q]: Edge): CoordinateAdjacencyList {
-    this.get(p).add(q);
-    return this;
-  }
-  public delete(p: Coordinates): CoordinateAdjacencyList {
-    const neighbours = this.get(p);
-    this.adjacencyList.delete(this.hash(p));
-    for (const n of neighbours) {
-      this.get(n)?.delete(p);
-    }
-
-    return this;
-  }
-
-  private hash(p: Coordinates): string {
-    return p.join(',');
-  }
-
-  private unhash(p: string): Coordinates {
-    return p.split(',').map(Number.parseFloat) as Coordinates;
-  }
-
-  public get(p: Coordinates): CoordinateSet {
-    const hash = this.hash(p);
-    const set = this.adjacencyList.get(hash) ?? new CoordinateSet();
-    if (!this.adjacencyList.has(hash)) {
-      this.adjacencyList.set(hash, set);
-    }
-    return set;
   }
 }
 
@@ -375,6 +290,110 @@ function* labelComponents(
   return contours;
 }
 
+function* pruneMedials(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+  const candidates = new Set(
+    Array.from(graph).filter(({ size }) => size === 1)
+  );
+  for (const p of candidates) {
+    yield;
+    const dist = rtree.nearestNeighbour(p.coordinates)?.distance ?? 0;
+    const [parent] = p.children;
+    if (
+      dist < MinDistanceToWall ||
+      !parent ||
+      dist <= (rtree.nearestNeighbour(parent.coordinates)?.distance ?? Infinity)
+    ) {
+      graph.delete(p);
+      if (parent && parent.size === 1) {
+        candidates.add(parent);
+      }
+    }
+  }
+}
+
+function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+  const visited = new Set<RegionNode>();
+  const candidates = new Set(
+    Array.from(graph).filter(({ size }) => size === 1)
+  );
+  for (const node of candidates) {
+    yield;
+    visited.add(node);
+
+    for (const child of node.children) {
+      if (!visited.has(child)) {
+        candidates.add(child);
+      }
+    }
+
+    if (node.size !== 2) {
+      node.type = 'region';
+      continue;
+    }
+
+    const nodeRadius = rtree.nearestNeighbour(node.coordinates)?.distance ?? 0;
+    let isLocalMinima = true;
+    let isLocalMaxima = true;
+    let parentChoke: RegionNode | undefined = undefined;
+    let parentChokeRadius = Infinity;
+    let parentRegion: RegionNode | undefined = undefined;
+    let parentRegionRadius = 0;
+
+    for (const child of node.children) {
+      const childRadius =
+        rtree.nearestNeighbour(child.coordinates)?.distance ?? 0;
+      if (childRadius < nodeRadius) {
+        isLocalMinima = false;
+      }
+      if (childRadius > nodeRadius) {
+        isLocalMaxima = false;
+      }
+      if (child.type === 'choke') {
+        parentChoke = child;
+        parentChokeRadius = Math.min(parentChokeRadius, childRadius);
+      }
+      if (child.type === 'region') {
+        parentRegion = child;
+        parentRegionRadius = Math.max(parentRegionRadius, childRadius);
+      }
+    }
+    if (isLocalMinima) {
+      node.type = 'choke';
+      if (parentChoke) {
+        if (parentChokeRadius < nodeRadius) {
+          node.type = undefined;
+        } else {
+          parentChoke.type = undefined;
+        }
+      }
+    } else if (isLocalMaxima) {
+      node.type = 'region';
+      if (parentRegion) {
+        if (parentRegionRadius > nodeRadius) {
+          node.type = undefined;
+        } else {
+          parentRegion.type = undefined;
+        }
+      }
+    }
+  }
+
+  for (const node of graph) {
+    if (!node.type) {
+      graph.delete(node);
+      if (node.size <= 1) {
+        return;
+      }
+      const children = Array.from(node.children);
+      const edges = children.slice(0, -1).map(
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        (cur, i) => [cur.coordinates, children[i + 1]!.coordinates] as Edge
+      );
+      edges.forEach((edge) => graph.addEdge(edge));
+    }
+  }
+}
+
 export function* roomKnowledge(roomName: string) {
   const terrain = Game.map.getRoomTerrain(roomName);
 
@@ -392,15 +411,15 @@ export function* roomKnowledge(roomName: string) {
   // TODO: Potentially simplify with douglas pecker
   const contours = yield* labelComponents(terrain, labelMap);
 
-  // go(function* contourVisuals() {
-  //   const visuals = new RoomVisual('dummy');
-  //   contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
-  //   const exported = visuals.export();
-  //   for (;;) {
-  //     new RoomVisual(roomName).import(exported);
-  //     yield sleep();
-  //   }
-  // });
+  go(function* contourVisuals() {
+    const visuals = new RoomVisual('dummy');
+    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+    const exported = visuals.export();
+    for (;;) {
+      new RoomVisual(roomName).import(exported);
+      yield sleep();
+    }
+  });
 
   const points = contours.flat();
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
@@ -428,7 +447,7 @@ export function* roomKnowledge(roomName: string) {
   //   }
   // });
 
-  const adjacencyList = new CoordinateAdjacencyList(edges);
+  const graph = new RegionGraph(edges);
   yield;
 
   const rtree = new RTree();
@@ -441,44 +460,35 @@ export function* roomKnowledge(roomName: string) {
   );
   yield;
 
-  // Prune medials
-  const candidates = CoordinateSet.from(
-    Array.from(adjacencyList)
-      .filter(([, neighbours]) => neighbours.size === 1)
-      .map(([p]) => p)
-  );
-  for (const p of candidates) {
-    const dist = rtree.nearestNeighbour(p)?.distance ?? 0;
-    const [parent] = adjacencyList.get(p);
-    if (
-      dist < MinDistanceToWall ||
-      !parent ||
-      (rtree.nearestNeighbour(parent)?.distance ?? Infinity) > dist
-    ) {
-      adjacencyList.delete(p);
-      if (parent && adjacencyList.get(parent).size === 1) {
-        candidates.add(parent);
-      }
-    }
-  }
-  yield;
-
-  go(function* visualisePath() {
-    const visuals = new RoomVisual('dummy');
-    const seen = new CoordinateSet();
-    for (const [origin, neighbours] of adjacencyList) {
-      seen.add(origin);
-      for (const n of neighbours) {
-        if (seen.has(n)) {
-          continue;
-        }
-        visuals.line(...origin, ...n, { color: 'blue', opacity: 1 });
-      }
-    }
-    const exported = visuals.export();
+  go(function* visualiseGraph() {
     for (;;) {
-      new RoomVisual(roomName).import(exported);
+      const visuals = new RoomVisual(roomName);
+
+      const seen = new Set<RegionNode>();
+      for (const node of graph) {
+        seen.add(node);
+        visuals.circle(...node.coordinates, {
+          fill: {
+            choke: 'red',
+            region: 'green',
+            unmarked: 'grey',
+          }[node.type ?? 'unmarked'],
+        });
+        for (const n of node.children) {
+          if (seen.has(n)) {
+            continue;
+          }
+          visuals.line(...node.coordinates, ...n.coordinates, {
+            color: 'blue',
+            opacity: 1,
+          });
+        }
+      }
       yield sleep();
     }
   });
+
+  yield* pruneMedials(graph, rtree);
+
+  yield* identifyNodes(graph, rtree);
 }
