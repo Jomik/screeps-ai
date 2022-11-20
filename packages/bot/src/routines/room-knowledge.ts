@@ -1,19 +1,18 @@
 import { SubRoutine } from 'coroutines';
+import Delaunator from 'delaunator';
 import {
-  CoordinateAdjacencyList,
   Coordinates,
   coordinatesEquals,
-  CoordinateSet,
   createLogger,
   Edge,
+  getEdges,
+  RectangleArray,
+  RTree,
+  sleep,
 } from '../library';
-import { sleep } from '../library/sleep';
+import { RegionGraph, RegionNode } from '../library';
 import { go } from '../runner';
-import Delaunator from 'delaunator';
 import { max } from '../utils';
-import { getVoronoiEdges } from '../library/delaunay';
-import { RTree } from '../library/rtree';
-import { RegionGraph, RegionNode } from '../library/region-graph';
 
 const MinDistanceToWall = 1;
 
@@ -44,41 +43,6 @@ export const overlayRectangleArray = (
 
   return visuals;
 };
-
-class RectangleArray {
-  constructor(
-    public readonly width: number,
-    public readonly height: number,
-    private bits = new Int8Array(width * height)
-  ) {}
-
-  public set(x: number, y: number, val: number) {
-    this.bits[x * 50 + y] = Math.min(Math.max(-128, val), 127);
-  }
-
-  public get(x: number, y: number): number | undefined {
-    if (x < 0 || x >= this.width || y < 0 || y >= this.height) {
-      return undefined;
-    }
-    return this.bits[x * 50 + y];
-  }
-
-  public clone(): RectangleArray {
-    return new RectangleArray(
-      this.width,
-      this.height,
-      new Int8Array(this.bits)
-    );
-  }
-  public toCostMatrix(): CostMatrix {
-    const cm = new PathFinder.CostMatrix() as CostMatrix & {
-      _bits: Uint8Array;
-    };
-    cm._bits = new Uint8Array(this.bits);
-
-    return cm;
-  }
-}
 
 function collect<T>(generator: Generator<T, void, undefined>): T[] {
   const res: T[] = [];
@@ -421,10 +385,10 @@ export function* roomKnowledge(roomName: string) {
     }
   });
 
-  const points = contours.flat();
+  const points = contours.flatMap((c) => c.slice(0, -1));
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
-  const edges = collect(getVoronoiEdges(points, delaunay))
+  const edges = collect(getEdges(points, contours, delaunay))
     .map(([p, q]) => [p.map(roundTo2Decimals), q.map(roundTo2Decimals)] as Edge)
     .filter(
       ([p, q]) =>
@@ -438,7 +402,7 @@ export function* roomKnowledge(roomName: string) {
   // go(function* voronoiVisuals() {
   //   const visuals = new RoomVisual('dummy');
   //   edges.forEach(([p, q]) => {
-  //     visuals.line(...p, ...q, { opacity: 0.3 });
+  //     visuals.line(...p, ...q, { color: 'blue' });
   //   });
   //   const exported = visuals.export();
   //   for (;;) {

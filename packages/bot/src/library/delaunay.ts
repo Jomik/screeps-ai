@@ -1,5 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import Delaunator from 'delaunator';
+import { RectangleArray } from './RectangleArray';
 import { Coordinates } from './coordinates';
+import { createLogger } from './logger';
+
+const logger = createLogger('delaunay');
 
 const circumcenter = (
   a: Coordinates,
@@ -47,13 +52,42 @@ const triangleOfEdge = (e: number): number => {
   return Math.floor(e / 3);
 };
 
-export function* getVoronoiEdges(
+const nextHalfedge = (e: number) => (e % 3 === 2 ? e - 2 : e + 1);
+
+export function* getEachTriangleEdge(
   points: Coordinates[],
+  delaunay: Delaunator<unknown>
+): Generator<[Coordinates, Coordinates], void, undefined> {
+  for (let e = 0; e < delaunay.triangles.length; e++) {
+    if (e > delaunay.halfedges[e]!) {
+      const p = points[delaunay.triangles[e]!]!;
+      const q = points[delaunay.triangles[nextHalfedge(e)]!]!;
+      yield [p, q];
+    }
+  }
+}
+
+export function* getEdges(
+  points: Coordinates[],
+  contours: Coordinates[][],
   delaunay: Delaunator<unknown>
 ): Generator<[p: Coordinates, q: Coordinates], void, undefined> {
   for (let e = 0; e < delaunay.triangles.length; e++) {
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     if (e < delaunay.halfedges[e]!) {
+      // Skip if this is a halfedge that runs along the contour.
+      // This can potentially generate an edge across terrain.
+      const start = points[delaunay.triangles[e]!]!;
+      const end = points[delaunay.triangles[nextHalfedge(e)]!]!;
+      const contour = contours.find((c) => c.includes(start));
+      const startIndex = contour?.slice(0, -1)?.indexOf(start);
+      if (
+        contour &&
+        startIndex !== undefined &&
+        contour[startIndex === contour.length - 2 ? 0 : startIndex + 1] === end
+      ) {
+        continue;
+      }
+
       const p = triangleCenter(points, delaunay, triangleOfEdge(e));
       const q = triangleCenter(
         points,
