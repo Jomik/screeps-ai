@@ -10,3 +10,4 @@ plugins:
         - '.ts'
 exclude_patterns:
   - '.yarn/**'
+  - '**/coverage'
