@@ -1,0 +1,12 @@
+version: '2'
+plugins:
+  eslint:
+    enabled: true
+    channel: 'eslint-8'
+    config:
+      config: ./.eslintrc.js
+      extensions:
+        - '.js'
+        - '.ts'
+exclude_patterns:
+  - '.yarn/**'
