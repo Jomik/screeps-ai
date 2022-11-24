@@ -12,6 +12,7 @@
     "delaunator": "5.0.0",
     "rbush": "3.0.1",
     "source-map": "~0.6.1",
+    "tinyqueue": "2.0.3",
     "ts-polyfill": "^3.8.2"
   },
   "devDependencies": {

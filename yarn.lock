@@ -1696,6 +1696,7 @@ __metadata:
     rollup-plugin-screeps: "npm:^1.0.1"
     rollup-plugin-typescript2: "npm:^0.34.0"
     source-map: "npm:~0.6.1"
+    tinyqueue: "npm:2.0.3"
     ts-jest: "npm:^29.0.3"
     ts-polyfill: "npm:^3.8.2"
     typescript: "npm:^4.8.4"
@@ -4831,6 +4832,13 @@ __metadata:
   version: 0.2.0
   resolution: "text-table@npm:0.2.0"
   checksum: 65e9ab9cd26946c5378cd4b8782562f47e017bad4fe8d398356380fdc762d08b177ca6a1c5c8deac14fbe974c46cd09c0cbb86560545cfa49800f3fcacb0c952
+  languageName: node
+  linkType: hard
+
+"tinyqueue@npm:2.0.3":
+  version: 2.0.3
+  resolution: "tinyqueue@npm:2.0.3"
+  checksum: 944c704cd1a5ba891c24f8088f746c5400d96526408619cee78ba533165438f9bb02d087f74111ae57d91d40fa6e4143fa1cf6076a707001979735173d29c126
   languageName: node
   linkType: hard
 

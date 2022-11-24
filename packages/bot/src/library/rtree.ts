@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import RBush, { BBox } from 'rbush';
-import { Coordinates, Edge } from './coordinates';
-import { createLogger } from './logger';
+import { Coordinates } from './coordinates';
+import Queue from 'tinyqueue';
 
 type Node<T> = (
   | {
@@ -17,58 +17,59 @@ type Node<T> = (
 ) &
   BBox;
 
-export class RTree extends RBush<Edge> {
-  override toBBox([[px, py], [qx, qy]]: Edge) {
-    return {
-      minX: Math.min(px, qx),
-      minY: Math.min(py, qy),
-      maxX: Math.max(px, qx),
-      maxY: Math.max(py, qy),
-    };
+export class RTree extends RBush<Coordinates> {
+  toBBox([x, y]: Coordinates) {
+    return { minX: x, minY: y, maxX: x, maxY: y };
   }
-  override compareMinX([[a1], [a2]]: Edge, [[b1], [b2]]: Edge) {
-    return Math.min(a1, a2) - Math.min(b1, b2);
+  compareMinX([ax]: Coordinates, [bx]: Coordinates) {
+    return ax - bx;
   }
-  override compareMinY([[, a1], [, a2]]: Edge, [[, b1], [, b2]]: Edge) {
-    return Math.min(a1, a2) - Math.min(b1, b2);
+  compareMinY([, ay]: Coordinates, [, by]: Coordinates) {
+    return ay - by;
   }
 
   // TODO: Clean this up, probably recurse.
   public nearestNeighbour([x, y]: Coordinates): {
-    edge: Edge;
+    point: Coordinates;
     distance: number;
   } | null {
-    let node = (this as unknown as { data: Node<Edge> }).data;
+    let node = (this as unknown as { data: Node<Coordinates> }).data;
+    const queue = new Queue<
+      { dist: number } & (
+        | { node: Node<Coordinates>; isItem: false }
+        | { node: Coordinates; isItem: true }
+      )
+    >([], (a, b) => a.dist - b.dist);
 
     // Yeah this is scary..
     for (;;) {
       if (node.leaf) {
-        let closest: Edge = [
-          [Infinity, Infinity],
-          [Infinity, Infinity],
-        ];
-        let closestDist = Infinity;
         for (const child of node.children) {
           const dist = boxDist(x, y, this.toBBox(child));
-          if (dist < closestDist) {
-            closest = child;
-            closestDist = dist;
-          }
+          queue.push({
+            dist,
+            isItem: true,
+            node: child,
+          });
         }
-        return { edge: closest, distance: closestDist };
-      }
-
-      let closestDist = Infinity;
-      for (const child of node.children) {
-        const dist = boxDist(x, y, child);
-        if (dist < closestDist) {
-          node = child;
-          closestDist = dist;
+      } else {
+        for (const child of node.children) {
+          const dist = boxDist(x, y, child);
+          queue.push({
+            dist,
+            isItem: false,
+            node: child,
+          });
         }
       }
-      if (closestDist === Infinity) {
-        return null;
+      const next = queue.pop();
+      if (!next) {
+        throw new Error('No item in queue');
       }
+      if (next.isItem) {
+        return { distance: next.dist, point: next.node };
+      }
+      node = next.node;
     }
   }
 }
