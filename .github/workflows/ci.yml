@@ -51,6 +51,8 @@ jobs:
             ${{github.workspace}}/packages/*/coverage/lcov.info:lcov
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
     needs:
       - build
     steps:
@@ -58,3 +60,11 @@ jobs:
       - uses: ./.github/actions/install
       - name: 'run lint'
         run: yarn lint
+      - name: 'generate report'
+        run: yarn lint --output-file lint_report.json --format json
+        continue-on-error: true
+      - name: 'annotate'
+        uses: ataylorme/eslint-annotate-action@v2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          report-json: 'lint_report.json'
