@@ -2,6 +2,7 @@ import { Coordinates, coordinatesEquals, Edge } from './coordinates';
 
 export class RegionNode {
   type?: 'choke' | 'region' = undefined;
+  parent?: RegionNode;
 
   get id() {
     return this.coordinates.join(',');

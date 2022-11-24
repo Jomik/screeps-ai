@@ -1,5 +1,6 @@
 import { SubRoutine } from 'coroutines';
 import Delaunator from 'delaunator';
+import TinyQueue from 'tinyqueue';
 import {
   Coordinates,
   coordinatesEquals,
@@ -12,9 +13,9 @@ import {
 } from '../library';
 import { RegionGraph, RegionNode } from '../library';
 import { go } from '../runner';
-import { max } from '../utils';
+import { clamp, max } from '../utils';
 
-const MinDistanceToWall = 1;
+const MinDistanceToWall = 0;
 
 const roundTo2Decimals = (num: number) =>
   Math.round((num + Number.EPSILON) * 100) / 100;
@@ -286,6 +287,7 @@ function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
 
     for (const child of node.children) {
       if (!visited.has(child)) {
+        child.parent = node;
         candidates.add(child);
       }
     }
@@ -295,64 +297,85 @@ function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
       continue;
     }
 
-    const nodeRadius = rtree.nearestNeighbour(node.coordinates)?.distance ?? 0;
-    let isLocalMinima = true;
-    let isLocalMaxima = true;
-    let parentChoke: RegionNode | undefined = undefined;
-    let parentChokeRadius = Infinity;
-    let parentRegion: RegionNode | undefined = undefined;
-    let parentRegionRadius = 0;
+    if (!node.parent) {
+      logger.warn('node without parent');
+      continue;
+    }
 
-    for (const child of node.children) {
-      const childRadius =
-        rtree.nearestNeighbour(child.coordinates)?.distance ?? 0;
-      if (childRadius < nodeRadius) {
-        isLocalMinima = false;
+    const nodeRadius = rtree.nearestNeighbour(node.coordinates)?.distance ?? 0;
+    const parentRadius =
+      rtree.nearestNeighbour(node.parent.coordinates)?.distance ?? 0;
+    const localMinimal = [...node.children].every(
+      (n) =>
+        (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) >= nodeRadius
+    );
+    if (localMinimal) {
+      if (node.parent.type !== 'region') {
+        if (nodeRadius < parentRadius) {
+          node.type = 'choke';
+          node.parent.type = undefined;
+        }
+      } else {
+        node.type = 'choke';
       }
-      if (childRadius > nodeRadius) {
-        isLocalMaxima = false;
-      }
-      if (child.type === 'choke') {
-        parentChoke = child;
-        parentChokeRadius = Math.min(parentChokeRadius, childRadius);
-      }
-      if (child.type === 'region') {
-        parentRegion = child;
-        parentRegionRadius = Math.max(parentRegionRadius, childRadius);
+    } else {
+      const localMaximal = [...node.children].every(
+        (n) =>
+          (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) <= nodeRadius
+      );
+      if (localMaximal) {
+        node.type = 'region';
       }
     }
-    if (isLocalMinima) {
-      node.type = 'choke';
-      if (parentChoke) {
-        if (parentChokeRadius < nodeRadius) {
-          node.type = undefined;
-        } else {
-          parentChoke.type = undefined;
-        }
+  }
+}
+
+function* simplifyGraph(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+  for (const node of graph) {
+    yield;
+    if (!node.type) {
+      graph.delete(node);
+      const children = Array.from(node.children);
+      const [c1, c2] = children;
+      if (children.length !== 2) {
+        throw new Error(
+          `Unmarked node with degree ${node.size}, ${node.coordinates.join(
+            ','
+          )}`
+        );
       }
-    } else if (isLocalMaxima) {
-      node.type = 'region';
-      if (parentRegion) {
-        if (parentRegionRadius > nodeRadius) {
-          node.type = undefined;
-        } else {
-          parentRegion.type = undefined;
-        }
+      if (c1 === undefined || c2 === undefined) {
+        continue;
       }
+      graph.addEdge([c1.coordinates, c2.coordinates]);
     }
   }
 
   for (const node of graph) {
-    if (!node.type) {
+    if (node.size === 1 && node.type === 'choke') {
       graph.delete(node);
-      if (node.size <= 1) {
-        return;
-      }
+    }
+  }
+
+  for (const node of graph) {
+    if (node.type !== 'region') {
+      continue;
+    }
+    const child = [...node.children].find(({ type }) => type === 'region');
+
+    if (!child) {
+      continue;
+    }
+    yield;
+    const childRadius =
+      rtree.nearestNeighbour(child.coordinates)?.distance ?? 0;
+    const nodeRadius = rtree.nearestNeighbour(node.coordinates)?.distance ?? 0;
+    if (childRadius > nodeRadius) {
+      graph.delete(node);
       const children = Array.from(node.children);
-      const edges = children.slice(0, -1).map(
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        (cur, i) => [cur.coordinates, children[i + 1]!.coordinates] as Edge
-      );
+      const edges = children
+        .filter((c) => !coordinatesEquals(c.coordinates, child.coordinates))
+        .map((c) => [child.coordinates, c.coordinates] as Edge);
       edges.forEach((edge) => graph.addEdge(edge));
     }
   }
@@ -375,21 +398,27 @@ export function* roomKnowledge(roomName: string) {
   // TODO: Potentially simplify with douglas pecker
   const contours = yield* labelComponents(terrain, labelMap);
 
-  go(function* contourVisuals() {
-    const visuals = new RoomVisual('dummy');
-    contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
-    const exported = visuals.export();
-    for (;;) {
-      new RoomVisual(roomName).import(exported);
-      yield sleep();
-    }
-  });
+  // go(function* contourVisuals() {
+  //   const visuals = new RoomVisual('dummy');
+  //   contours.forEach((c) => visuals.poly(c, { stroke: 'red' }));
+  //   const exported = visuals.export();
+  //   for (;;) {
+  //     new RoomVisual(roomName).import(exported);
+  //     yield sleep();
+  //   }
+  // });
 
   const points = contours.flatMap((c) => c.slice(0, -1));
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
   const edges = collect(getEdges(points, contours, delaunay))
-    .map(([p, q]) => [p.map(roundTo2Decimals), q.map(roundTo2Decimals)] as Edge)
+    .map(
+      ([p, q]) =>
+        [
+          p.map(clamp(0, 49)).map(roundTo2Decimals),
+          q.map(clamp(0, 49)).map(roundTo2Decimals),
+        ] as Edge
+    )
     .filter(
       ([p, q]) =>
         !(
@@ -415,13 +444,7 @@ export function* roomKnowledge(roomName: string) {
   yield;
 
   const rtree = new RTree();
-  rtree.load(
-    contours.flatMap((contour) =>
-      // Since we skip the last element, this should be fine.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      contour.slice(0, -1).map((cur, i) => [cur, contour[i + 1]!])
-    )
-  );
+  rtree.load(contours.flatMap((contour) => contour));
   yield;
 
   go(function* visualiseGraph() {
@@ -454,5 +477,22 @@ export function* roomKnowledge(roomName: string) {
 
   yield* pruneMedials(graph, rtree);
 
+  // go(function* radiusVisuals() {
+  //   for (;;) {
+  //     yield sleep();
+  //     const visuals = new RoomVisual(roomName);
+  //     for (const p of graph) {
+  //       const nearest = rtree.nearestNeighbour(p.coordinates);
+  //       if (!nearest) {
+  //         continue;
+  //       }
+  //       visuals.text(nearest.distance.toString(), ...p.coordinates);
+  //       visuals.line(...p.coordinates, ...nearest.point);
+  //     }
+  //   }
+  // });
+
   yield* identifyNodes(graph, rtree);
+  yield;
+  yield* simplifyGraph(graph, rtree);
 }
