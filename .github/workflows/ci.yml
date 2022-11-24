@@ -35,6 +35,20 @@ jobs:
       - uses: ./.github/actions/install
       - name: 'run test'
         run: yarn workspace ${{ matrix.workspace }} run test
+  coverage:
+    runs-on: ubuntu-latest
+    needs:
+      - unit-test
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - uses: paambaati/codeclimate-action@v3.2.0
+        env:
+          CC_TEST_REPORTER_ID: 51c7f30f122040979cda7714bfe59e47bd6ce27c2e157d40345d9fa07788ed6b
+        with:
+          coverageCommand: yarn workspaces foreach --no-private run test --coverage
+          coverageLocations: |
+            ${{github.workspace}}/packages/*/coverage/lcov.info:lcov
   lint:
     runs-on: ubuntu-latest
     needs:
