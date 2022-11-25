@@ -1,6 +1,5 @@
 import { SubRoutine } from 'coroutines';
 import Delaunator from 'delaunator';
-import TinyQueue from 'tinyqueue';
 import {
   Coordinates,
   coordinatesEquals,
