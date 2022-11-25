@@ -1168,6 +1168,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/delaunator@npm:5.0.0":
+  version: 5.0.0
+  resolution: "@types/delaunator@npm:5.0.0"
+  checksum: 1c45996eb1a10d548c6c02994b30a4e4346867cedd00788cf71b376a80a12ca8b484a28102badc66fbdfdc67c08e76ad399880f26528dabf7008bf5eff8ace7f
+  languageName: node
+  linkType: hard
+
 "@types/estree@npm:*":
   version: 0.0.51
   resolution: "@types/estree@npm:0.0.51"
@@ -1251,6 +1258,13 @@ __metadata:
   version: 2.6.0
   resolution: "@types/prettier@npm:2.6.0"
   checksum: 65e5d937e0cca8ddaed5b8e871be0da20d8e43b97bff34a8cd4b59f287b76b52a1d196109f5024c0cf2cffa3435f6961020e3350cc06022d8c656155687787ae
+  languageName: node
+  linkType: hard
+
+"@types/rbush@npm:3.0.0":
+  version: 3.0.0
+  resolution: "@types/rbush@npm:3.0.0"
+  checksum: 2844d787eb03d5867652158a23d7dc3f68f84804905bf2e17788b419dcb58c188ea7b6704c6c6212ad07532389eba6feea730d901b5c6f7d5024c76a0e1e505f
   languageName: node
   linkType: hard
 
@@ -1666,18 +1680,23 @@ __metadata:
   dependencies:
     "@rollup/plugin-commonjs": "npm:^22.0.2"
     "@rollup/plugin-node-resolve": "npm:^14.1.0"
+    "@types/delaunator": "npm:5.0.0"
     "@types/jest": "npm:^29.1.1"
     "@types/lodash": "npm:3.10.2"
+    "@types/rbush": "npm:3.0.0"
     "@types/screeps": "npm:^3.3.0"
     coroutines: "workspace:*"
+    delaunator: "npm:5.0.0"
     dotenv: "npm:16.0.3"
     jest: "npm:^29.1.2"
     prettier: "npm:^2.7.1"
+    rbush: "npm:3.0.1"
     rollup: "npm:^2.79.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
     rollup-plugin-typescript2: "npm:^0.34.0"
     source-map: "npm:~0.6.1"
+    tinyqueue: "npm:2.0.3"
     ts-jest: "npm:^29.0.3"
     ts-polyfill: "npm:^3.8.2"
     typescript: "npm:^4.8.4"
@@ -2063,6 +2082,15 @@ __metadata:
   version: 4.2.2
   resolution: "deepmerge@npm:4.2.2"
   checksum: f37e1f5e8cfca71833a43a5d14ad1bf533689b1e5acff72eefa9bdd26f1a4fe80153e29238e8b3052e5f8c4169a95992456f3b60cd50a9db94a84680712a9aca
+  languageName: node
+  linkType: hard
+
+"delaunator@npm:5.0.0":
+  version: 5.0.0
+  resolution: "delaunator@npm:5.0.0"
+  dependencies:
+    robust-predicates: "npm:^3.0.0"
+  checksum: 689c98d0b71270b470b5061d46a5214244dc319175459aea33a8d5403da4144d18b33d446be99c5757209fa7ce0fea446e3669147636a13b92a56f9e346142f3
   languageName: node
   linkType: hard
 
@@ -4231,6 +4259,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"quickselect@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "quickselect@npm:2.0.0"
+  checksum: 1dbcdaadc2ffa6b70d1c8730b3b964dadb784a3cf02c95c3c2a3044e62a45d91bd4ecec0558082a24d12b46f31ec9e5eac27c9185461b27feefabf327ae67620
+  languageName: node
+  linkType: hard
+
+"rbush@npm:3.0.1":
+  version: 3.0.1
+  resolution: "rbush@npm:3.0.1"
+  dependencies:
+    quickselect: "npm:^2.0.0"
+  checksum: 66b7cd6583281d32c263f10a88a23af59c8ec7f16cf865293fd21d009e18f8af3d99156f0250360cb386e34c726be539ed49ab1c2eb62a46d77eccad2d99784c
+  languageName: node
+  linkType: hard
+
 "react-is@npm:^18.0.0":
   version: 18.2.0
   resolution: "react-is@npm:18.2.0"
@@ -4361,6 +4405,13 @@ __metadata:
   bin:
     rimraf: bin.js
   checksum: b786c9ad52df9fbcd9c7120e105f3150b83b39dd87d9235a93b0c7e806575e1e68936504ff64563dbe67b3f8bbbc00bdfff586157d402ee8990e7143456511c0
+  languageName: node
+  linkType: hard
+
+"robust-predicates@npm:^3.0.0":
+  version: 3.0.1
+  resolution: "robust-predicates@npm:3.0.1"
+  checksum: 943d6578b37343716792f35857c3a068efd15184b2bf23b3c308fceeee417ed141e4838ffb66aa60426714985ae2ef8217ecaa12241a28772ce3070fddcc7fd7
   languageName: node
   linkType: hard
 
@@ -4781,6 +4832,13 @@ __metadata:
   version: 0.2.0
   resolution: "text-table@npm:0.2.0"
   checksum: 65e9ab9cd26946c5378cd4b8782562f47e017bad4fe8d398356380fdc762d08b177ca6a1c5c8deac14fbe974c46cd09c0cbb86560545cfa49800f3fcacb0c952
+  languageName: node
+  linkType: hard
+
+"tinyqueue@npm:2.0.3":
+  version: 2.0.3
+  resolution: "tinyqueue@npm:2.0.3"
+  checksum: 944c704cd1a5ba891c24f8088f746c5400d96526408619cee78ba533165438f9bb02d087f74111ae57d91d40fa6e4143fa1cf6076a707001979735173d29c126
   languageName: node
   linkType: hard
 
