@@ -13,6 +13,8 @@ jobs:
   deploy:
     needs: integration
     runs-on: ubuntu-latest
+    concurrency:
+      group: mmo_environment
     environment:
       name: MMO
       url: https://screeps.com/a/#!/profile/Jomik
