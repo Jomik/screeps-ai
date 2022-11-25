@@ -275,17 +275,34 @@ function* pruneMedials(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
   }
 }
 
+function* addSinks(graph: RegionGraph): SubRoutine<void> {
+  const nodes = Array.from(graph).filter(
+    ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48
+  );
+  if (nodes.length > 0) {
+    const exitSink = graph.get([-2, -2]);
+    const exitRegion = graph.get([-1, -1]);
+    graph.addEdge([exitSink.coordinates, exitRegion.coordinates]);
+    for (const node of nodes) {
+      graph.addEdge([node.coordinates, exitRegion.coordinates]);
+    }
+  }
+}
+
 function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
-  const visited = new Set<RegionNode>();
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1)
   );
+  if (candidates.size === 0) {
+    for (const node of Array.from(graph).filter(({ size }) => size === 3)) {
+      candidates.add(node);
+    }
+  }
   for (const node of candidates) {
     yield;
-    visited.add(node);
 
     for (const child of node.children) {
-      if (!visited.has(child)) {
+      if (!candidates.has(child)) {
         child.parent = node;
         candidates.add(child);
       }
@@ -351,31 +368,36 @@ function* simplifyGraph(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
   }
 
   for (const node of graph) {
-    if (node.size === 1 && node.type === 'choke') {
+    if (
+      (node.size === 1 && node.type === 'choke') ||
+      isOutOfBounds(...node.coordinates)
+    ) {
       graph.delete(node);
     }
   }
 
   for (const node of graph) {
-    if (node.type !== 'region') {
-      continue;
-    }
-    const child = [...node.children].find(({ type }) => type === 'region');
+    const target = [...node.children].find(({ type }) => type === node.type);
 
-    if (!child) {
+    if (!target) {
       continue;
     }
+
     yield;
     const childRadius =
-      rtree.nearestNeighbour(child.coordinates)?.distance ?? 0;
+      rtree.nearestNeighbour(target.coordinates)?.distance ?? 0;
     const nodeRadius = rtree.nearestNeighbour(node.coordinates)?.distance ?? 0;
-    if (childRadius > nodeRadius) {
+    if (
+      (node.type === 'region' && childRadius >= nodeRadius) ||
+      (node.type === 'choke' && childRadius <= nodeRadius)
+    ) {
       graph.delete(node);
-      const children = Array.from(node.children);
-      const edges = children
-        .filter((c) => !coordinatesEquals(c.coordinates, child.coordinates))
-        .map((c) => [child.coordinates, c.coordinates] as Edge);
-      edges.forEach((edge) => graph.addEdge(edge));
+      for (const child of node.children) {
+        if (coordinatesEquals(child.coordinates, target.coordinates)) {
+          continue;
+        }
+        graph.addEdge([child.coordinates, target.coordinates]);
+      }
     }
   }
 }
@@ -490,7 +512,8 @@ export function* roomKnowledge(roomName: string) {
   //     }
   //   }
   // });
-
+  yield* addSinks(graph);
+  yield;
   yield* identifyNodes(graph, rtree);
   yield;
   yield* simplifyGraph(graph, rtree);
