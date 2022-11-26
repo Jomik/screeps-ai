@@ -11,6 +11,10 @@
     {
       "name": "Coroutines",
       "path": "packages/coroutines"
+    },
+    {
+      "name": "Behavior Trees",
+      "path": "packages/behavior-trees"
     }
   ],
   "settings": {

@@ -1674,6 +1674,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"behavior-trees@workspace:packages/behavior-trees":
+  version: 0.0.0-use.local
+  resolution: "behavior-trees@workspace:packages/behavior-trees"
+  dependencies:
+    "@types/jest": "npm:^29.1.1"
+    jest: "npm:^29.1.2"
+    prettier: "npm:^2.7.1"
+    ts-jest: "npm:^29.0.3"
+    typescript: "npm:^4.8.4"
+  languageName: unknown
+  linkType: soft
+
 "bot@workspace:packages/bot":
   version: 0.0.0-use.local
   resolution: "bot@workspace:packages/bot"
