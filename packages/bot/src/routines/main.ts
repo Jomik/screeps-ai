@@ -15,7 +15,6 @@ export function* main() {
 
   for (const room of Object.values(Game.rooms)) {
     if (room.controller?.my) {
-      go(roomKnowledge, room.name);
       go(planRoom, room.name);
       go(linkManager, room.name);
     }
