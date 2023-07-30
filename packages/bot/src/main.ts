@@ -19,10 +19,11 @@ export const loop = ErrorMapper.wrapLoop(
 
     const cpuUsage: Record<string, number> = {};
     while (Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() && canRun()) {
-      const start = Game.cpu.getUsed();
+      // TODO: Monitor CPU
+      // const start = Game.cpu.getUsed();
       const task = run();
-      const end = Game.cpu.getUsed();
-      cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
+      // const end = Game.cpu.getUsed();
+      // cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
     }
 
     const visuals = new RoomVisual();

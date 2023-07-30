@@ -5,26 +5,29 @@ type RoutineCall = void | Future<any>;
 export type SubRoutine<T> = Generator<RoutineCall, T, unknown>;
 export type Routine = SubRoutine<void>;
 
-type InternalRoutine = Routine & {
-  name: string;
-};
+export interface Scheduler {
+  next(): Routine;
+  schedule(routine: Routine): void;
+  remove(routine: Routine): void;
+}
 
-export const createRunner = (onError?: (error: unknown) => void) => {
-  const resultMap = new WeakMap<Routine, unknown>();
-  const coroutines: InternalRoutine[] = [];
+const resultMap = new WeakMap<Routine, unknown>();
 
+export const createRunner = (
+  scheduler: Scheduler,
+  onError?: (error: unknown) => void
+) => {
   const go = <Args extends unknown[]>(
-    fn: ((...args: Args) => Routine) & { name: string },
+    fn: (...args: Args) => Routine,
     ...args: Args
   ): void => {
-    const task = fn(...args) as InternalRoutine;
+    const task = fn(...args);
     resultMap.set(task, undefined);
-    task.name = fn.name;
-    coroutines.push(task);
+    scheduler.schedule(task);
   };
 
   const wrapExecution = (
-    routine: InternalRoutine
+    routine: Routine
   ): IteratorResult<RoutineCall, void> => {
     try {
       const lastResult = resultMap.get(routine);
@@ -36,40 +39,37 @@ export const createRunner = (onError?: (error: unknown) => void) => {
     }
   };
 
-  const canRun = (): boolean =>
-    coroutines.some((routine) => resultMap.has(routine));
+  const run = (): void => {
+    const routine = scheduler.next();
 
-  const run = (): { state: 'done' | 'ready' | 'waiting'; name: string } => {
-    const routine = coroutines.pop();
     if (!routine) {
       throw new Error('No routine to run');
     }
 
     if (!resultMap.has(routine)) {
-      coroutines.unshift(routine);
-      return { state: 'waiting', name: routine.name };
+      throw new Error('Scheduler returned routine that is not ready to run!');
     }
 
     const execution = wrapExecution(routine);
 
     if (execution.done) {
-      return { state: 'done', name: routine.name };
+      scheduler.remove(routine);
+      return;
     }
 
     if (execution.value instanceof Future) {
       execution.value.then((data) => {
         resultMap.set(routine, data);
+        scheduler.schedule(routine);
       });
-    } else {
-      resultMap.set(routine, undefined);
+      return;
     }
-    coroutines.unshift(routine);
 
-    return {
-      state: resultMap.has(routine) ? 'ready' : 'waiting',
-      name: routine.name,
-    };
+    resultMap.set(routine, undefined);
+    scheduler.schedule(routine);
+
+    return;
   };
 
-  return { go, run, canRun };
+  return { go, run };
 };

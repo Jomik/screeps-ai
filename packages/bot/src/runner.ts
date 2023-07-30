@@ -1,7 +1,9 @@
-import { createRunner } from 'coroutines';
+import { createRunner, fifo } from 'coroutines';
 import { createLogger } from './library';
 
 const logger = createLogger('coroutines');
-export const { go, run, canRun } = createRunner((err) => {
+const scheduler = fifo();
+export const canRun = () => scheduler.canRun();
+export const { go, run } = createRunner(scheduler, (err) => {
   logger.error(err as Error);
 });
