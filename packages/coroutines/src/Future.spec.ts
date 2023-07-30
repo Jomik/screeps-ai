@@ -4,17 +4,18 @@ describe('Future', () => {
   it('calls then', () => {
     let res = '';
     const expected = 'foo';
-    let resolver: (value: string) => void;
+    const resolver = jest.fn();
 
-    const uut = new Future<string>((resolve) => (resolver = resolve));
+    const uut = new Future<string>((resolve) =>
+      resolver.mockImplementation(resolve)
+    );
     uut.then((value) => (res = value));
-    // @ts-ignore it is assigned
-    resolver?.(expected);
+    resolver(expected);
 
     expect(res).toBe(expected);
   });
 
-  it('calls then on resolved', () => {
+  it('calls then if already resolved', () => {
     let res = '';
     const expected = 'foo';
     const resolver = jest.fn();
