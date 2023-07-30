@@ -1,14 +1,14 @@
 import { make } from './channel';
 import { Future } from './Future';
 import { createRunner } from './runner';
-import { fifo } from './schedulers/fifo';
+import { FIFOScheduler } from './schedulers';
 
 describe('runner', () => {
   let go: ReturnType<typeof createRunner>['go'];
   let execute: () => void;
 
   beforeEach(() => {
-    const s = fifo();
+    const s = new FIFOScheduler();
     const runner = createRunner(s);
     go = runner.go;
     execute = () => {

@@ -18,12 +18,20 @@ export const createRunner = (
   onError?: (error: unknown) => void
 ) => {
   const go = <Args extends unknown[]>(
-    fn: (...args: Args) => Routine,
+    fn: (this: Routine, ...args: Args) => Routine,
     ...args: Args
-  ): void => {
-    const task = fn(...args);
-    resultMap.set(task, undefined);
-    scheduler.schedule(task);
+  ): Routine => {
+    // NOTE: This allows the routine to reference itself as this
+    // Intended to for use with the scheduler
+    function* wrapper(): Routine {
+      yield* task;
+    }
+    const routine = wrapper();
+
+    const task = fn.call(routine, ...args);
+    resultMap.set(routine, undefined);
+    scheduler.schedule(routine);
+    return routine;
   };
 
   const wrapExecution = (
