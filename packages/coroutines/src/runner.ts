@@ -27,10 +27,11 @@ export const createRunner = (
       yield* task;
     }
     const routine = wrapper();
-
     const task = fn.call(routine, ...args);
+
     resultMap.set(routine, undefined);
     scheduler.schedule(routine);
+
     return routine;
   };
 
@@ -47,7 +48,7 @@ export const createRunner = (
     }
   };
 
-  const run = (): void => {
+  const run = (): Routine => {
     const routine = scheduler.next();
 
     if (!routine) {
@@ -62,7 +63,7 @@ export const createRunner = (
 
     if (execution.done) {
       scheduler.remove(routine);
-      return;
+      return routine;
     }
 
     if (execution.value instanceof Future) {
@@ -70,13 +71,13 @@ export const createRunner = (
         resultMap.set(routine, data);
         scheduler.schedule(routine);
       });
-      return;
+      return routine;
     }
 
     resultMap.set(routine, undefined);
     scheduler.schedule(routine);
 
-    return;
+    return routine;
   };
 
   return { go, run };
