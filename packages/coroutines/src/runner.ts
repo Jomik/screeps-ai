@@ -5,15 +5,12 @@ type RoutineCall = void | Future<any>;
 export type SubRoutine<T> = Generator<RoutineCall, T, unknown>;
 export type Routine = SubRoutine<void>;
 
-const Result = Symbol('Result');
-const IsReady = Symbol('IsReady');
 type InternalRoutine = Routine & {
-  [Result]?: unknown;
-  [IsReady]: boolean;
   name: string;
 };
 
 export const createRunner = (onError?: (error: unknown) => void) => {
+  const resultMap = new WeakMap<Routine, unknown>();
   const coroutines: InternalRoutine[] = [];
 
   const go = <Args extends unknown[]>(
@@ -21,17 +18,17 @@ export const createRunner = (onError?: (error: unknown) => void) => {
     ...args: Args
   ): void => {
     const task = fn(...args) as InternalRoutine;
-    task[IsReady] = true;
+    resultMap.set(task, undefined);
     task.name = fn.name;
     coroutines.push(task);
   };
 
-  const runRoutine = (
+  const wrapExecution = (
     routine: InternalRoutine
   ): IteratorResult<RoutineCall, void> => {
     try {
-      const lastResult = routine[Result];
-      routine[Result] = undefined;
+      const lastResult = resultMap.get(routine);
+      resultMap.delete(routine);
       return routine.next(lastResult);
     } catch (err: unknown) {
       onError?.(err);
@@ -39,7 +36,8 @@ export const createRunner = (onError?: (error: unknown) => void) => {
     }
   };
 
-  const canRun = (): boolean => coroutines.some((routine) => routine[IsReady]);
+  const canRun = (): boolean =>
+    coroutines.some((routine) => resultMap.has(routine));
 
   const run = (): { state: 'done' | 'ready' | 'waiting'; name: string } => {
     const routine = coroutines.pop();
@@ -47,28 +45,28 @@ export const createRunner = (onError?: (error: unknown) => void) => {
       throw new Error('No routine to run');
     }
 
-    if (!routine[IsReady]) {
+    if (!resultMap.has(routine)) {
       coroutines.unshift(routine);
       return { state: 'waiting', name: routine.name };
     }
 
-    const execution = runRoutine(routine);
+    const execution = wrapExecution(routine);
 
     if (execution.done) {
       return { state: 'done', name: routine.name };
     }
 
     if (execution.value instanceof Future) {
-      routine[IsReady] = false;
       execution.value.then((data) => {
-        routine[Result] = data;
-        routine[IsReady] = true;
+        resultMap.set(routine, data);
       });
+    } else {
+      resultMap.set(routine, undefined);
     }
     coroutines.unshift(routine);
 
     return {
-      state: routine[IsReady] ? 'ready' : 'waiting',
+      state: resultMap.has(routine) ? 'ready' : 'waiting',
       name: routine.name,
     };
   };
