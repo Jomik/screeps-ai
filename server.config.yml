@@ -1,5 +1,5 @@
 mods:
-  - git+https://github.com/Jomik/screepsmod-auth#add-return
+  - screepsmod-auth
   - screepsmod-admin-utils
   - screepsmod-mongo
 bots:
