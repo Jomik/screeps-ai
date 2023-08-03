@@ -1,16 +1,18 @@
 import { make } from './channel';
 import { Future } from './Future';
 import { createRunner } from './runner';
+import { FIFOScheduler } from './schedulers';
 
 describe('runner', () => {
   let go: ReturnType<typeof createRunner>['go'];
   let execute: () => void;
 
   beforeEach(() => {
-    const runner = createRunner();
+    const s = new FIFOScheduler();
+    const runner = createRunner(s);
     go = runner.go;
     execute = () => {
-      while (runner.canRun()) {
+      while (s.canRun()) {
         runner.run();
       }
     };
@@ -42,42 +44,6 @@ describe('runner', () => {
     execute();
 
     expect(uut).toBe('AAA');
-  });
-
-  describe('scheduling', () => {
-    it('starts with newest', () => {
-      let uut = '';
-      go(function* () {
-        uut += 'A';
-      });
-      go(function* () {
-        uut += 'B';
-      });
-
-      execute();
-
-      expect(uut).toBe('BA');
-    });
-
-    it('interleaves executions', () => {
-      let uut = '';
-      go(function* () {
-        for (let i = 0; i < 3; ++i) {
-          uut += 'A';
-          yield;
-        }
-      });
-      go(function* () {
-        for (let i = 0; i < 3; ++i) {
-          uut += 'B';
-          yield;
-        }
-      });
-
-      execute();
-
-      expect(uut).toBe('BABABA');
-    });
   });
 
   describe('futures', () => {
@@ -139,7 +105,7 @@ describe('runner', () => {
 
       execute();
 
-      expect(res).toBe('BABBA');
+      expect(res).toBe('ABBBA');
     });
 
     it('gets result from future', () => {

@@ -5,7 +5,7 @@ import { recordGlobals, resetStats } from './library';
 import { wrapWithMemoryHack } from './utils/memory-hack';
 import { resolveSleep } from './library/sleep';
 import { main } from './routines/main';
-import { canRun, go, run } from './runner';
+import { scheduler, go, run } from './runner';
 
 go(main);
 
@@ -18,11 +18,15 @@ export const loop = ErrorMapper.wrapLoop(
     resolveSleep();
 
     const cpuUsage: Record<string, number> = {};
-    while (Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() && canRun()) {
-      const start = Game.cpu.getUsed();
+    while (
+      Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() &&
+      scheduler.canRun()
+    ) {
+      // TODO: Monitor CPU
+      // const start = Game.cpu.getUsed();
       const task = run();
-      const end = Game.cpu.getUsed();
-      cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
+      // const end = Game.cpu.getUsed();
+      // cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
     }
 
     const visuals = new RoomVisual();
