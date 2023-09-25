@@ -1,11 +1,11 @@
-import { findLocalMaxima } from './graph-transforms';
+import { Routine } from 'coroutines';
 import { Coordinates } from './coordinates';
-import { SubRoutine } from 'coroutines';
+import { findLocalMaxima } from './graph-transforms';
 
 export function* chooseBaseOrigin(
   room: Room,
-  distanceTransform: CostMatrix
-): SubRoutine<Coordinates> {
+  distanceTransform: CostMatrix,
+): Routine<Coordinates> {
   const maxima = yield* findLocalMaxima(distanceTransform);
   const candidates = maxima.flatMap((c) => c);
   yield;
@@ -24,7 +24,7 @@ export function* chooseBaseOrigin(
       (acc, cur) =>
         acc +
         PathFinder.search(candidatePosition, { pos: cur.pos, range: 1 }).cost,
-      0
+      0,
     );
 
     if (cost < sourceCost) {

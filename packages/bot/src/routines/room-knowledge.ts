@@ -1,4 +1,4 @@
-import { SubRoutine } from 'coroutines';
+import { Routine } from 'coroutines';
 import Delaunator from 'delaunator';
 import {
   Coordinates,
@@ -55,8 +55,8 @@ function collect<T>(generator: Generator<T, void, undefined>): T[] {
 
 function* map<T, U>(
   values: T[],
-  generator: (value: T) => SubRoutine<U>
-): SubRoutine<U[]> {
+  generator: (value: T) => Routine<U>
+): Routine<U[]> {
   const res: U[] = [];
   for (const value of values) {
     res.push(yield* generator(value));
@@ -96,7 +96,7 @@ const distanceFromPointToLine = (
   Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
 const startDouglasPecker = (epsilon: number) =>
-  function* douglasPecker(line: Coordinates[]): SubRoutine<Coordinates[]> {
+  function* douglasPecker(line: Coordinates[]): Routine<Coordinates[]> {
     yield;
     const start = line[0];
     const end = line[line.length - 1];
@@ -168,7 +168,7 @@ function* contourTracing(
   external: boolean,
   terrain: RoomTerrain,
   labelMap: RectangleArray
-): SubRoutine<Contour> {
+): Routine<Contour> {
   const contour = [S];
 
   let direction = external ? 7 : 3;
@@ -204,7 +204,7 @@ function* contourTracing(
 function* labelComponents(
   terrain: RoomTerrain,
   labelMap: RectangleArray
-): SubRoutine<Contour[]> {
+): Routine<Contour[]> {
   const contours: Contour[] = [];
   let C = 1;
 
@@ -254,7 +254,7 @@ function* labelComponents(
   return contours;
 }
 
-function* pruneMedials(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1)
   );
@@ -275,7 +275,7 @@ function* pruneMedials(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
   }
 }
 
-function* addSinks(graph: RegionGraph): SubRoutine<void> {
+function* addSinks(graph: RegionGraph): Routine<void> {
   const nodes = Array.from(graph).filter(
     ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48
   );
@@ -289,7 +289,7 @@ function* addSinks(graph: RegionGraph): SubRoutine<void> {
   }
 }
 
-function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1)
   );
@@ -346,7 +346,7 @@ function* identifyNodes(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
   }
 }
 
-function* simplifyGraph(graph: RegionGraph, rtree: RTree): SubRoutine<void> {
+function* simplifyGraph(graph: RegionGraph, rtree: RTree): Routine {
   for (const node of graph) {
     yield;
     if (!node.type) {
