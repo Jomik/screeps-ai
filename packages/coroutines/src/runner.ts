@@ -2,8 +2,7 @@ import { Future } from './Future';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RoutineCall = void | Future<any>;
-export type SubRoutine<T> = Generator<RoutineCall, T, unknown>;
-export type Routine = SubRoutine<void>;
+export type Routine<T = void> = Generator<RoutineCall, T, unknown>;
 
 export interface Scheduler {
   next(): Routine;
@@ -15,7 +14,7 @@ const resultMap = new WeakMap<Routine, unknown>();
 
 export const createRunner = (
   scheduler: Scheduler,
-  onError?: (error: unknown) => void
+  onError?: (error: unknown) => void,
 ) => {
   const go = <Args extends unknown[]>(
     fn: (this: Routine, ...args: Args) => Routine,
@@ -36,7 +35,7 @@ export const createRunner = (
   };
 
   const wrapExecution = (
-    routine: Routine
+    routine: Routine,
   ): IteratorResult<RoutineCall, void> => {
     try {
       const lastResult = resultMap.get(routine);

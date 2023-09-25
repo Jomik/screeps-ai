@@ -1,5 +1,4 @@
 import { Routine } from 'coroutines';
-import { SubRoutine } from 'coroutines';
 import {
   calculateDistanceTransform,
   Coordinates,
@@ -26,7 +25,7 @@ function* getRoadTo(
   target: Coordinates,
   roomName: string,
   navigation: CostMatrix
-): SubRoutine<Coordinates[]> {
+): Routine<Coordinates[]> {
   const room = Game.rooms[roomName];
   if (!room) {
     return [];
@@ -206,7 +205,7 @@ function* canPlaceStamp(
   buildingSpace: CostMatrix,
   origin: Coordinates,
   pointsToReach: Coordinates[]
-): SubRoutine<boolean> {
+): Routine<boolean> {
   const placement = placeStamp(stamp, center);
 
   for (const [structureType, x, y] of placement) {
@@ -256,7 +255,7 @@ function* placeNumberOfStamp(
   distanceTransform: CostMatrix,
   buildingSpace: CostMatrix,
   pointsToReach: Coordinates[]
-): SubRoutine<StructurePlacement[]> {
+): Routine<StructurePlacement[]> {
   let placed = 0;
   const structures: StructurePlacement[] = [];
   for (const stamp of stamps) {

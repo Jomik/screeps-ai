@@ -1,4 +1,4 @@
-import { SubRoutine } from 'coroutines';
+import { Routine } from 'coroutines';
 import {
   expandOrtogonally,
   coordinatesToNumber,
@@ -7,8 +7,8 @@ import {
 } from '../coordinates';
 
 export function* findLocalMaxima(
-  distanceTransform: CostMatrix
-): SubRoutine<Coordinates[][]> {
+  distanceTransform: CostMatrix,
+): Routine<Coordinates[][]> {
   const candidates = new Set<number>();
   const maxima: Set<number>[] = [];
   for (let x = 1; x <= 48; ++x) {

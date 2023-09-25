@@ -1,4 +1,4 @@
-import { SubRoutine } from 'coroutines';
+import { Routine } from 'coroutines';
 
 // prettier-ignore
 const forwardMask = [
@@ -17,22 +17,22 @@ const updateCM = (
   x: number,
   y: number,
   costMatrix: CostMatrix,
-  mask: ReadonlyArray<readonly [number, number]>
+  mask: ReadonlyArray<readonly [number, number]>,
 ) => {
   const neighbours = mask.map(
-    ([dx, dy]) => costMatrix.get(x + dx, y + dy) ?? 0
+    ([dx, dy]) => costMatrix.get(x + dx, y + dy) ?? 0,
   );
   costMatrix.set(
     x,
     y,
-    Math.min(Math.min(...neighbours) + 1, costMatrix.get(x, y) ?? 0)
+    Math.min(Math.min(...neighbours) + 1, costMatrix.get(x, y) ?? 0),
   );
 };
 
 export function* calculateDistanceTransform(
   bounds: { x: [number, number]; y: [number, number] },
-  base: CostMatrix
-): SubRoutine<CostMatrix> {
+  base: CostMatrix,
+): Routine<CostMatrix> {
   const dt = base.clone();
 
   const {
