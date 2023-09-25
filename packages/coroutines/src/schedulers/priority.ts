@@ -36,5 +36,9 @@ export class PriorityScheduler implements Scheduler {
 
   remove(routine: Routine): void {
     this.priorities.delete(routine);
+    const index = this.routines.indexOf(routine);
+    if (index !== -1) {
+      this.routines.splice(index, 1);
+    }
   }
 }
