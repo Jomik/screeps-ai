@@ -21,6 +21,15 @@ export class Future<T> {
     return new Future<T>((resolve) => resolve(value));
   }
 
+  static defer<T>(): [future: Future<T>, resolve: (value: T) => void] {
+    let resolve: (value: T) => void;
+    const future = new Future<T>((r) => {
+      resolve = r;
+    });
+    // Depends on constructor immediately calling the resolver.
+    return [future, resolve!];
+  }
+
   private resolve(value: T): void {
     if (this.value !== NotResolved) {
       throw new Error('Future already resolved');

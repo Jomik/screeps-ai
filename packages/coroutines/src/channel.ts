@@ -26,9 +26,10 @@ export const make = <T>(capacity = 0): Channel<T> => {
         return Future.resolve(producer.value);
       }
 
-      return new Future<T>((resolve) => {
-        consumers.push(resolve);
-      });
+      const [future, resolve] = Future.defer<T>();
+      consumers.push(resolve);
+
+      return future;
     },
 
     send(value) {
@@ -43,12 +44,13 @@ export const make = <T>(capacity = 0): Channel<T> => {
         return Future.resolve<void>(undefined);
       }
 
-      return new Future<void>((resolve) => {
-        producers.push({
-          value,
-          resolve,
-        });
+      const [future, resolve] = Future.defer<void>();
+      producers.push({
+        value,
+        resolve,
       });
+
+      return future;
     },
   };
 };
