@@ -18,7 +18,10 @@ export class FIFOScheduler implements Scheduler {
     return r;
   }
 
-  remove() {
-    // do nothing
+  remove(routine: Routine) {
+    const index = this.routines.indexOf(routine);
+    if (index !== -1) {
+      this.routines.splice(index, 1);
+    }
   }
 }
