@@ -1,17 +1,31 @@
 import { Future } from 'coroutines';
 
-export let resolveSleep = () => {
-  //Nothing
+const sleepers = new Map<
+  number,
+  { future: Future<void>; resolve: () => void }
+>();
+
+export const resolveSleep = () => {
+  const sleep = sleepers.get(Game.time);
+
+  if (sleep === undefined) {
+    return;
+  }
+
+  sleep.resolve();
+  sleepers.delete(Game.time);
 };
 
-const sleepPromiseFactory = () =>
-  new Future<void>((resolve) => {
-    resolveSleep = () => {
-      resolve();
-      sleepPromise = sleepPromiseFactory();
-    };
-  });
+export const sleep = (ticks: number = 1): Future<void> => {
+  const wakeTime = Game.time + ticks;
 
-let sleepPromise = sleepPromiseFactory();
+  const sleep = sleepers.get(wakeTime);
+  if (sleep !== undefined) {
+    return sleep.future;
+  }
 
-export const sleep = () => sleepPromise;
+  const [future, resolve] = Future.defer<void>();
+  sleepers.set(wakeTime, { future, resolve });
+
+  return future;
+};
