@@ -6,6 +6,14 @@ import { isDefined, isStructureType } from '../utils';
 import { intelRef } from './intel-manager';
 import { runHauler } from './hauler';
 
+export type CreepTypes =
+  | 'hauler'
+  | 'worker'
+  | 'miner'
+  | 'upgrader'
+  | 'attacker'
+  | 'scout';
+
 const logger = createLogger('creep-manager');
 
 const pickupEnergy = (worker: Creep, need: number) => {
