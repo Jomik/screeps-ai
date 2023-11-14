@@ -16,7 +16,7 @@ const spawnCreep = (
   spawn: StructureSpawn,
   type: string,
   memory: CreepMemory,
-  bodyGenerator: IterableIterator<BodyPartConstant[]>
+  bodyGenerator: IterableIterator<BodyPartConstant[]>,
 ): ScreepsReturnCode => {
   const capacity = spawn.room.energyAvailable;
   const body: BodyPartConstant[] = [];
@@ -37,10 +37,10 @@ const spawnCreep = (
 };
 
 export function* spawnManager(): Routine {
-  const getSpawn = (): StructureSpawn => {
+  const getSpawn = (): StructureSpawn | undefined => {
     // TODO: This is slightly bad.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Game.spawns['Spawn1']!;
+    return Object.values(Game.spawns)[0];
   };
 
   const spawnHauler = () => {
@@ -50,11 +50,15 @@ export function* spawnManager(): Routine {
       }
     }
     const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
     return spawnCreep(
       spawn,
       'hauler',
       { home: spawn.room.name },
-      bodyGenerator()
+      bodyGenerator(),
     );
   };
 
@@ -65,7 +69,12 @@ export function* spawnManager(): Routine {
         yield [WORK];
       }
     }
-    return spawnCreep(getSpawn(), 'miner', { slot }, bodyGenerator());
+    const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
+    return spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
   };
 
   const spawnRemoteMiner = (slot: [...Coordinates, string]) => {
@@ -76,7 +85,12 @@ export function* spawnManager(): Routine {
         yield [MOVE];
       }
     }
-    return spawnCreep(getSpawn(), 'miner', { slot }, bodyGenerator());
+    const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
+    return spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
   };
 
   const spawnUpgrader = () => {
@@ -86,7 +100,12 @@ export function* spawnManager(): Routine {
         yield [WORK];
       }
     }
-    return spawnCreep(getSpawn(), 'upgrader', {}, bodyGenerator());
+    const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
+    return spawnCreep(spawn, 'upgrader', {}, bodyGenerator());
   };
 
   const spawnWorker = () => {
@@ -105,7 +124,12 @@ export function* spawnManager(): Routine {
         yield [MOVE];
       }
     }
-    return spawnCreep(getSpawn(), 'worker', {}, bodyGenerator());
+    const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
+    return spawnCreep(spawn, 'worker', {}, bodyGenerator());
   };
 
   const spawnScout = () => {
@@ -113,11 +137,15 @@ export function* spawnManager(): Routine {
       yield [MOVE];
     }
     const spawn = getSpawn();
+    if (spawn === undefined) {
+      logger.error('No spawn found');
+      return;
+    }
     return spawnCreep(
       spawn,
       'scout',
       { home: spawn.room.name },
-      bodyGenerator()
+      bodyGenerator(),
     );
   };
 
@@ -125,10 +153,13 @@ export function* spawnManager(): Routine {
 
   for (;;) {
     yield sleep();
-    while (!getSpawn() || getSpawn().spawning) {
-      yield sleep();
+    let spawn: StructureSpawn | undefined;
+    while (!(spawn = getSpawn()) || spawn.spawning) {
+      if (spawn === undefined) {
+        logger.error('No spawn found');
+      }
+      yield sleep(spawn?.spawning?.remainingTime ?? 1);
     }
-    const spawn = getSpawn();
     const { room } = spawn;
 
     const sources = room.find(FIND_SOURCES);
@@ -146,7 +177,7 @@ export function* spawnManager(): Routine {
           const bdisty = Math.abs(goal.y - b.y);
           return adistx - bdistx + adisty - bdisty;
         })
-        .slice(0, 3)
+        .slice(0, 3),
     );
 
     const {
@@ -174,7 +205,7 @@ export function* spawnManager(): Routine {
         ('resourceType' in cur
           ? cur.amount
           : cur.store.getUsedCapacity(RESOURCE_ENERGY)),
-      0
+      0,
     );
     const takenSlots = miners
       .filter((creep) => (creep.ticksToLive ?? 0) > 100)
@@ -184,14 +215,14 @@ export function* spawnManager(): Routine {
       (pos) =>
         !takenSlots.some(
           ([x, y, roomName]) =>
-            pos.x === x && pos.y === y && pos.roomName === roomName
-        )
+            pos.x === x && pos.y === y && pos.roomName === roomName,
+        ),
     );
 
     const adjacentRooms = Object.values(
-      Game.map.describeExits(room.name)
+      Game.map.describeExits(room.name),
     ).filter(
-      (roomName) => Game.map.getRoomStatus(roomName).status === 'normal'
+      (roomName) => Game.map.getRoomStatus(roomName).status === 'normal',
     );
     if (haulers.length === 0 && energyInRoom >= 300) {
       spawnHauler();
@@ -241,21 +272,21 @@ export function* spawnManager(): Routine {
         return [];
       }
       return roomIntel.remotes.map(
-        ([x, y]) => new RoomPosition(x, y, roomName)
+        ([x, y]) => new RoomPosition(x, y, roomName),
       );
     });
     const freeRemoteSlots = remoteSlots.filter(
       (pos) =>
         !takenSlots.some(
           ([x, y, roomName]) =>
-            pos.roomName === roomName && dist([x, y], [pos.x, pos.y]) <= 1
-        )
+            pos.roomName === roomName && dist([x, y], [pos.x, pos.y]) <= 1,
+        ),
     );
 
     if (freeRemoteSlots.length > 0) {
       const path = PathFinder.search(
         spawn.pos,
-        freeRemoteSlots.map((pos) => ({ pos, range: 1 }))
+        freeRemoteSlots.map((pos) => ({ pos, range: 1 })),
       );
       if (!path.incomplete) {
         const freeSlot = path.path[path.path.length - 1];
