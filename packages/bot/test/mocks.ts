@@ -21,7 +21,7 @@ class CostMatrix {
 
   public serialize(): number[] {
     return Array.prototype.slice.apply(
-      new Uint32Array(this._bits.buffer)
+      new Uint32Array(this._bits.buffer),
     ) as number[];
   }
 
@@ -34,4 +34,5 @@ export const setupMocks = () => {
   global.PathFinder = {
     CostMatrix: CostMatrix,
   };
+  global.Game = {};
 };
