@@ -4,6 +4,7 @@
   "scripts": {
     "build": "rollup -c",
     "deploy:mmo": "yarn build --environment DEST:mmo",
+    "deploy:newbieland": "yarn build --environment DEST:newbieland",
     "deploy:development": "yarn build --environment DEST:development",
     "test": "jest"
   },

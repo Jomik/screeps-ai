@@ -10,7 +10,7 @@ jobs:
     permissions:
       checks: write
     uses: ./.github/workflows/ci.yml
-  deploy:
+  deploy-mmo:
     needs: integration
     runs-on: ubuntu-latest
     concurrency:
@@ -25,3 +25,18 @@ jobs:
         run: yarn deploy:mmo
         env:
           SCREEPS_MMO_TOKEN: ${{ secrets.SCREEPS_TOKEN }}
+  deploy-newbieland:
+    needs: integration
+    runs-on: ubuntu-latest
+    concurrency:
+      group: newbieland_environment
+    environment:
+      name: Newbie Land
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ./.github/actions/install
+      - name: Deploy Newbie Land
+        run: yarn deploy:newbieland
+        env:
+          SCREEPS_NEWBIELAND_EMAIL: ${{ secrets.SCREEPS_EMAIL }}
+          SCREEPS_NEWBIELAND_PASSWORD: ${{ secrets.SCREEPS_PASSWORD }}

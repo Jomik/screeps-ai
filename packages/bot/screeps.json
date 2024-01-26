@@ -6,6 +6,13 @@
     "path": "/",
     "branch": "main"
   },
+  "newbieland": {
+    "protocol": "https",
+    "hostname": "screeps.newbieland.net",
+    "port": 443,
+    "path": "/",
+    "branch": "main"
+  },
   "development": {
     "protocol": "http",
     "hostname": "localhost",
