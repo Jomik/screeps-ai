@@ -7,9 +7,7 @@ dist/
 coverage/
 yarn-error.log
 
-.pnp.*
 .yarn/*
 !.yarn/patches
 !.yarn/plugins
-!.yarn/sdks
 !.yarn/versions
