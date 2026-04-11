@@ -5,3 +5,7 @@ mods:
 bots:
   simplebot: screepsbot-zeswarm
   overmind: screeps-bot-overmind
+
+launcherOptions:
+  autoUpdate: false
+  logConsole: false
