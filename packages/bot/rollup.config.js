@@ -13,7 +13,7 @@ let cfg;
 const dest = process.env.DEST;
 if (!dest) {
   console.log(
-    'No destination specified - code will be compiled but not uploaded'
+    'No destination specified - code will be compiled but not uploaded',
   );
 } else if ((cfg = require('./screeps.json')[dest]) == null) {
   throw new Error('Invalid upload destination');
@@ -45,7 +45,14 @@ export default {
     clear({ targets: ['dist'] }),
     resolve({ rootDir: 'src', preferBuiltins: false }),
     commonjs(),
-    typescript({ tsconfig: './tsconfig.json' }),
+    typescript({
+      tsconfig: './tsconfig.json',
+      tsconfigOverride: {
+        compilerOptions: {
+          rootDir: '../..',
+        },
+      },
+    }),
     screeps({ config: cfg, dryRun: cfg == null }),
   ],
 };

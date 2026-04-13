@@ -1786,12 +1786,12 @@ __metadata:
     rollup: "npm:^2.79.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
-    rollup-plugin-typescript2: "npm:^0.34.1"
+    rollup-plugin-typescript2: "npm:^0.37.0"
     source-map: "npm:~0.6.1"
     tinyqueue: "npm:2.0.3"
     ts-jest: "npm:^29.1.1"
     ts-polyfill: "npm:^3.8.2"
-    typescript: "npm:^5.2.2"
+    typescript: "npm:^6.0.2"
   languageName: unknown
   linkType: soft
 
@@ -2136,7 +2136,7 @@ __metadata:
     jest: "npm:^29.7.0"
     prettier: "npm:^3.0.3"
     ts-jest: "npm:^29.1.1"
-    typescript: "npm:^5.2.2"
+    typescript: "npm:^6.0.2"
   languageName: unknown
   linkType: soft
 
@@ -4653,19 +4653,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rollup-plugin-typescript2@npm:^0.34.1":
-  version: 0.34.1
-  resolution: "rollup-plugin-typescript2@npm:0.34.1"
+"rollup-plugin-typescript2@npm:^0.37.0":
+  version: 0.37.0
+  resolution: "rollup-plugin-typescript2@npm:0.37.0"
   dependencies:
     "@rollup/pluginutils": "npm:^4.1.2"
     find-cache-dir: "npm:^3.3.2"
     fs-extra: "npm:^10.0.0"
-    semver: "npm:^7.3.7"
-    tslib: "npm:^2.4.0"
+    semver: "npm:^7.5.4"
+    tslib: "npm:^2.6.2"
   peerDependencies:
     rollup: ">=1.26.3"
     typescript: ">=2.4.0"
-  checksum: 10/0cccd4a03d984ca717dd8fd798284d262950efd14ec9c9c5a4d0b3469676b62cb7a2e7b58f14733f2534328981ae4d2ec9620f49b7fc45ad729ddd42d78c759b
+  checksum: 10/5aaa7425775ac769fd2c2a382c432cca9f7102f1b1cf5bf8fa4d4023ab6a54039f599022faa113c36ff9459239d3c1b7df23e029245bea6f07c87a93fdcef495
   languageName: node
   linkType: hard
 
@@ -4692,7 +4692,7 @@ __metadata:
     eslint: "npm:^8.49.0"
     eslint-config-prettier: "npm:^9.0.0"
     prettier: "npm:^3.5.3"
-    typescript: "npm:^5.2.2"
+    typescript: "npm:^6.0.2"
   languageName: unknown
   linkType: soft
 
@@ -4757,7 +4757,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.3.5, semver@npm:^7.3.7":
+"semver@npm:^7.3.5":
   version: 7.3.7
   resolution: "semver@npm:7.3.7"
   dependencies:
@@ -5127,10 +5127,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^2.4.0":
-  version: 2.4.0
-  resolution: "tslib@npm:2.4.0"
-  checksum: 10/d8379e68b36caf082c1905ec25d17df8261e1d68ddc1abfd6c91158a064f6e4402039ae7c02cf4c81d12e3a2a2c7cd8ea2f57b233eb80136a2e3e7279daf2911
+"tslib@npm:^2.6.2":
+  version: 2.8.1
+  resolution: "tslib@npm:2.8.1"
+  checksum: 10/3e2e043d5c2316461cb54e5c7fe02c30ef6dccb3384717ca22ae5c6b5bc95232a6241df19c622d9c73b809bea33b187f6dbc73030963e29950c2141bc32a79f7
   languageName: node
   linkType: hard
 
@@ -5164,23 +5164,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.2.2":
-  version: 5.2.2
-  resolution: "typescript@npm:5.2.2"
+"typescript@npm:^6.0.2":
+  version: 6.0.2
+  resolution: "typescript@npm:6.0.2"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/d65e50eb849bd21ff8677e5b9447f9c6e74777e346afd67754934264dcbf4bd59e7d2473f6062d9a015d66bd573311166357e3eb07fea0b52859cf9bb2b58555
+  checksum: 10/b9fc2fcee7ee8e5ca6f5138181964550531e18e2d20ecb71b802d4d495881e3444e0ef94cbb6e84eb2ba41e913f6feae3ca33cc722b32e6e6dfadb32d23b80e6
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.2.2#optional!builtin<compat/typescript>":
-  version: 5.2.2
-  resolution: "typescript@patch:typescript@npm%3A5.2.2#optional!builtin<compat/typescript>::version=5.2.2&hash=f3b441"
+"typescript@patch:typescript@npm%3A^6.0.2#optional!builtin<compat/typescript>":
+  version: 6.0.2
+  resolution: "typescript@patch:typescript@npm%3A6.0.2#optional!builtin<compat/typescript>::version=6.0.2&hash=5786d5"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10/f79cc2ba802c94c2b78dbb00d767a10adb67368ae764709737dc277273ec148aa4558033a03ce901406b35fddf4eac46dabc94a1e1d12d2587e2b9cfe5707b4a
+  checksum: 10/e5501dfcf8c5b6b9a61f6fa53decc40187cebe3a2b7b2bd51c615007ad4cf6d58298461fef63294f6be9d5f2f33019b2a2e2bf02d9cb7d7f6ec94372bf24ffa2
   languageName: node
   linkType: hard
 

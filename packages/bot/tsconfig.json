@@ -2,15 +2,16 @@
   "compilerOptions": {
     "lib": ["es2017", "es2019.Array"],
     "target": "es2017",
-    "moduleResolution": "node",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "rootDir": ".",
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
-    "experimentalDecorators": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "allowSyntheticDefaultImports": true,
     "noUnusedLocals": false,
-    "allowUnreachableCode": true
+    "allowUnreachableCode": true,
+    "types": ["jest", "lodash", "screeps"]
   }
 }
