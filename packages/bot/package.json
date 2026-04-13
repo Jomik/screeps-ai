@@ -6,7 +6,8 @@
     "deploy:mmo": "yarn build --environment DEST:mmo",
     "deploy:newbieland": "yarn build --environment DEST:newbieland",
     "deploy:development": "yarn build --environment DEST:development",
-    "test": "jest"
+    "test": "jest",
+    "typecheck": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "coroutines": "workspace:*",
