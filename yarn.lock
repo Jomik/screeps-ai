@@ -1255,10 +1255,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/delaunator@npm:5.0.0":
-  version: 5.0.0
-  resolution: "@types/delaunator@npm:5.0.0"
-  checksum: 10/0f7b52a72ae4b7f7c4e153cec0e1216f46bf9355d290eb3ef9fad7604e3ff447b9d61cf7fee466ffc9f03aedf4ad3cc12603961ccf0df431bb1fe9ee2a85fd11
+"@types/delaunator@npm:^5.0.3":
+  version: 5.0.3
+  resolution: "@types/delaunator@npm:5.0.3"
+  checksum: 10/44777442fdcb2f1974e5c33a49ec2f05921e3566864678b2a8a3ea57f77cebc7ddada431ce2c094d3de0c84d19da9cf7d2dd9d2ee583aece34fb4adcf0adf557
   languageName: node
   linkType: hard
 
@@ -1772,13 +1772,13 @@ __metadata:
   dependencies:
     "@rollup/plugin-commonjs": "npm:^22.0.2"
     "@rollup/plugin-node-resolve": "npm:^14.1.0"
-    "@types/delaunator": "npm:5.0.0"
+    "@types/delaunator": "npm:^5.0.3"
     "@types/jest": "npm:^29.5.5"
     "@types/lodash": "npm:3.10.2"
     "@types/rbush": "npm:3.0.0"
     "@types/screeps": "npm:^3.3.3"
     coroutines: "workspace:*"
-    delaunator: "npm:5.0.0"
+    delaunator: "npm:5.1.0"
     dotenv: "npm:16.3.1"
     jest: "npm:^29.7.0"
     prettier: "npm:^3.0.3"
@@ -2206,12 +2206,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"delaunator@npm:5.0.0":
-  version: 5.0.0
-  resolution: "delaunator@npm:5.0.0"
+"delaunator@npm:5.1.0":
+  version: 5.1.0
+  resolution: "delaunator@npm:5.1.0"
   dependencies:
-    robust-predicates: "npm:^3.0.0"
-  checksum: 10/87f9aa5e2378036377ad924418181261ffb58607f303480b4615a5ef6fe2ecefc79f90db217353f2b79e06ee959bba65940429d4484aa36350bd6bde0fbf5010
+    robust-predicates: "npm:^3.0.2"
+  checksum: 10/ede01ddbb69c2d12672e1fd334e4265099d73c082a10fc2d33b4e527c61e0221b25011e9d49a701941211bbedd9d39b9eccac232803edf22d6308ad08ef61a98
   languageName: node
   linkType: hard
 
@@ -4406,6 +4406,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"prettier@npm:^3.5.3":
+  version: 3.8.2
+  resolution: "prettier@npm:3.8.2"
+  bin:
+    prettier: bin/prettier.cjs
+  checksum: 10/fd784175bc600c07eb2c44d7ec4ee7133f95f26492adad61b6a15c06f438b858181faf096ab74163d7f49500ad80cff4479c6abb084e161a2e85a9df5974ecd1
+  languageName: node
+  linkType: hard
+
 "pretty-format@npm:^29.0.0, pretty-format@npm:^29.1.2":
   version: 29.1.2
   resolution: "pretty-format@npm:29.1.2"
@@ -4618,10 +4627,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"robust-predicates@npm:^3.0.0":
-  version: 3.0.1
-  resolution: "robust-predicates@npm:3.0.1"
-  checksum: 10/99a3feb54a195f88c8118114cf4a535e915d2eafd259bcb517e161e8d2af4cf84730313c7e70ac98b9a04e23d7e789bfe50a703b2874745ffe1c0e09e4e4f22d
+"robust-predicates@npm:^3.0.2":
+  version: 3.0.3
+  resolution: "robust-predicates@npm:3.0.3"
+  checksum: 10/38464ec7a839b366e039410fa375ec9ea6d365f30eb38dab1c33c0269160ffa682c552a4c2f0098d89aff085fd51023db0cf039e7e6d24f87b4fc4b74ac5e89b
   languageName: node
   linkType: hard
 
@@ -4682,7 +4691,7 @@ __metadata:
     "@typescript-eslint/parser": "npm:^6.7.2"
     eslint: "npm:^8.49.0"
     eslint-config-prettier: "npm:^9.0.0"
-    prettier: "npm:^3.0.3"
+    prettier: "npm:^3.5.3"
     typescript: "npm:^5.2.2"
   languageName: unknown
   linkType: soft

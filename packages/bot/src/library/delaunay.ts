@@ -6,10 +6,22 @@ import { createLogger } from './logger';
 
 const logger = createLogger('delaunay');
 
+/**
+ * Minimal structural type capturing the Delaunator properties used by this
+ * module. Using a local interface avoids relying on the bundled
+ * `delaunator@5.1.0` type definitions which use TypeScript ≥5.3 generic
+ * typed-array syntax (`Uint32Array<ArrayBuffer>`) that is incompatible with
+ * the project's current TypeScript version.
+ */
+type DelaunatorLike = {
+  triangles: Uint32Array;
+  halfedges: Int32Array;
+};
+
 const circumcenter = (
   a: Coordinates,
   b: Coordinates,
-  c: Coordinates
+  c: Coordinates,
 ): Coordinates => {
   const ad = a[0] * a[0] + a[1] * a[1];
   const bd = b[0] * b[0] + b[1] * b[1];
@@ -25,25 +37,25 @@ const edgesOfTriangle = (t: number): [number, number, number] => {
   return [3 * t, 3 * t + 1, 3 * t + 2];
 };
 const pointsOfTriangle = (
-  delaunay: Delaunator<unknown>,
-  t: number
+  delaunay: DelaunatorLike,
+  t: number,
 ): [number, number, number] => {
   return edgesOfTriangle(t).map((e) => delaunay.triangles[e]) as [
     number,
     number,
-    number
+    number,
   ];
 };
 
 const triangleCenter = (
   points: Coordinates[],
-  delaunay: Delaunator<unknown>,
-  t: number
+  delaunay: DelaunatorLike,
+  t: number,
 ): Coordinates => {
   const vertices = pointsOfTriangle(delaunay, t).map((p) => points[p]) as [
     Coordinates,
     Coordinates,
-    Coordinates
+    Coordinates,
   ];
   return circumcenter(vertices[0], vertices[1], vertices[2]);
 };
@@ -56,7 +68,7 @@ const nextHalfedge = (e: number) => (e % 3 === 2 ? e - 2 : e + 1);
 
 export function* getEachTriangleEdge(
   points: Coordinates[],
-  delaunay: Delaunator<unknown>
+  delaunay: DelaunatorLike,
 ): Generator<[Coordinates, Coordinates], void, undefined> {
   for (let e = 0; e < delaunay.triangles.length; e++) {
     if (e > delaunay.halfedges[e]!) {
@@ -70,7 +82,7 @@ export function* getEachTriangleEdge(
 export function* getEdges(
   points: Coordinates[],
   contours: Coordinates[][],
-  delaunay: Delaunator<unknown>
+  delaunay: DelaunatorLike,
 ): Generator<[p: Coordinates, q: Coordinates], void, undefined> {
   for (let e = 0; e < delaunay.triangles.length; e++) {
     if (e < delaunay.halfedges[e]!) {
@@ -93,7 +105,7 @@ export function* getEdges(
         points,
         delaunay,
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        triangleOfEdge(delaunay.halfedges[e]!)
+        triangleOfEdge(delaunay.halfedges[e]!),
       );
       yield [p, q];
     }
