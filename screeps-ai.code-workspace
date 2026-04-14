@@ -28,8 +28,7 @@
       "dist/**": true,
       "node_modules/**": true,
       "typings/**": true,
-      "**/.yarn": true,
-      "**/.pnp.*": true
+      "**/.yarn": true
     },
     "files.exclude": {
       "**/.git": true,
@@ -39,14 +38,10 @@
       "**/.DS_Store": true,
       "**/Thumbs.db": true,
       "node_modules/": true,
-      "**/.yarn": true,
-      "**/.pnp.*": true
+      "**/.yarn": true
     },
     "eslint.enable": true,
-    "eslint.nodePath": "../../.yarn/sdks",
     "eslint.workingDirectories": ["packages/*"],
-    "prettier.prettierPath": ".yarn/sdks/prettier/index.js",
-    "typescript.tsdk": "Root/.yarn/sdks/typescript/lib",
     "typescript.enablePromptUseWorkspaceTsdk": true,
     "jest.jestCommandLine": "yarn jest",
     "jest.shell": "fish",
@@ -58,7 +53,6 @@
   },
   "extensions": {
     "recommendations": [
-      "arcanis.vscode-zipfs",
       "dbaeumer.vscode-eslint",
       "esbenp.prettier-vscode",
       "Orta.vscode-jest",

@@ -11,8 +11,8 @@ export default tseslint.config(
   },
   {
     linterOptions: {
-      // ESLint 9 defaults to "warn"; match ESLint 8 behaviour (off) to avoid
-      // flagging stale inline eslint-disable comments as new warnings.
+      // Disabled to avoid flagging stale inline eslint-disable comments.
+      // Enable and clean up directives when ready.
       reportUnusedDisableDirectives: 'off',
     },
   },
@@ -45,11 +45,7 @@ export default tseslint.config(
           'ts-ignore': 'allow-with-description',
         },
       ],
-      // Preserve v6 behavior: in typescript-eslint v6, the default case was
-      // implicitly considered exhaustive for union types. v8 changed the default
-      // to false, which would break existing code (e.g., RoomVisual.ts with union
-      // type switches that rely on a default case). We explicitly set it to true
-      // to maintain backward compatibility.
+      // Treat default case as exhaustive for union switches (e.g., RoomVisual.ts).
       '@typescript-eslint/switch-exhaustiveness-check': [
         'warn',
         { considerDefaultExhaustiveForUnions: true },

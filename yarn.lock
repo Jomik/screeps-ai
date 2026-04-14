@@ -1819,16 +1819,14 @@ __metadata:
     delaunator: "npm:5.1.0"
     dotenv: "npm:^16.4.7"
     jest: "npm:^29.7.0"
-    prettier: "npm:^3.0.3"
     rbush: "npm:3.0.1"
     rollup: "npm:^2.79.1"
     rollup-plugin-clear: "npm:^2.0.7"
     rollup-plugin-screeps: "npm:^1.0.1"
     rollup-plugin-typescript2: "npm:^0.37.0"
-    source-map: "npm:~0.6.1"
+    source-map-js: "npm:^1.2.1"
     tinyqueue: "npm:2.0.3"
     ts-jest: "npm:^29.4.9"
-    ts-polyfill: "npm:^3.8.2"
     typescript: "npm:^6.0.2"
   languageName: unknown
   linkType: soft
@@ -2168,20 +2166,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-js@npm:^3.6.4":
-  version: 3.22.2
-  resolution: "core-js@npm:3.22.2"
-  checksum: 10/a134d88a894835847c24f9fa6ab02657b1f0210b6eb3f215b18f597caefef086319f82485924e62a12814ec2687ad1f0e5f54f0d2a9d0cde2c719fc632458570
-  languageName: node
-  linkType: hard
-
 "coroutines@workspace:*, coroutines@workspace:packages/coroutines":
   version: 0.0.0-use.local
   resolution: "coroutines@workspace:packages/coroutines"
   dependencies:
     "@types/jest": "npm:^29.5.5"
     jest: "npm:^29.7.0"
-    prettier: "npm:^3.0.3"
     ts-jest: "npm:^29.4.9"
     typescript: "npm:^6.0.2"
   languageName: unknown
@@ -2897,6 +2887,13 @@ __metadata:
   version: 14.0.0
   resolution: "globals@npm:14.0.0"
   checksum: 10/03939c8af95c6df5014b137cac83aa909090c3a3985caef06ee9a5a669790877af8698ab38007e4c0186873adc14c0b13764acc754b16a754c216cc56aa5f021
+  languageName: node
+  linkType: hard
+
+"globals@npm:^16.0.0":
+  version: 16.5.0
+  resolution: "globals@npm:16.5.0"
+  checksum: 10/f9e8a2a13f50222c127030a619e283e7bbfe32966316bdde0715af1d15a7e40cb9c24ff52cad59671f97762ed8b515353c2f8674f560c63d9385f19ee26735a6
   languageName: node
   linkType: hard
 
@@ -4468,15 +4465,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prettier@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "prettier@npm:3.0.3"
-  bin:
-    prettier: bin/prettier.cjs
-  checksum: 10/ccf1ead9794b017be6b42d0873f459070beef2069eb393c8b4c0d11aa3430acefc54f6d5f44a5b7ce9af05ad8daf694b912f0aa2808d1c22dfa86e61e9d563f8
-  languageName: node
-  linkType: hard
-
 "prettier@npm:^3.5.3":
   version: 3.8.2
   resolution: "prettier@npm:3.8.2"
@@ -4747,6 +4735,7 @@ __metadata:
     "@eslint/js": "npm:^9.25.0"
     eslint: "npm:^9.25.0"
     eslint-config-prettier: "npm:^10.1.8"
+    globals: "npm:^16.0.0"
     prettier: "npm:^3.5.3"
     typescript: "npm:^6.0.2"
     typescript-eslint: "npm:^8.31.0"
@@ -4921,6 +4910,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"source-map-js@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "source-map-js@npm:1.2.1"
+  checksum: 10/ff9d8c8bf096d534a5b7707e0382ef827b4dd360a577d3f34d2b9f48e12c9d230b5747974ee7c607f0df65113732711bb701fe9ece3c7edbd43cb2294d707df3
+  languageName: node
+  linkType: hard
+
 "source-map-support@npm:0.5.13":
   version: 0.5.13
   resolution: "source-map-support@npm:0.5.13"
@@ -4938,7 +4934,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map@npm:^0.6.0, source-map@npm:^0.6.1, source-map@npm:~0.6.1":
+"source-map@npm:^0.6.0, source-map@npm:^0.6.1":
   version: 0.6.1
   resolution: "source-map@npm:0.6.1"
   checksum: 10/59ef7462f1c29d502b3057e822cdbdae0b0e565302c4dd1a95e11e793d8d9d62006cdc10e0fd99163ca33ff2071360cf50ee13f90440806e7ed57d81cba2f7ff
@@ -5182,15 +5178,6 @@ __metadata:
   bin:
     ts-jest: cli.js
   checksum: 10/f5e81b1e13fff08da5b92d5a72f984f3393f40df73a1ae54473a780436b95dddb1452c78256e6d70a701c09ea427449657a5fbb3d142dc7e7a82eb192e80c3db
-  languageName: node
-  linkType: hard
-
-"ts-polyfill@npm:^3.8.2":
-  version: 3.8.2
-  resolution: "ts-polyfill@npm:3.8.2"
-  dependencies:
-    core-js: "npm:^3.6.4"
-  checksum: 10/41128ca8ad5ad13ef4d799ed31a0f0397c416c0066af2171657f3e3ba1a261911fb13efd9899c833ca6688351cf1882975affda7a47241dd4f62ee81947ccb3f
   languageName: node
   linkType: hard
 

@@ -10,7 +10,6 @@
     "strict": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": false,
     "allowUnreachableCode": true,
     "types": ["jest", "lodash", "screeps"]
   }
