@@ -22,7 +22,7 @@ export default tseslint.config(
     files: ['**/*.js'],
     languageOptions: {
       sourceType: 'module',
-      ecmaVersion: 2018,
+      ecmaVersion: 2022,
       globals: globals.node,
     },
   },
