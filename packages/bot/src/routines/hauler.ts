@@ -1,9 +1,6 @@
-import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { groupBy, isDefined, isStructureType, min } from '../utils';
 import { intelRef } from './intel-manager';
-
-const logger = createLogger('hauler');
 
 const intel = intelRef.get();
 const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
@@ -20,14 +17,14 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
         .filter(
           (s) =>
             s.pos.findInRange(FIND_SOURCES, 1).length > 0 &&
-            (!s.room.controller || s.pos.getRangeTo(s.room.controller) > 3)
+            (!s.room.controller || s.pos.getRangeTo(s.room.controller) > 3),
         );
 
   const rooms = Object.values(Game.map.describeExits(hauler.memory.home))
     .filter(
       (roomName) =>
         Game.map.getRoomStatus(roomName).status === 'normal' &&
-        !intel[roomName]?.hostile
+        !intel[roomName]?.hostile,
     )
     .concat(hauler.memory.home)
     .map((roomName) => Game.rooms[roomName])
@@ -35,7 +32,7 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
   const energyDrops = rooms.flatMap((room) =>
     room.find(FIND_DROPPED_RESOURCES, {
       filter: ({ resourceType }) => resourceType === RESOURCE_ENERGY,
-    })
+    }),
   );
 
   const ruins = hauler.room.find(FIND_RUINS);
@@ -43,7 +40,7 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
 
   const targets = (
     [...containers, ...ruins, ...tombstones].filter(
-      (target) => target.store.getUsedCapacity(RESOURCE_ENERGY) > 0
+      (target) => target.store.getUsedCapacity(RESOURCE_ENERGY) > 0,
     ) as Array<
       StructureContainer | Ruin | Tombstone | StructureStorage | Resource
     >
@@ -51,19 +48,19 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
   const targetsWithNeeded = targets.filter((s) =>
     s instanceof Resource
       ? s.amount >= need
-      : s.store.getUsedCapacity(RESOURCE_ENERGY) >= need
+      : s.store.getUsedCapacity(RESOURCE_ENERGY) >= need,
   );
 
   const targetWithNeededPath = PathFinder.search(
     hauler.pos,
-    targetsWithNeeded.map(({ pos }) => pos)
+    targetsWithNeeded.map(({ pos }) => pos),
   );
 
   const targetPath = !targetWithNeededPath.incomplete
     ? targetWithNeededPath
     : PathFinder.search(
         hauler.pos,
-        targets.map(({ pos }) => pos)
+        targets.map(({ pos }) => pos),
       );
 
   const targetPos = targetPath.path[targetPath.path.length - 1];
@@ -109,7 +106,7 @@ const PriorityMap = {
 type HaulerTarget = ConcreteStructure<keyof typeof PriorityMap>;
 
 const isHaulerTarget = isStructureType(
-  ...(Object.keys(PriorityMap) as HaulerTarget['structureType'][])
+  ...(Object.keys(PriorityMap) as HaulerTarget['structureType'][]),
 );
 
 const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
@@ -139,10 +136,10 @@ const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
     .find(FIND_STRUCTURES)
     .filter(
       <T extends AnyStructure>(
-        structure: T
+        structure: T,
       ): structure is T extends { structureType: keyof typeof PriorityMap }
         ? T
-        : never => structure.structureType in PriorityMap
+        : never => structure.structureType in PriorityMap,
     )
     .filter(
       ({ store, structureType, pos }) =>
@@ -150,12 +147,12 @@ const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
         (structureType !== STRUCTURE_LINK ||
           (room.controller && !pos.inRangeTo(room.controller, 5))) &&
         (structureType !== STRUCTURE_CONTAINER ||
-          pos.findInRange(FIND_SOURCES, 1).length === 0)
+          pos.findInRange(FIND_SOURCES, 1).length === 0),
     );
 
   const groupedByPriority = groupBy(
     potentialTargets,
-    (t) => PriorityMap[t.structureType]
+    (t) => PriorityMap[t.structureType],
   );
   const [, targets] =
     min(Object.entries(groupedByPriority), ([p]) => Number.parseInt(p)) ?? [];
@@ -166,7 +163,7 @@ const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
 
   const pathResult = PathFinder.search(
     hauler.pos,
-    targets.map(({ pos }) => pos)
+    targets.map(({ pos }) => pos),
   );
   const targetPos = pathResult.path[pathResult.path.length - 1];
 
@@ -193,7 +190,7 @@ export function* runHauler(id: Id<Creep>) {
 
     const need = Math.min(
       hauler.store.getCapacity(RESOURCE_ENERGY),
-      target?.store.getFreeCapacity(RESOURCE_ENERGY) ?? Infinity
+      target?.store.getFreeCapacity(RESOURCE_ENERGY) ?? Infinity,
     );
 
     if (hauler.store.getUsedCapacity(RESOURCE_ENERGY) < need) {
@@ -207,7 +204,7 @@ export function* runHauler(id: Id<Creep>) {
                 STRUCTURE_STORAGE,
               ] as BuildableStructureConstant[]
             ).includes(target.structureType)
-          : false
+          : false,
       );
       continue;
     }

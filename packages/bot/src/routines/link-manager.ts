@@ -1,8 +1,5 @@
-import { createLogger } from '../library';
 import { sleep } from '../library/sleep';
 import { isStructureType, min } from '../utils';
-
-const logger = createLogger('link-manager');
 
 export function* linkManager(roomName: string) {
   const room = Game.rooms[roomName];

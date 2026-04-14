@@ -3,7 +3,6 @@ import { creepManager } from './creep-manager';
 import { intelManager } from './intel-manager';
 import { linkManager } from './link-manager';
 import { planRoom } from './plan-room';
-import { roomKnowledge } from './room-knowledge';
 import { spawnManager } from './spawn-manager';
 import { towerManager } from './tower-manager';
 

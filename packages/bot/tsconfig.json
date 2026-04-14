@@ -10,7 +10,8 @@
     "strict": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "allowUnreachableCode": true,
-    "types": ["jest", "lodash", "screeps"]
-  }
+    "allowUnreachableCode": false,
+    "types": ["lodash", "screeps"]
+  },
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "test/**/*.ts"]
 }

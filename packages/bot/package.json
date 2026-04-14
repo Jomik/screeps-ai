@@ -7,7 +7,7 @@
     "deploy:newbieland": "yarn build --environment DEST:newbieland",
     "deploy:development": "yarn build --environment DEST:development",
     "test": "jest",
-    "typecheck": "tsc --noEmit --skipLibCheck"
+    "typecheck": "tsc --noEmit --skipLibCheck && tsc -p tsconfig.test.json --noEmit --skipLibCheck"
   },
   "dependencies": {
     "coroutines": "workspace:*",

@@ -9,7 +9,8 @@
     "strict": true,
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
-    "allowUnreachableCode": true,
-    "types": ["jest"]
-  }
+    "allowUnreachableCode": false,
+    "types": []
+  },
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts"]
 }

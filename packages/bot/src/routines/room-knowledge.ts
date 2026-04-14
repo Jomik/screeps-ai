@@ -21,7 +21,7 @@ const roundTo2Decimals = (num: number) =>
 
 export const overlayRectangleArray = (
   costMatrix: RectangleArray,
-  interpolate: (value: number) => number = (value) => value / 255
+  interpolate: (value: number) => number = (value) => value / 255,
 ) => {
   const visual = new RoomVisual('dummy');
 
@@ -53,9 +53,9 @@ function collect<T>(generator: Generator<T, void, undefined>): T[] {
   return res;
 }
 
-function* map<T, U>(
+function* _map<T, U>(
   values: T[],
-  generator: (value: T) => Routine<U>
+  generator: (value: T) => Routine<U>,
 ): Routine<U[]> {
   const res: U[] = [];
   for (const value of values) {
@@ -79,7 +79,7 @@ const neighbourIndex: Coordinates[] = [
 
 const translateInDirection = (
   [x, y]: Coordinates,
-  direction: number
+  direction: number,
 ): Coordinates => {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [dx, dy] = neighbourIndex[direction % 8]!;
@@ -90,12 +90,12 @@ const logger = createLogger('room-knowledge');
 
 const distanceFromPointToLine = (
   [x, y]: Coordinates,
-  [[x1, y1], [x2, y2]]: Edge
+  [[x1, y1], [x2, y2]]: Edge,
 ): number =>
   Math.abs((x2 - x1) * (y1 - y) - (x1 - x) * (y2 - y)) /
   Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
 
-const startDouglasPecker = (epsilon: number) =>
+const _startDouglasPecker = (epsilon: number) =>
   function* douglasPecker(line: Coordinates[]): Routine<Coordinates[]> {
     yield;
     const start = line[0];
@@ -106,7 +106,7 @@ const startDouglasPecker = (epsilon: number) =>
     }
     // Find the point with the maximum distance
     const maxPoint = max(line.slice(1, -1), (p) =>
-      distanceFromPointToLine(p, [start, end])
+      distanceFromPointToLine(p, [start, end]),
     );
     // If max distance is greater than epsilon, recursively simplify
     // if (dmax > epsilon) {
@@ -133,7 +133,7 @@ const startDouglasPecker = (epsilon: number) =>
   };
 
 // Component labelling
-const isRoomEdge = (x: number, y: number): boolean =>
+const _isRoomEdge = (x: number, y: number): boolean =>
   x === 0 || y === 0 || x === 49 || y === 49;
 const isBlack = (x: number, y: number, terrain: RoomTerrain): boolean =>
   !!(terrain.get(x, y) & TERRAIN_MASK_WALL);
@@ -146,7 +146,7 @@ const tracer = (
   origin: Coordinates,
   direction: number,
   terrain: RoomTerrain,
-  labelMap: RectangleArray
+  labelMap: RectangleArray,
 ): [direction: number, point: Coordinates] => {
   for (let i = 0; i < 7; ++i) {
     const point = translateInDirection(origin, direction + i);
@@ -167,7 +167,7 @@ function* contourTracing(
   label: number,
   external: boolean,
   terrain: RoomTerrain,
-  labelMap: RectangleArray
+  labelMap: RectangleArray,
 ): Routine<Contour> {
   const contour = [S];
 
@@ -203,7 +203,7 @@ function* contourTracing(
  */
 function* labelComponents(
   terrain: RoomTerrain,
-  labelMap: RectangleArray
+  labelMap: RectangleArray,
 ): Routine<Contour[]> {
   const contours: Contour[] = [];
   let C = 1;
@@ -225,7 +225,7 @@ function* labelComponents(
           C,
           true,
           terrain,
-          labelMap
+          labelMap,
         );
         contours.push(contour);
         ++C;
@@ -240,7 +240,7 @@ function* labelComponents(
             labelN,
             false,
             terrain,
-            labelMap
+            labelMap,
           );
           contours.push(contour);
         }
@@ -256,7 +256,7 @@ function* labelComponents(
 
 function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
   const candidates = new Set(
-    Array.from(graph).filter(({ size }) => size === 1)
+    Array.from(graph).filter(({ size }) => size === 1),
   );
   for (const p of candidates) {
     yield;
@@ -277,7 +277,7 @@ function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
 
 function* addSinks(graph: RegionGraph): Routine<void> {
   const nodes = Array.from(graph).filter(
-    ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48
+    ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48,
   );
   if (nodes.length > 0) {
     const exitSink = graph.get([-2, -2]);
@@ -291,7 +291,7 @@ function* addSinks(graph: RegionGraph): Routine<void> {
 
 function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
   const candidates = new Set(
-    Array.from(graph).filter(({ size }) => size === 1)
+    Array.from(graph).filter(({ size }) => size === 1),
   );
   if (candidates.size === 0) {
     for (const node of Array.from(graph).filter(({ size }) => size === 3)) {
@@ -323,7 +323,7 @@ function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
       rtree.nearestNeighbour(node.parent.coordinates)?.distance ?? 0;
     const localMinimal = [...node.children].every(
       (n) =>
-        (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) >= nodeRadius
+        (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) >= nodeRadius,
     );
     if (localMinimal) {
       if (node.parent.type !== 'region') {
@@ -337,7 +337,7 @@ function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
     } else {
       const localMaximal = [...node.children].every(
         (n) =>
-          (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) <= nodeRadius
+          (rtree.nearestNeighbour(n.coordinates)?.distance ?? 0) <= nodeRadius,
       );
       if (localMaximal) {
         node.type = 'region';
@@ -356,8 +356,8 @@ function* simplifyGraph(graph: RegionGraph, rtree: RTree): Routine {
       if (children.length !== 2) {
         throw new Error(
           `Unmarked node with degree ${node.size}, ${node.coordinates.join(
-            ','
-          )}`
+            ',',
+          )}`,
         );
       }
       if (c1 === undefined || c2 === undefined) {
@@ -438,14 +438,14 @@ export function* roomKnowledge(roomName: string) {
         [
           p.map(clamp(0, 49)).map(roundTo2Decimals),
           q.map(clamp(0, 49)).map(roundTo2Decimals),
-        ] as Edge
+        ] as Edge,
     )
     .filter(
       ([p, q]) =>
         !(
           (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
           (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
-        )
+        ),
     );
   yield;
 

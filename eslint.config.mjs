@@ -22,7 +22,7 @@ export default tseslint.config(
     files: ['**/*.js'],
     languageOptions: {
       sourceType: 'module',
-      ecmaVersion: 2018,
+      ecmaVersion: 2022,
       globals: globals.node,
     },
   },
@@ -32,13 +32,19 @@ export default tseslint.config(
     extends: [tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: ['packages/*/tsconfig.json', 'packages/*/tsconfig.test.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
     rules: {
       'require-yield': 'off',
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+        },
+      ],
       '@typescript-eslint/ban-ts-comment': [
         'error',
         {

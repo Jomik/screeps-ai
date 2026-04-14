@@ -24,7 +24,7 @@ export const loop = ErrorMapper.wrapLoop(
     ) {
       // TODO: Monitor CPU
       // const start = Game.cpu.getUsed();
-      const task = run();
+      const _task = run();
       // const end = Game.cpu.getUsed();
       // cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
     }
@@ -44,7 +44,7 @@ export const loop = ErrorMapper.wrapLoop(
       ).toFixed(2)}%`,
       0,
       0.2,
-      { font: 0.7, align: 'left' }
+      { font: 0.7, align: 'left' },
     );
 
     // Automatically delete memory of missing creeps
@@ -55,5 +55,5 @@ export const loop = ErrorMapper.wrapLoop(
     }
 
     recordGlobals();
-  })
+  }),
 );

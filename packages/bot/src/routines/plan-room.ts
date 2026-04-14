@@ -10,7 +10,6 @@ import {
 } from '../library';
 import { chooseBaseOrigin } from '../library/base-origin';
 import { sleep } from '../library/sleep';
-import { overlayCostMatrix } from '../library/visualize-cost-matrix';
 import { go } from '../runner';
 import { isDefined, MaxControllerLevel, max } from '../utils';
 
@@ -20,11 +19,11 @@ const MaxConstructionSites = 2;
 const RoadCost = 1;
 const BlockedCost = 2;
 
-function* getRoadTo(
+function* _getRoadTo(
   origin: Coordinates,
   target: Coordinates,
   roomName: string,
-  navigation: CostMatrix
+  navigation: CostMatrix,
 ): Routine<Coordinates[]> {
   const room = Game.rooms[roomName];
   if (!room) {
@@ -41,7 +40,7 @@ function* getRoadTo(
       maxRooms: 1,
       plainCost: 2,
       swampCost: 10,
-    }
+    },
   );
   if (res.incomplete) {
     logger.warn(`No path to ${JSON.stringify(target)}`);
@@ -54,7 +53,7 @@ function* getRoadTo(
 type Stamp = Array<BuildableStructureConstant | EMPTY | BLOCKED>[];
 type StructurePlacement = [
   BuildableStructureConstant | EMPTY | BLOCKED,
-  ...Coordinates
+  ...Coordinates,
 ];
 
 const EMPTY = 'empty';
@@ -123,7 +122,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   // Block off tiles around exit tiles.
   for (const { x, y } of room.find(FIND_EXIT)) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 1)
+      cm.set(x, y, 1),
     );
   }
 
@@ -132,7 +131,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
     pos: { x, y },
   } of [...room.find(FIND_SOURCES), ...room.find(FIND_MINERALS)]) {
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, BlockedCost)
+      cm.set(x, y, BlockedCost),
     );
   }
 
@@ -140,7 +139,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   if (room.controller) {
     const { x, y } = room.controller.pos;
     [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, BlockedCost)
+      cm.set(x, y, BlockedCost),
     );
   }
 
@@ -158,7 +157,7 @@ const getBuildingSpace = (room: Room): CostMatrix => {
 
 const placeStamp = (
   stamp: Stamp,
-  center: Coordinates
+  center: Coordinates,
 ): StructurePlacement[] => {
   const [centerX, centerY] = center;
   const width = stamp[0]?.length ?? 0;
@@ -172,13 +171,13 @@ const placeStamp = (
       structure,
       leftX + xOffset,
       topY + yOffset,
-    ])
+    ]),
   );
 };
 
 const updateCMWithPlacement = (
   placement: StructurePlacement[],
-  buildingSpace: CostMatrix
+  buildingSpace: CostMatrix,
 ) => {
   for (const [structureType, x, y] of placement) {
     if (structureType === EMPTY) {
@@ -190,10 +189,10 @@ const updateCMWithPlacement = (
       structureType === BLOCKED
         ? BlockedCost
         : structureType === STRUCTURE_CONTAINER
-        ? BlockedCost
-        : structureType === STRUCTURE_ROAD
-        ? RoadCost
-        : Infinity
+          ? BlockedCost
+          : structureType === STRUCTURE_ROAD
+            ? RoadCost
+            : Infinity,
     );
   }
 };
@@ -204,7 +203,7 @@ function* canPlaceStamp(
   center: Coordinates,
   buildingSpace: CostMatrix,
   origin: Coordinates,
-  pointsToReach: Coordinates[]
+  pointsToReach: Coordinates[],
 ): Routine<boolean> {
   const placement = placeStamp(stamp, center);
 
@@ -237,7 +236,7 @@ function* canPlaceStamp(
         maxRooms: 1,
         roomCallback: (roomName) =>
           roomName === room.name ? navigation : false,
-      }
+      },
     );
     if (path.incomplete) {
       return false;
@@ -254,7 +253,7 @@ function* placeNumberOfStamp(
   origin: Coordinates,
   distanceTransform: CostMatrix,
   buildingSpace: CostMatrix,
-  pointsToReach: Coordinates[]
+  pointsToReach: Coordinates[],
 ): Routine<StructurePlacement[]> {
   let placed = 0;
   const structures: StructurePlacement[] = [];
@@ -274,14 +273,14 @@ function* placeNumberOfStamp(
           candidate,
           buildingSpace,
           origin,
-          pointsToReach
+          pointsToReach,
         )
       ) {
         const placement = placeStamp(stamp, candidate).filter(
           // remove duplicate roads
           ([structureType, x, y]) =>
             structureType !== STRUCTURE_ROAD ||
-            buildingSpace.get(x, y) !== RoadCost
+            buildingSpace.get(x, y) !== RoadCost,
         );
         updateCMWithPlacement(placement, buildingSpace);
 
@@ -313,7 +312,7 @@ const nextStructure = (
   room: Room,
   placements: [BuildableStructureConstant, ...Coordinates][],
   includeContainer = false,
-  includeRoad = false
+  includeRoad = false,
 ): [BuildableStructureConstant, ...Coordinates] | undefined => {
   const { controller } = room;
   if (!controller) {
@@ -381,7 +380,7 @@ const nextStructure = (
 
 const findControllerLink = (
   room: Room,
-  buildingSpace: CostMatrix
+  buildingSpace: CostMatrix,
 ): Coordinates | null => {
   if (!room.controller) {
     return null;
@@ -402,8 +401,8 @@ const findControllerLink = (
     potentialPositions,
     (potential) =>
       expandPosition(potential).filter(
-        ([x, y]) => buildingSpace.get(x, y) <= BlockedCost
-      ).length
+        ([x, y]) => buildingSpace.get(x, y) <= BlockedCost,
+      ).length,
   );
 
   return linkPos;
@@ -419,7 +418,7 @@ export function* planRoom(roomName: string): Routine {
 
   const distanceTransform = yield* calculateDistanceTransform(
     { x: [1, 48], y: [1, 48] },
-    invertBuildingSpaceForDT(buildingSpace)
+    invertBuildingSpaceForDT(buildingSpace),
   );
 
   const origin = yield* chooseBaseOrigin(room, distanceTransform);
@@ -443,13 +442,13 @@ export function* planRoom(roomName: string): Routine {
       origin,
       distanceTransform,
       buildingSpace,
-      pointsToReach
+      pointsToReach,
     );
     placedStructures.push(...structures);
   }
   yield;
   const [, storageX, storageY] = placedStructures.find(
-    ([type]) => type === STRUCTURE_STORAGE
+    ([type]) => type === STRUCTURE_STORAGE,
   ) ?? ['origin', ...origin];
 
   // Source containers
@@ -461,7 +460,7 @@ export function* planRoom(roomName: string): Routine {
       const { path, incomplete } = PathFinder.search(
         new RoomPosition(storageX, storageY, roomName),
         { pos, range },
-        { roomCallback: () => buildingSpace }
+        { roomCallback: () => buildingSpace },
       );
       const tile = path[path.length - 1];
 
@@ -542,18 +541,18 @@ export function* planRoom(roomName: string): Routine {
     const toBePlaced = placedStructures
       .filter(
         (
-          placement
+          placement,
         ): placement is [BuildableStructureConstant, ...Coordinates] => {
           const [type] = placement;
           return type !== EMPTY && type !== BLOCKED;
-        }
+        },
       )
       .filter(([type, x, y]) => {
         const [structure] = room.lookForAt(LOOK_STRUCTURES, x, y);
         if (structure) {
           if (structure.structureType !== type) {
             logger.warn(
-              `Wrong structure, ${structure.structureType} at ${x},${y}, want ${type}`
+              `Wrong structure, ${structure.structureType} at ${x},${y}, want ${type}`,
             );
           }
           return false;

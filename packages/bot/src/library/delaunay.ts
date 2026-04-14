@@ -1,10 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-import Delaunator from 'delaunator';
-import { RectangleArray } from './RectangleArray';
 import { Coordinates } from './coordinates';
-import { createLogger } from './logger';
-
-const logger = createLogger('delaunay');
 
 /**
  * Minimal structural type capturing the Delaunator properties used by this
