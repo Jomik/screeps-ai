@@ -32,7 +32,7 @@ export default tseslint.config(
     extends: [tseslint.configs.recommendedTypeChecked],
     languageOptions: {
       parserOptions: {
-        projectService: true,
+        project: ['packages/*/tsconfig.json', 'packages/*/tsconfig.test.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },

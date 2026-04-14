@@ -11,6 +11,7 @@
     "noImplicitReturns": true,
     "noUncheckedIndexedAccess": true,
     "allowUnreachableCode": false,
-    "types": ["jest", "lodash", "screeps"]
-  }
+    "types": ["lodash", "screeps"]
+  },
+  "exclude": ["src/**/*.spec.ts", "src/**/*.test.ts", "test/**/*.ts"]
 }

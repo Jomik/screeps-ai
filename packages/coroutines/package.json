@@ -7,7 +7,7 @@
   },
   "scripts": {
     "test": "jest",
-    "typecheck": "tsc --noEmit --skipLibCheck"
+    "typecheck": "tsc --noEmit --skipLibCheck && tsc -p tsconfig.test.json --noEmit --skipLibCheck"
   },
   "devDependencies": {
     "@types/jest": "^29.5.5",
