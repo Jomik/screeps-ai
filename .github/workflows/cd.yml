@@ -1,4 +1,4 @@
-name: Continous delivery
+name: Continuous delivery
 
 on:
   push:
@@ -25,18 +25,3 @@ jobs:
         run: yarn deploy:mmo
         env:
           SCREEPS_MMO_TOKEN: ${{ secrets.SCREEPS_TOKEN }}
-  deploy-newbieland:
-    needs: integration
-    runs-on: ubuntu-latest
-    concurrency:
-      group: newbieland_environment
-    environment:
-      name: Newbie Land
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/install
-      - name: Deploy Newbie Land
-        run: yarn deploy:newbieland
-        env:
-          SCREEPS_NEWBIELAND_EMAIL: ${{ secrets.SCREEPS_EMAIL }}
-          SCREEPS_NEWBIELAND_PASSWORD: ${{ secrets.SCREEPS_PASSWORD }}
