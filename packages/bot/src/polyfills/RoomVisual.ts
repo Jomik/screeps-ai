@@ -20,18 +20,20 @@ interface AnimatedStyle {
   frames?: number;
 }
 
-interface RoomVisual {
-  roads: Poly;
-  structure(
-    x: number,
-    y: number,
-    type: StructureConstant,
-    opts?: PolyStyle
-  ): void;
-  connectRoads(opts?: LineStyle): RoomVisual;
-  speech(text: string, x: number, y: number, opts?: SpeechStyle): RoomVisual;
-  animatedPosition(x: number, y: number, opts?: AnimatedStyle): RoomVisual;
-  test(): RoomVisual;
+declare global {
+  interface RoomVisual {
+    roads: Poly;
+    structure(
+      x: number,
+      y: number,
+      type: StructureConstant,
+      opts?: PolyStyle,
+    ): void;
+    connectRoads(opts?: LineStyle): RoomVisual;
+    speech(text: string, x: number, y: number, opts?: SpeechStyle): RoomVisual;
+    animatedPosition(x: number, y: number, opts?: AnimatedStyle): RoomVisual;
+    test(): RoomVisual;
+  }
 }
 
 const colors = {
@@ -79,7 +81,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
     {
       opacity: 1,
     },
-    opts
+    opts,
   );
   switch (type) {
     case STRUCTURE_FACTORY: {
@@ -123,7 +125,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
           stroke: colors.outline,
           strokeWidth: 0.05,
           opacity: opts.opacity,
-        }
+        },
       );
       // outer circle
       this.circle(x, y, {
@@ -173,7 +175,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
           stroke: '#140a0a',
           strokeWidth: 0.04,
           opacity: opts.opacity,
-        }
+        },
       );
       // factory level circle
       this.circle(x, y, {
@@ -189,7 +191,7 @@ RoomVisual.prototype.structure = function (x, y, type, opts = {}) {
           fill: '#140a0a',
           stroke: undefined,
           opacity: opts.opacity,
-        }
+        },
       );
       // inner black circle
       this.circle(x, y, {
@@ -514,7 +516,7 @@ function rotate(
   s: number,
   c: number,
   px: number,
-  py: number
+  py: number,
 ) {
   const xDelta = x * c - y * s;
   const yDelta = x * s + y * c;
@@ -616,3 +618,5 @@ RoomVisual.prototype.animatedPosition = function (x, y, opts = {}) {
 
   return this;
 };
+
+export {};
