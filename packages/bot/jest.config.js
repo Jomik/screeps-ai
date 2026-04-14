@@ -1,4 +1,4 @@
-/** @type {import('ts-jest/dist/types').InitialOptionsTsJest} */
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 const config = {
   preset: 'ts-jest',
   testEnvironment: 'node',

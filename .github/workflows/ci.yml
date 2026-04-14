@@ -17,10 +17,10 @@ jobs:
       matrix:
         workspace: ${{ fromJSON(needs.workspaces.outputs.workspaces) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/install
       - name: 'typescript compile'
-        run: yarn workspace ${{ matrix.workspace }} run tsc --noEmit --strict --skipLibCheck
+        run: yarn workspace ${{ matrix.workspace }} run typecheck
   unit-test:
     runs-on: ubuntu-latest
     needs:
@@ -31,7 +31,7 @@ jobs:
       matrix:
         workspace: ${{ fromJSON(needs.workspaces.outputs.workspaces) }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/install
       - name: 'run test'
         run: yarn workspace ${{ matrix.workspace }} run test --reporters="github-actions"
@@ -42,7 +42,7 @@ jobs:
     needs:
       - build
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: ./.github/actions/install
       - name: 'run lint'
         run: yarn lint --output-file lint_report.json --format json

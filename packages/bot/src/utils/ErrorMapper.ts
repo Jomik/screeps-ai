@@ -1,4 +1,4 @@
-import { RawSourceMap, SourceMapConsumer } from 'source-map';
+import { RawSourceMap, SourceMapConsumer } from 'source-map-js';
 
 declare const console: { log(msg: string): void };
 declare const require: (module: `${string}.js.map`) => RawSourceMap;
@@ -83,14 +83,14 @@ export class ErrorMapper {
             const message = `Source maps don't work in the simulator - displaying original error`;
             console.log(
               `<span style='color:red'>${message}<br>${_.escape(
-                e.stack
-              )}</span>`
+                e.stack,
+              )}</span>`,
             );
           } else {
             console.log(
               `<span style='color:red'>${_.escape(
-                this.sourceMappedStackTrace(e)
-              )}</span>`
+                this.sourceMappedStackTrace(e),
+              )}</span>`,
             );
           }
         } else {
