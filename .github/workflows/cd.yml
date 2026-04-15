@@ -8,7 +8,9 @@ on:
 jobs:
   integration:
     permissions:
+      contents: read
       checks: write
+      pull-requests: read
     uses: ./.github/workflows/ci.yml
   deploy-mmo:
     needs: integration
