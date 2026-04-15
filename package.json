@@ -3,6 +3,9 @@
     "packages/*"
   ],
   "private": true,
+  "scripts": {
+    "check": "oxlint --config oxlint.config.mjs --type-aware --type-check --deny warnings"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Jomik/screeps-ai.git"
