@@ -1675,6 +1675,7 @@ __metadata:
     delaunator: "npm:5.1.0"
     dotenv: "npm:^16.4.7"
     jest: "npm:^29.7.0"
+    oxlint: "npm:^1.60.0"
     rbush: "npm:3.0.1"
     rollup: "npm:^2.79.1"
     rollup-plugin-clear: "npm:^2.0.7"
@@ -2019,6 +2020,7 @@ __metadata:
   dependencies:
     "@types/jest": "npm:^29.5.5"
     jest: "npm:^29.7.0"
+    oxlint: "npm:^1.60.0"
     ts-jest: "npm:^29.4.9"
     typescript: "npm:^6.0.2"
   languageName: unknown

@@ -7,7 +7,7 @@
     "deploy:newbieland": "yarn build --environment DEST:newbieland",
     "deploy:development": "yarn build --environment DEST:development",
     "test": "jest",
-    "typecheck": "tsc --noEmit --skipLibCheck && tsc -p tsconfig.test.json --noEmit --skipLibCheck"
+    "check": "oxlint --config ../../oxlint.config.mjs --type-aware --type-check --deny warnings"
   },
   "dependencies": {
     "coroutines": "workspace:*",
@@ -26,6 +26,7 @@
     "@types/screeps": "^3.3.3",
     "dotenv": "^16.4.7",
     "jest": "^29.7.0",
+    "oxlint": "^1.60.0",
     "rollup": "^2.79.1",
     "rollup-plugin-clear": "^2.0.7",
     "rollup-plugin-screeps": "^1.0.1",
