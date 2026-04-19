@@ -66,8 +66,7 @@ export default defineConfig({
     // accidental thenable (it is never used in await expressions)
     'unicorn/no-thenable': 'off',
 
-    // TODO: re-enable and fix — spread-in-for-of is a minor perf issue
-    'unicorn/no-useless-spread': 'off',
+    'unicorn/no-useless-spread': 'warn',
 
     // TODO: re-enable and fix — no-shadow fires in many places with valid patterns
     'no-shadow': 'off',
@@ -84,8 +83,7 @@ export default defineConfig({
     // TODO: re-enable and fix — unnecessary type arguments are minor style issues
     'typescript/no-unnecessary-type-arguments': 'off',
 
-    // TODO: re-enable and fix — unnecessary type assertion is minor
-    'typescript/no-unnecessary-type-assertion': 'off',
+    'typescript/no-unnecessary-type-assertion': 'warn',
 
     // TODO: re-enable and fix — unnecessary type conversion (.toString() on string)
     'typescript/no-unnecessary-type-conversion': 'off',
