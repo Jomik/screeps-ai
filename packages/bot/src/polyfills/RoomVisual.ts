@@ -1,6 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable @typescript-eslint/restrict-plus-operands */
-
 // Source https://github.com/screepers/RoomVisual/pull/13
 
 type Poly = [number, number][];

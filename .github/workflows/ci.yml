@@ -9,9 +9,13 @@ on:
 jobs:
   workspaces:
     uses: ./.github/workflows/workspaces.yml
-  build:
+  check:
     runs-on: ubuntu-latest
     needs: workspaces
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: read
     strategy:
       fail-fast: false
       matrix:
@@ -19,13 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install
-      - name: 'typescript compile'
-        run: yarn workspace ${{ matrix.workspace }} run typecheck
+      - name: 'lint and typecheck'
+        run: yarn workspace ${{ matrix.workspace }} run check --format github
   unit-test:
     runs-on: ubuntu-latest
     needs:
       - workspaces
-      - build
+      - check
     strategy:
       fail-fast: false
       matrix:
@@ -35,21 +39,3 @@ jobs:
       - uses: ./.github/actions/install
       - name: 'run test'
         run: yarn workspace ${{ matrix.workspace }} run test --reporters="github-actions"
-  lint:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      checks: write
-      pull-requests: read
-    needs:
-      - build
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/install
-      - name: 'run lint'
-        run: yarn lint --output-file lint_report.json --format json
-        continue-on-error: true
-      - name: 'annotate'
-        uses: ataylorme/eslint-annotate-action@v3
-        with:
-          report-json: 'lint_report.json'

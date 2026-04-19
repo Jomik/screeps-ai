@@ -4,6 +4,7 @@
     "target": "es2017",
     "module": "esnext",
     "moduleResolution": "bundler",
+    "rootDir": "src",
     "outDir": "dist",
     "sourceMap": true,
     "strict": true,
