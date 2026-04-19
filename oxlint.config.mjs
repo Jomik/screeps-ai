@@ -71,8 +71,7 @@ export default defineConfig({
     // TODO: re-enable and fix — no-shadow fires in many places with valid patterns
     'no-shadow': 'off',
 
-    // TODO: re-enable and fix — consistent-return fires in spawn-manager routines
-    'typescript/consistent-return': 'off',
+    'typescript/consistent-return': 'warn',
 
     // ErrorMapper is a static-only utility class with cached state —
     // refactoring to standalone functions would lose the encapsulation
