@@ -68,7 +68,7 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
   const target =
     targetPath.incomplete || !targetPos
       ? null
-      : targets.find((target) => target.pos.isEqualTo(targetPos));
+      : targets.find((t) => t.pos.isEqualTo(targetPos));
 
   if (!target) {
     return;

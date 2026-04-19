@@ -18,13 +18,13 @@ export function* linkManager(roomName: string) {
 
   for (;;) {
     yield sleep();
-    const room = Game.rooms[roomName];
-    if (!room || !room.controller) {
+    const currentRoom = Game.rooms[roomName];
+    if (!currentRoom || !currentRoom.controller) {
       return;
     }
 
-    const { storage, controller } = room;
-    const links = room
+    const { storage, controller } = currentRoom;
+    const links = currentRoom
       .find(FIND_MY_STRUCTURES)
       .filter(isStructureType(STRUCTURE_LINK));
 

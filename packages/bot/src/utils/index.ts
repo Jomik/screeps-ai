@@ -85,5 +85,5 @@ export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
 export const min = <T>(arr: T[], map: (v: T) => number): T | null =>
   max(arr, (v) => -map(v));
 
-export const clamp = (min: number, max: number) => (value: number) =>
-  Math.max(min, Math.min(max, value));
+export const clamp = (lower: number, upper: number) => (value: number) =>
+  Math.max(lower, Math.min(upper, value));

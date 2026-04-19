@@ -187,8 +187,8 @@ function* contourTracing(
     yield;
     direction = (direction + 2) % 8;
     labelMap.set(...previous, label);
-    const [dx, next] = tracer(previous, direction, terrain, labelMap);
-    direction = dx + 4;
+    const [nextDx, next] = tracer(previous, direction, terrain, labelMap);
+    direction = nextDx + 4;
     if (coordinatesEquals(next, T) && coordinatesEquals(previous, S)) {
       break;
     }

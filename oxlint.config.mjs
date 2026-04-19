@@ -68,8 +68,7 @@ export default defineConfig({
 
     'unicorn/no-useless-spread': 'warn',
 
-    // TODO: re-enable and fix — no-shadow fires in many places with valid patterns
-    'no-shadow': 'off',
+    'no-shadow': 'warn',
 
     'typescript/consistent-return': 'warn',
 

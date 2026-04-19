@@ -121,8 +121,8 @@ const getBuildingSpace = (room: Room): CostMatrix => {
 
   // Block off tiles around exit tiles.
   for (const { x, y } of room.find(FIND_EXIT)) {
-    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, 1),
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([cx, cy]) =>
+      cm.set(cx, cy, 1),
     );
   }
 
@@ -130,16 +130,16 @@ const getBuildingSpace = (room: Room): CostMatrix => {
   for (const {
     pos: { x, y },
   } of [...room.find(FIND_SOURCES), ...room.find(FIND_MINERALS)]) {
-    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, BlockedCost),
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([cx, cy]) =>
+      cm.set(cx, cy, BlockedCost),
     );
   }
 
   // Block off tiles around controller.
   if (room.controller) {
     const { x, y } = room.controller.pos;
-    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([x, y]) =>
-      cm.set(x, y, BlockedCost),
+    [[x, y] as Coordinates, ...expandPosition([x, y])].forEach(([cx, cy]) =>
+      cm.set(cx, cy, BlockedCost),
     );
   }
 
@@ -519,16 +519,16 @@ export function* planRoom(roomName: string): Routine {
     yield;
 
     for (;;) {
-      const room = Game.rooms[roomName];
-      if (!room) {
+      const currentRoom = Game.rooms[roomName];
+      if (!currentRoom) {
         return;
       }
       // room.visual.import(
       //   overlayCostMatrix(distanceTransform, (dist) => dist / 13)
       // );
       // room.visual.import(overlayCostMatrix(buildingSpace));
-      room.visual.import(buildingVisuals);
-      room.visual.circle(...origin, {
+      currentRoom.visual.import(buildingVisuals);
+      currentRoom.visual.circle(...origin, {
         fill: 'green',
         radius: 0.25,
       });
@@ -571,22 +571,22 @@ export function* planRoom(roomName: string): Routine {
       });
 
     while (toBePlaced.length > 0) {
-      const room = Game.rooms[roomName];
-      if (!room) {
+      const currentRoom = Game.rooms[roomName];
+      if (!currentRoom) {
         return;
       }
       if (
-        room.find(FIND_MY_CONSTRUCTION_SITES).length >= MaxConstructionSites
+        currentRoom.find(FIND_MY_CONSTRUCTION_SITES).length >= MaxConstructionSites
       ) {
         yield sleep();
         continue;
       }
-      const controller = room.controller;
+      const controller = currentRoom.controller;
       if (!controller) {
         return;
       }
 
-      const placement = nextStructure(room, toBePlaced);
+      const placement = nextStructure(currentRoom, toBePlaced);
 
       if (!placement) {
         const start = controller.level;
