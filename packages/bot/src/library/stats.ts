@@ -25,6 +25,7 @@ export const recordStats = (stats: StatsRecord) => {
 
 export const recordGlobals = () => {
   const rooms = _.mapValues(
+    // eslint-disable-next-line typescript/no-unnecessary-type-arguments -- TS requires both type params for this overload
     _.pick<Record<string, Room>, Record<string, Room>>(
       Game.rooms,
       (room: Room) => room.controller?.my

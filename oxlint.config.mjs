@@ -81,8 +81,7 @@ export default defineConfig({
     // TODO: re-enable and fix — unsafe type assertions are used throughout
     'typescript/no-unsafe-type-assertion': 'off',
 
-    // TODO: re-enable and fix — unnecessary type arguments are minor style issues
-    'typescript/no-unnecessary-type-arguments': 'off',
+    'typescript/no-unnecessary-type-arguments': 'warn',
 
     'typescript/no-unnecessary-type-assertion': 'warn',
 

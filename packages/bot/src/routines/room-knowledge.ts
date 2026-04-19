@@ -254,7 +254,7 @@ function* labelComponents(
   return contours;
 }
 
-function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
+function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1),
   );
@@ -275,7 +275,7 @@ function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
   }
 }
 
-function* addSinks(graph: RegionGraph): Routine<void> {
+function* addSinks(graph: RegionGraph): Routine {
   const nodes = Array.from(graph).filter(
     ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48,
   );
@@ -289,7 +289,7 @@ function* addSinks(graph: RegionGraph): Routine<void> {
   }
 }
 
-function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
+function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1),
   );
