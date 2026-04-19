@@ -24,6 +24,7 @@ export class RectangleArray {
     );
   }
   public toCostMatrix(): CostMatrix {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- accessing internal CostMatrix _bits
     const cm = new PathFinder.CostMatrix() as CostMatrix & {
       _bits: Uint8Array;
     };

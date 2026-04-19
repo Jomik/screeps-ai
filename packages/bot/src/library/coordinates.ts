@@ -76,6 +76,7 @@ export class CoordinateSet {
   }
 
   private unhash(p: string): Coordinates {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from split
     return p.split(',').map(Number.parseFloat) as Coordinates;
   }
 
@@ -127,6 +128,7 @@ export class CoordinateAdjacencyList {
   }
 
   private unhash(p: string): Coordinates {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from split
     return p.split(',').map(Number.parseFloat) as Coordinates;
   }
 

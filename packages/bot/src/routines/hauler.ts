@@ -106,6 +106,7 @@ const PriorityMap = {
 type HaulerTarget = ConcreteStructure<keyof typeof PriorityMap>;
 
 const isHaulerTarget = isStructureType(
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Object.keys loses literal type
   ...(Object.keys(PriorityMap) as HaulerTarget['structureType'][]),
 );
 

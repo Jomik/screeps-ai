@@ -35,6 +35,7 @@ const pointsOfTriangle = (
   delaunay: DelaunatorLike,
   t: number,
 ): [number, number, number] => {
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
   return edgesOfTriangle(t).map((e) => delaunay.triangles[e]) as [
     number,
     number,
@@ -47,6 +48,7 @@ const triangleCenter = (
   delaunay: DelaunatorLike,
   t: number,
 ): Coordinates => {
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
   const vertices = pointsOfTriangle(delaunay, t).map((p) => points[p]) as [
     Coordinates,
     Coordinates,

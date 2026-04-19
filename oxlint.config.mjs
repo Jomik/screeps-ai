@@ -77,8 +77,7 @@ export default defineConfig({
     // refactoring to standalone functions would lose the encapsulation
     'typescript/no-extraneous-class': 'off',
 
-    // TODO: re-enable and fix — unsafe type assertions are used throughout
-    'typescript/no-unsafe-type-assertion': 'off',
+    'typescript/no-unsafe-type-assertion': 'warn',
 
     'typescript/no-unnecessary-type-arguments': 'warn',
 

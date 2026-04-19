@@ -29,7 +29,7 @@ export class ErrorMapper {
    */
   public static sourceMappedStackTrace(error: Error | string): string {
     const stack: string =
-      error instanceof Error ? (error.stack as string) : error;
+      error instanceof Error ? (error.stack ?? '') : error;
     const cached = this.cache.get(stack);
     if (cached) {
       return cached;

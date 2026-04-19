@@ -33,6 +33,7 @@ export class RTree extends RBush<Coordinates> {
     point: Coordinates;
     distance: number;
   } | null {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- accessing internal rbush data structure
     let node = (this as unknown as { data: Node<Coordinates> }).data;
     const queue = new Queue<
       { dist: number } & (
