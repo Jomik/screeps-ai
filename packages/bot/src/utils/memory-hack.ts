@@ -27,7 +27,7 @@ export const wrapWithMemoryHack = (fn: () => void) => {
 
     const visuals = new RoomVisual();
     visuals.text(
-      `Memory stringify: ${(end - start).toFixed(2).toString()}`,
+      `Memory stringify: ${(end - start).toFixed(2)}`,
       0,
       1.2,
       { font: 0.7, align: 'left' }

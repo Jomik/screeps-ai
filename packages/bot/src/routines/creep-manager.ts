@@ -79,7 +79,7 @@ function* runMiner(id: Id<Creep>) {
       return;
     }
 
-    const [x, y, roomName = miner.room.name] = miner.memory.slot;
+    const [x, y, roomName] = miner.memory.slot;
     const target = new RoomPosition(x, y, roomName);
     if (!miner.pos.isEqualTo(target)) {
       miner.moveTo(target, {

@@ -187,8 +187,8 @@ function* contourTracing(
     yield;
     direction = (direction + 2) % 8;
     labelMap.set(...previous, label);
-    const [dx, next] = tracer(previous, direction, terrain, labelMap);
-    direction = dx + 4;
+    const [nextDx, next] = tracer(previous, direction, terrain, labelMap);
+    direction = nextDx + 4;
     if (coordinatesEquals(next, T) && coordinatesEquals(previous, S)) {
       break;
     }
@@ -254,7 +254,7 @@ function* labelComponents(
   return contours;
 }
 
-function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
+function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1),
   );
@@ -275,7 +275,7 @@ function* pruneMedials(graph: RegionGraph, rtree: RTree): Routine<void> {
   }
 }
 
-function* addSinks(graph: RegionGraph): Routine<void> {
+function* addSinks(graph: RegionGraph): Routine {
   const nodes = Array.from(graph).filter(
     ({ coordinates: [x, y] }) => x < 2 || x > 48 || y < 2 || y > 48,
   );
@@ -289,7 +289,7 @@ function* addSinks(graph: RegionGraph): Routine<void> {
   }
 }
 
-function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine<void> {
+function* identifyNodes(graph: RegionGraph, rtree: RTree): Routine {
   const candidates = new Set(
     Array.from(graph).filter(({ size }) => size === 1),
   );
@@ -433,6 +433,7 @@ export function* roomKnowledge(roomName: string) {
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
   const edges = collect(getEdges(points, contours, delaunay))
+    // eslint-disable typescript/no-unsafe-type-assertion
     .map(
       ([p, q]) =>
         [
@@ -440,10 +441,13 @@ export function* roomKnowledge(roomName: string) {
           q.map(clamp(0, 49)).map(roundTo2Decimals),
         ] as Edge,
     )
+    // eslint-enable typescript/no-unsafe-type-assertion
     .filter(
       ([p, q]) =>
         !(
+          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
           (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
+          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
           (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
         ),
     );

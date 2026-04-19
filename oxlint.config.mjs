@@ -66,31 +66,24 @@ export default defineConfig({
     // accidental thenable (it is never used in await expressions)
     'unicorn/no-thenable': 'off',
 
-    // TODO: re-enable and fix — spread-in-for-of is a minor perf issue
-    'unicorn/no-useless-spread': 'off',
+    'unicorn/no-useless-spread': 'warn',
 
-    // TODO: re-enable and fix — no-shadow fires in many places with valid patterns
-    'no-shadow': 'off',
+    'no-shadow': 'warn',
 
-    // TODO: re-enable and fix — consistent-return fires in spawn-manager routines
-    'typescript/consistent-return': 'off',
+    'typescript/consistent-return': 'warn',
 
-    // TODO: re-enable and fix — no-extraneous-class fires for ErrorMapper static class
+    // ErrorMapper is a static-only utility class with cached state —
+    // refactoring to standalone functions would lose the encapsulation
     'typescript/no-extraneous-class': 'off',
 
-    // TODO: re-enable and fix — unsafe type assertions are used throughout
-    'typescript/no-unsafe-type-assertion': 'off',
+    'typescript/no-unsafe-type-assertion': 'warn',
 
-    // TODO: re-enable and fix — unnecessary type arguments are minor style issues
-    'typescript/no-unnecessary-type-arguments': 'off',
+    'typescript/no-unnecessary-type-arguments': 'warn',
 
-    // TODO: re-enable and fix — unnecessary type assertion is minor
-    'typescript/no-unnecessary-type-assertion': 'off',
+    'typescript/no-unnecessary-type-assertion': 'warn',
 
-    // TODO: re-enable and fix — unnecessary type conversion (.toString() on string)
-    'typescript/no-unnecessary-type-conversion': 'off',
+    'typescript/no-unnecessary-type-conversion': 'warn',
 
-    // TODO: re-enable and fix — default assignment in destructuring is valid intent
-    'typescript/no-useless-default-assignment': 'off',
+    'typescript/no-useless-default-assignment': 'warn',
   },
 });

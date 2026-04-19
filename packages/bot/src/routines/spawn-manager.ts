@@ -54,7 +54,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(
+    spawnCreep(
       spawn,
       'hauler',
       { home: spawn.room.name },
@@ -74,7 +74,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
+    spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
   };
 
   const spawnRemoteMiner = (slot: [...Coordinates, string]) => {
@@ -90,7 +90,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
+    spawnCreep(spawn, 'miner', { slot }, bodyGenerator());
   };
 
   const spawnUpgrader = () => {
@@ -105,7 +105,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(spawn, 'upgrader', {}, bodyGenerator());
+    spawnCreep(spawn, 'upgrader', {}, bodyGenerator());
   };
 
   const spawnWorker = () => {
@@ -129,7 +129,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(spawn, 'worker', {}, bodyGenerator());
+    spawnCreep(spawn, 'worker', {}, bodyGenerator());
   };
 
   const spawnScout = () => {
@@ -141,7 +141,7 @@ export function* spawnManager(): Routine {
       logger.error('No spawn found');
       return;
     }
-    return spawnCreep(
+    spawnCreep(
       spawn,
       'scout',
       { home: spawn.room.name },

@@ -19,9 +19,9 @@ export const resolveSleep = () => {
 export const sleep = (ticks: number = 1): Future<void> => {
   const wakeTime = Game.time + ticks;
 
-  const sleep = sleepers.get(wakeTime);
-  if (sleep !== undefined) {
-    return sleep.future;
+  const existing = sleepers.get(wakeTime);
+  if (existing !== undefined) {
+    return existing.future;
   }
 
   const [future, resolve] = Future.defer<void>();

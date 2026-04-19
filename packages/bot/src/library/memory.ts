@@ -12,6 +12,7 @@ export const getMemoryRef = <T>(
 
   return {
     get() {
+      // eslint-disable-next-line typescript/no-unsafe-type-assertion -- intentional type erasure for dynamic memory access
       return Memory[key] as never;
     },
     set(value) {

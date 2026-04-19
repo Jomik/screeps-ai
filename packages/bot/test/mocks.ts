@@ -20,6 +20,7 @@ class CostMatrix {
   }
 
   public serialize(): number[] {
+    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Array.prototype.slice returns any
     return Array.prototype.slice.apply(
       new Uint32Array(this._bits.buffer),
     ) as number[];

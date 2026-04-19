@@ -50,6 +50,7 @@ registerCommand('setLogLevel', (level) => {
     throw new InvalidArgumentError('LogLevel', level);
   }
 
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- narrowed by `in` check above
   settingsRef.level = LogLevel[level.toLowerCase() as keyof typeof LogLevel];
   return undefined;
 });

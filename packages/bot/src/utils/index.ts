@@ -30,6 +30,7 @@ export const groupBy = <T, K extends string | number>(
       ...acc,
       [key]: (acc[key] ?? ([] as T[])).concat(cur),
     };
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- empty seed for reduce accumulator
   }, {} as Record<K, T[]>);
 
 export const isDefined = <T>(value: T | undefined | null): value is T =>
@@ -69,6 +70,7 @@ export const getGuid = (): string => {
 
 export const objectEntries = <T extends string, V>(
   obj: Partial<Record<T, V>>
+// eslint-disable-next-line typescript/no-unsafe-type-assertion -- Object.entries loses key type
 ): [T, V][] => Object.entries(obj).filter(isDefined) as [T, V][];
 
 export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
@@ -83,5 +85,5 @@ export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
 export const min = <T>(arr: T[], map: (v: T) => number): T | null =>
   max(arr, (v) => -map(v));
 
-export const clamp = (min: number, max: number) => (value: number) =>
-  Math.max(min, Math.min(max, value));
+export const clamp = (lower: number, upper: number) => (value: number) =>
+  Math.max(lower, Math.min(upper, value));

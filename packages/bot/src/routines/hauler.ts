@@ -68,7 +68,7 @@ const pickupEnergy = (hauler: Creep, need: number, includeContainer = true) => {
   const target =
     targetPath.incomplete || !targetPos
       ? null
-      : targets.find((target) => target.pos.isEqualTo(targetPos));
+      : targets.find((t) => t.pos.isEqualTo(targetPos));
 
   if (!target) {
     return;
@@ -106,6 +106,7 @@ const PriorityMap = {
 type HaulerTarget = ConcreteStructure<keyof typeof PriorityMap>;
 
 const isHaulerTarget = isStructureType(
+  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Object.keys loses literal type
   ...(Object.keys(PriorityMap) as HaulerTarget['structureType'][]),
 );
 
