@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Coordinates } from './coordinates';
 
 /**
@@ -101,7 +100,6 @@ export function* getEdges(
       const q = triangleCenter(
         points,
         delaunay,
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         triangleOfEdge(delaunay.halfedges[e]!),
       );
       yield [p, q];

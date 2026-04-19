@@ -81,7 +81,6 @@ const translateInDirection = (
   [x, y]: Coordinates,
   direction: number,
 ): Coordinates => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [dx, dy] = neighbourIndex[direction % 8]!;
   return [x + dx, y + dy];
 };

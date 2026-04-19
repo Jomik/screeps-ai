@@ -39,7 +39,6 @@ const spawnCreep = (
 export function* spawnManager(): Routine {
   const getSpawn = (): StructureSpawn | undefined => {
     // TODO: This is slightly bad.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     return Object.values(Game.spawns)[0];
   };
 
