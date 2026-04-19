@@ -20,18 +20,6 @@ export const groupByKey = <T extends Record<Key, string>, Key extends string>(
     };
   }, {} as GroupByKey<T, Key>);
 
-export const groupBy = <T, K extends string | number>(
-  values: Array<T>,
-  keyFn: (v: T) => K
-): Record<K, T[]> =>
-  values.reduce((acc, cur) => {
-    const key = keyFn(cur);
-    return {
-      ...acc,
-      [key]: (acc[key] ?? ([] as T[])).concat(cur),
-    };
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- empty seed for reduce accumulator
-  }, {} as Record<K, T[]>);
 
 export const isDefined = <T>(value: T | undefined | null): value is T =>
   value !== undefined && value !== null;
@@ -67,11 +55,6 @@ export const getGuid = (): string => {
   }
   return `${time.toString(36)}:${(++counter).toString(36)}`;
 };
-
-export const objectEntries = <T extends string, V>(
-  obj: Partial<Record<T, V>>
-// eslint-disable-next-line typescript/no-unsafe-type-assertion -- Object.entries loses key type
-): [T, V][] => Object.entries(obj).filter(isDefined) as [T, V][];
 
 export const max = <T>(arr: T[], map: (v: T) => number): T | null =>
   arr.reduce<{ value: number; item: T | null }>(

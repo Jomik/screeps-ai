@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "lib": ["es2017", "es2019.Array"],
-    "target": "es2017",
+    "lib": ["es2024"],
+    "target": "es2024",
     "module": "esnext",
     "moduleResolution": "bundler",
     "rootDir": ".",

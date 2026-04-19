@@ -185,7 +185,7 @@ export function* spawnManager(): Routine {
       upgrader: upgraders = [],
       worker: workers = [],
       scout: scouts = [],
-    } = _.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]);
+    } = Object.groupBy(Object.values(Game.creeps), (c) => c.name.split('-')[0]!);
 
     const hasConstructionSite =
       room.find(FIND_MY_CONSTRUCTION_SITES).length > 0;
