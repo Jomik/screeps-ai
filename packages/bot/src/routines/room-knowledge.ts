@@ -81,7 +81,6 @@ const translateInDirection = (
   [x, y]: Coordinates,
   direction: number,
 ): Coordinates => {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const [dx, dy] = neighbourIndex[direction % 8]!;
   return [x + dx, y + dy];
 };
@@ -433,22 +432,17 @@ export function* roomKnowledge(roomName: string) {
   const delaunay = new Delaunator(new Uint8Array(points.flat()));
   yield;
   const edges = collect(getEdges(points, contours, delaunay))
-    // eslint-disable typescript/no-unsafe-type-assertion
     .map(
-      ([p, q]) =>
-        [
-          p.map(clamp(0, 49)).map(roundTo2Decimals),
-          q.map(clamp(0, 49)).map(roundTo2Decimals),
-        ] as Edge,
+      ([p, q]): Edge => [
+        [roundTo2Decimals(clamp(0, 49)(p[0])), roundTo2Decimals(clamp(0, 49)(p[1]))],
+        [roundTo2Decimals(clamp(0, 49)(q[0])), roundTo2Decimals(clamp(0, 49)(q[1]))],
+      ],
     )
-    // eslint-enable typescript/no-unsafe-type-assertion
     .filter(
       ([p, q]) =>
         !(
-          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
-          (labelMap.get(...(p.map(Math.round) as Coordinates)) ?? 0) > 0 ||
-          // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from map
-          (labelMap.get(...(q.map(Math.round) as Coordinates)) ?? 0) > 0
+          (labelMap.get(Math.round(p[0]), Math.round(p[1])) ?? 0) > 0 ||
+          (labelMap.get(Math.round(q[0]), Math.round(q[1])) ?? 0) > 0
         ),
     );
   yield;

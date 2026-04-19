@@ -76,8 +76,8 @@ export class CoordinateSet {
   }
 
   private unhash(p: string): Coordinates {
-    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from split
-    return p.split(',').map(Number.parseFloat) as Coordinates;
+    const [x, y] = p.split(',');
+    return [Number.parseFloat(x!), Number.parseFloat(y!)];
   }
 
   *[Symbol.iterator](): IterableIterator<Coordinates> {
@@ -128,8 +128,8 @@ export class CoordinateAdjacencyList {
   }
 
   private unhash(p: string): Coordinates {
-    // eslint-disable-next-line typescript/no-unsafe-type-assertion -- tuple from split
-    return p.split(',').map(Number.parseFloat) as Coordinates;
+    const [x, y] = p.split(',');
+    return [Number.parseFloat(x!), Number.parseFloat(y!)];
   }
 
   public get(p: Coordinates): CoordinateSet {

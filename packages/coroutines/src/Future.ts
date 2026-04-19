@@ -9,7 +9,7 @@ export class Future<T> {
 
   // Implementation specific to `run`.
   [Symbol.iterator](): Iterator<Future<T>, T, T> {
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    // eslint-disable-next-line no-this-alias -- generator functions can't be arrows
     const self = this;
     return (function* () {
       const res = yield self;

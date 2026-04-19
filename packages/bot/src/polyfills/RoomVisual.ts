@@ -535,7 +535,7 @@ RoomVisual.prototype.connectRoads = function (opts = {}) {
     for (let i = 1; i <= 4; i++) {
       const d = dirs[i]!;
       const c = [r[0] + d[0]!, r[1] + d[1]!];
-      const rd = _.some(this.roads, (other) => other[0] == c[0] && other[1] == c[1]);
+      const rd = this.roads.some((other) => other[0] == c[0] && other[1] == c[1]);
       if (rd) {
         this.line(r[0], r[1], c[0]!, c[1]!, {
           color: color,

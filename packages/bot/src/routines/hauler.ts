@@ -1,5 +1,5 @@
 import { sleep } from '../library/sleep';
-import { groupBy, isDefined, isStructureType, min } from '../utils';
+import { isDefined, isStructureType, min } from '../utils';
 import { intelRef } from './intel-manager';
 
 const intel = intelRef.get();
@@ -101,14 +101,20 @@ const PriorityMap = {
   [STRUCTURE_LINK]: 3,
   [STRUCTURE_CONTAINER]: 4,
   [STRUCTURE_STORAGE]: 7,
-};
+} as const satisfies Record<string, number>;
 
 type HaulerTarget = ConcreteStructure<keyof typeof PriorityMap>;
 
-const isHaulerTarget = isStructureType(
-  // eslint-disable-next-line typescript/no-unsafe-type-assertion -- Object.keys loses literal type
-  ...(Object.keys(PriorityMap) as HaulerTarget['structureType'][]),
-);
+const haulerTargetTypes: HaulerTarget['structureType'][] = [
+  STRUCTURE_TOWER,
+  STRUCTURE_SPAWN,
+  STRUCTURE_EXTENSION,
+  STRUCTURE_LINK,
+  STRUCTURE_CONTAINER,
+  STRUCTURE_STORAGE,
+];
+
+const isHaulerTarget = isStructureType(...haulerTargetTypes);
 
 const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
   if (!hauler.memory.home) {
@@ -151,7 +157,7 @@ const findHaulerTarget = (hauler: Creep): HaulerTarget | null => {
           pos.findInRange(FIND_SOURCES, 1).length === 0),
     );
 
-  const groupedByPriority = groupBy(
+  const groupedByPriority = Object.groupBy(
     potentialTargets,
     (t) => PriorityMap[t.structureType],
   );

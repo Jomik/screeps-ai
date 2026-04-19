@@ -24,19 +24,19 @@ export const recordStats = (stats: StatsRecord) => {
 };
 
 export const recordGlobals = () => {
-  const rooms = _.mapValues(
-    // eslint-disable-next-line typescript/no-unnecessary-type-arguments -- TS requires both type params for this overload
-    _.pick<Record<string, Room>, Record<string, Room>>(
-      Game.rooms,
-      (room: Room) => room.controller?.my
-    ),
-    (room) => ({
-      energyAvailable: room.energyAvailable,
-      energyCapacityAvailable: room.energyCapacityAvailable,
-      controllerProgress: room.controller?.progress,
-      controllerProgressTotal: room.controller?.progressTotal,
-      controllerLevel: room.controller?.level,
-    })
+  const rooms = Object.fromEntries(
+    Object.entries(Game.rooms)
+      .filter(([, room]) => room.controller?.my)
+      .map(([name, room]) => [
+        name,
+        {
+          energyAvailable: room.energyAvailable,
+          energyCapacityAvailable: room.energyCapacityAvailable,
+          controllerProgress: room.controller?.progress,
+          controllerProgressTotal: room.controller?.progressTotal,
+          controllerLevel: room.controller?.level,
+        },
+      ])
   );
   const heap = Game.cpu.getHeapStatistics?.();
 

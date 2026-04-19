@@ -1,6 +1,5 @@
 import { Future } from './Future';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type RoutineCall = void | Future<any>;
 export type Routine<T = void> = Generator<RoutineCall, T, unknown>;
 

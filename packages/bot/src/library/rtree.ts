@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import RBush, { BBox } from 'rbush';
 import { Coordinates } from './coordinates';
 import Queue from 'tinyqueue';

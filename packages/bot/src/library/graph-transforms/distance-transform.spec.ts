@@ -32,7 +32,6 @@ const mapToDT = (map: number[][]): number[][] => {
   const arr = Array.from(Array(size), () => [] as number[]);
   for (let x = 0; x <= size - 1; ++x) {
     for (let y = 0; y <= size - 1; ++y) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       arr[x]![y] = result.get(x, y);
     }
   }
