@@ -22,11 +22,8 @@ export const loop = ErrorMapper.wrapLoop(
       Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() &&
       scheduler.canRun()
     ) {
-      // TODO: Monitor CPU
-      // const start = Game.cpu.getUsed();
+      // TODO: Monitor CPU per routine — requires threading fn.name through go()/Routine
       const _task = run();
-      // const end = Game.cpu.getUsed();
-      // cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + end - start;
     }
 
     const visuals = new RoomVisual();
@@ -46,13 +43,6 @@ export const loop = ErrorMapper.wrapLoop(
       0.2,
       { font: 0.7, align: 'left' },
     );
-
-    // Automatically delete memory of missing creeps
-    for (const name in Memory.creeps) {
-      if (!(name in Game.creeps)) {
-        delete Memory.creeps[name];
-      }
-    }
 
     recordGlobals();
   }),
