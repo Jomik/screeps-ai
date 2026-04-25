@@ -214,4 +214,16 @@ describe('runner', () => {
       expect(fn).toBeCalledTimes(0);
     });
   });
+
+  describe('routine name', () => {
+    it('assigns fn.name to named generator', () => {
+      const routine = go(function* named() {});
+      expect(routine.name).toBe('named');
+    });
+
+    it('leaves name undefined for anonymous generator', () => {
+      const routine = go(function* () {});
+      expect(routine.name).toBeUndefined();
+    });
+  });
 });

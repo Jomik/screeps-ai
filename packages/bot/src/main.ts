@@ -22,8 +22,12 @@ export const loop = ErrorMapper.wrapLoop(
       Game.cpu.tickLimit * 0.8 > Game.cpu.getUsed() &&
       scheduler.canRun()
     ) {
-      // TODO: Monitor CPU per routine — requires threading fn.name through go()/Routine
-      const _task = run();
+      const start = Game.cpu.getUsed();
+      const task = run();
+      const end = Game.cpu.getUsed();
+      if (task.name) {
+        cpuUsage[task.name] = (cpuUsage[task.name] ?? 0) + (end - start);
+      }
     }
 
     const visuals = new RoomVisual();

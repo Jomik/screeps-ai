@@ -1,7 +1,7 @@
 import { Future } from './Future';
 
 type RoutineCall = void | Future<any>;
-export type Routine<T = void> = Generator<RoutineCall, T, unknown>;
+export type Routine<T = void> = Generator<RoutineCall, T, unknown> & { name?: string };
 
 export interface Scheduler {
   next(): Routine;
@@ -26,6 +26,7 @@ export const createRunner = (
     }
     const routine = wrapper();
     const task = fn.call(routine, ...args);
+    if (fn.name) routine.name = fn.name;
 
     resultMap.set(routine, undefined);
     scheduler.schedule(routine);
