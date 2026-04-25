@@ -1,10 +1,11 @@
+import { describe, it, expect, jest } from '@jest/globals';
 import { make } from './channel';
 
 describe('channel', () => {
   describe('get', () => {
     it('waits for a value', () => {
       const channel = make<string>();
-      const fn = jest.fn<void, [string]>();
+      const fn = jest.fn<(s: string) => void>();
       const uut = channel.get();
 
       uut.then(fn);
@@ -15,7 +16,7 @@ describe('channel', () => {
     it('gets a value', () => {
       const expected = 'foo';
       const channel = make<string>();
-      const fn = jest.fn<void, [string]>();
+      const fn = jest.fn<(s: string) => void>();
       const uut = channel.get();
       channel.send(expected);
 
@@ -26,7 +27,7 @@ describe('channel', () => {
 
     it('gets multiple', () => {
       const channel = make<string>();
-      const fn = jest.fn<void, [string]>();
+      const fn = jest.fn<(s: string) => void>();
       const uut1 = channel.get();
       const uut2 = channel.get();
 
@@ -43,7 +44,7 @@ describe('channel', () => {
   describe('send', () => {
     it('waits for consumer', () => {
       const channel = make<void>();
-      const fn = jest.fn<void, []>();
+      const fn = jest.fn<() => void>();
       const uut = channel.send();
 
       uut.then(fn);
@@ -53,7 +54,7 @@ describe('channel', () => {
 
     it('resolves on consumer', () => {
       const channel = make<void>();
-      const fn = jest.fn<void, []>();
+      const fn = jest.fn<() => void>();
       const uut = channel.send();
       uut.then(fn);
       channel.get();
@@ -63,7 +64,7 @@ describe('channel', () => {
 
     it('sends multiple', () => {
       const channel = make<void>();
-      const fn = jest.fn<void, []>();
+      const fn = jest.fn<() => void>();
       const uut1 = channel.send();
       const uut2 = channel.send();
 
@@ -77,7 +78,7 @@ describe('channel', () => {
 
     it('resolves immediately if capacity not full', () => {
       const channel = make<void>(1);
-      const fn = jest.fn<void, []>();
+      const fn = jest.fn<() => void>();
       const uut = channel.send();
 
       uut.then(fn);
@@ -87,7 +88,7 @@ describe('channel', () => {
 
     it('unblocks if consumed below capacity', () => {
       const channel = make<void>(1);
-      const fn = jest.fn<void, []>();
+      const fn = jest.fn<() => void>();
       channel.send();
       const uut = channel.send();
 

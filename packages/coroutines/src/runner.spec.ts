@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { make } from './channel';
 import { Future } from './Future';
 import { createRunner } from './runner';
@@ -110,7 +111,7 @@ describe('runner', () => {
 
     it('gets result from future', () => {
       let res = '';
-      const resolver = jest.fn<void, [string]>();
+      const resolver = jest.fn<(s: string) => void>();
       const fut = new Future<string>((resolve) =>
         resolver.mockImplementation(resolve)
       );

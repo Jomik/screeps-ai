@@ -1,3 +1,4 @@
+import { describe, it, expect } from '@jest/globals';
 import { calculateDistanceTransform } from './distance-transform';
 
 const getResultOfGenerator = <T>(gen: Generator<unknown, T, unknown>): T => {
