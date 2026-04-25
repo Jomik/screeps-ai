@@ -1,8 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "types": ["jest", "lodash", "screeps"]
-  },
-  "include": ["src/**/*.spec.ts", "src/**/*.test.ts", "test/**/*.ts"],
-  "exclude": []
-}
